@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://oasis-space.onrender.com/api/$1"
+    }
+  ]
+}
