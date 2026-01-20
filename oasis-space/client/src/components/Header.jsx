@@ -69,6 +69,9 @@ export default function Header() {
               About
             </li>
           </Link>
+          <Link to='/saved-listings'>
+    <li className='hidden sm:inline text-slate-700 hover:underline'>Wishlist</li>
+  </Link>
           <Link to='/profile'>
             {currentUser ? (
               <img

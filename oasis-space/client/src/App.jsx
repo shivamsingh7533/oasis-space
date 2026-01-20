@@ -12,6 +12,7 @@ import UpdateListing from './pages/UpdateListing';
 import Listing from './pages/Listing';
 import Search from './pages/Search';
 import Preloader from './components/Preloader'; // Import the new component
+import SavedListings from './pages/SavedListings'; // <--- YE LINE ADD KAREIN
 
 export default function App() {
   // State to track if we are loading
@@ -44,6 +45,7 @@ export default function App() {
         <Route path='/listing/:listingId' element={<Listing />} />
 
         <Route element={<PrivateRoute />}>
+        <Route path='/saved-listings' element={<SavedListings />} />
           <Route path='/profile' element={<Profile />} />
           <Route path='/create-listing' element={<CreateListing />} />
           <Route path='/update-listing/:listingId' element={<UpdateListing />} />
