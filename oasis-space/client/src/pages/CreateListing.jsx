@@ -1,18 +1,11 @@
-import { useEffect, useState } from 'react';
-import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
-} from 'firebase/storage';
-import { app } from '../firebase';
+import { useState } from 'react';
+import { supabase } from '../supabase'; // <--- Imports from your supabase.js
 import { useSelector } from 'react-redux';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-export default function UpdateListing() {
+export default function CreateListing() {
   const { currentUser } = useSelector((state) => state.user);
   const navigate = useNavigate();
-  const params = useParams();
   const [formData, setFormData] = useState({
     imageUrls: [],
     name: '',
@@ -32,34 +25,23 @@ export default function UpdateListing() {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchListing = async () => {
-      try {
-        const listingId = params.listingId;
-        const res = await fetch(`/api/listing/get/${listingId}`);
-        const data = await res.json();
-        if (data.success === false) {
-          console.log(data.message);
-          return;
-        }
-        setFormData(data);
-      } catch (error) {
-        console.log(error.message);
-      }
-    };
+  console.log(formData);
 
-    fetchListing();
-  }, [params.listingId]);
-
-  const handleImageSubmit = (filesList) => {
-    // AUTO UPLOAD LOGIC
-    if (filesList.length > 0 && filesList.length + formData.imageUrls.length < 7) {
+  const handleImageSubmit = (files) => {
+    // 1. CHECK FILE COUNT (Max 6 images)
+    if (files.length > 0 && files.length + formData.imageUrls.length < 7) {
       setUploading(true);
       setImageUploadError(false);
       const promises = [];
 
-      for (let i = 0; i < filesList.length; i++) {
-        promises.push(storeImage(filesList[i]));
+      for (let i = 0; i < files.length; i++) {
+        // 2. CHECK FILE SIZE (20MB Limit)
+        if (files[i].size > 20 * 1024 * 1024) {
+          setUploading(false);
+          setImageUploadError('File too large! Max 20MB per image.');
+          return;
+        }
+        promises.push(storeImage(files[i]));
       }
 
       Promise.all(promises)
@@ -73,7 +55,7 @@ export default function UpdateListing() {
         })
         .catch((err) => {
           console.log(err);
-          setImageUploadError('Image upload failed (2 mb max per image)');
+          setImageUploadError('Image upload failed');
           setUploading(false);
         });
     } else {
@@ -83,28 +65,29 @@ export default function UpdateListing() {
   };
 
   const storeImage = async (file) => {
-    return new Promise((resolve, reject) => {
-      const storage = getStorage(app);
-      const fileName = new Date().getTime() + file.name;
-      const storageRef = ref(storage, fileName);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log(`Upload is ${progress}% done`);
-        },
-        (error) => {
-          reject(error);
-        },
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-            resolve(downloadURL);
-          });
-        }
-      );
-    });
+    const fileName = new Date().getTime() + '_' + file.name;
+
+    // 1. Upload to Supabase (Bucket: 'images')
+    // We removed 'data' here because we don't use it, fixing the unused var error
+    const { error } = await supabase.storage
+      .from('images')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+
+    // If upload fails, throw error (this rejects the promise automatically)
+    if (error) {
+      throw error;
+    }
+
+    // 2. Get Public URL
+    const { data: publicData } = supabase.storage
+      .from('images')
+      .getPublicUrl(fileName);
+
+    // Return the URL (this resolves the promise automatically)
+    return publicData.publicUrl;
   };
 
   const handleRemoveImage = (index) => {
@@ -154,7 +137,8 @@ export default function UpdateListing() {
         return setError('Discount price must be lower than regular price');
       setLoading(true);
       setError(false);
-      const res = await fetch(`/api/listing/update/${params.listingId}`, {
+      
+      const res = await fetch('/api/listing/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -178,9 +162,9 @@ export default function UpdateListing() {
 
   return (
     <main className='p-3 max-w-4xl mx-auto'>
-      <h1 className='text-3xl font-semibold text-center my-7 '>
-  Create Listing 
-</h1>
+      <h1 className='text-3xl font-semibold text-center my-7'>
+        Create a Listing
+      </h1>
       <form onSubmit={handleSubmit} className='flex flex-col sm:flex-row gap-4'>
         <div className='flex flex-col gap-4 flex-1'>
           <input
@@ -339,7 +323,6 @@ export default function UpdateListing() {
             </span>
           </p>
           <div className='flex gap-4'>
-            {/* --- THIS IS THE FIXED INPUT (NO BUTTON) --- */}
             <input
               onChange={(e) => handleImageSubmit(e.target.files)}
               className='p-3 border border-gray-300 rounded w-full'
@@ -349,9 +332,6 @@ export default function UpdateListing() {
               multiple
             />
           </div>
-          
-          {uploading && <p className='text-center text-sm text-green-700 animate-pulse'>Uploading images...</p>}
-
           <p className='text-red-700 text-sm'>
             {imageUploadError && imageUploadError}
           </p>
@@ -379,7 +359,7 @@ export default function UpdateListing() {
             disabled={loading || uploading}
             className='p-3 bg-slate-700 text-white rounded-lg uppercase hover:opacity-95 disabled:opacity-80'
           >
-            {loading ? 'Updating...' : 'Update listing'}
+            {loading ? 'Creating...' : 'Create Listing'}
           </button>
           {error && <p className='text-red-700 text-sm'>{error}</p>}
         </div>
