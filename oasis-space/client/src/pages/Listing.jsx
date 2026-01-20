@@ -22,8 +22,7 @@ export default function Listing() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
-  // FIX 1: Removed unused setContact since we use a direct mailto link
-  const [contact] = useState(false); 
+  const [contact] = useState(false);
   const [saved, setSaved] = useState(false);
   const params = useParams();
   const { currentUser } = useSelector((state) => state.user);
@@ -42,13 +41,11 @@ export default function Listing() {
         setListing(data);
         setLoading(false);
         
-        // Check if listing is already saved by user
         if (currentUser && currentUser.savedListings && currentUser.savedListings.includes(data._id)) {
           setSaved(true);
         }
 
       } catch (error) {
-        // FIX 2: Log the error to clear the warning
         console.log(error);
         setError(true);
         setLoading(false);
@@ -62,7 +59,6 @@ export default function Listing() {
     
     try {
       setSaved(!saved); // Immediate UI toggle
-      
       const res = await fetch(`/api/user/save/${currentUser._id}`, {
         method: 'POST',
         headers: {
@@ -90,12 +86,15 @@ export default function Listing() {
         <p className='text-center my-7 text-2xl'>Something went wrong!</p>
       )}
       {listing && !loading && !error && (
-        <div>
+        <div className='relative'> {/* Changed to RELATIVE for proper icon positioning */}
+          
           <Swiper navigation>
             {listing.imageUrls.map((url) => (
               <SwiperSlide key={url}>
                 <div
-                  className='h-[550px]'
+                  // RESPONSIVE HEIGHT: 
+                  // Mobile: h-[300px] | Tablet: h-[400px] | Desktop: h-[550px]
+                  className='h-[300px] sm:h-[400px] md:h-[550px]' 
                   style={{
                     background: `url(${url}) center no-repeat`,
                     backgroundSize: 'cover',
@@ -104,8 +103,9 @@ export default function Listing() {
               </SwiperSlide>
             ))}
           </Swiper>
-          
-          <div className='fixed top-[13%] right-[3%] z-10 border rounded-full w-12 h-12 flex justify-center items-center bg-slate-100 cursor-pointer'>
+
+          {/* SHARE BUTTON: Positioned top-right inside the image area */}
+          <div className='absolute top-5 right-5 z-10 border rounded-full w-12 h-12 flex justify-center items-center bg-slate-100 cursor-pointer shadow-md hover:scale-105 transition-transform'>
             <FaShare
               className='text-slate-500'
               onClick={() => {
@@ -117,11 +117,11 @@ export default function Listing() {
               }}
             />
           </div>
-          
-          {/* HEART BUTTON */}
+
+          {/* HEART BUTTON: Positioned VERTICALLY below the share button (top-20) */}
           <div 
             onClick={handleSaveListing}
-            className='fixed top-[13%] right-[8%] z-10 border rounded-full w-12 h-12 flex justify-center items-center bg-slate-100 cursor-pointer hover:bg-slate-200 transition-all'
+            className='absolute top-20 right-5 z-10 border rounded-full w-12 h-12 flex justify-center items-center bg-slate-100 cursor-pointer shadow-md hover:bg-slate-200 hover:scale-105 transition-all'
           >
             {saved ? (
               <FaHeart className='text-red-500 text-xl' />
@@ -130,15 +130,16 @@ export default function Listing() {
             )}
           </div>
 
+          {/* COPIED MESSAGE POPUP */}
           {copied && (
-            <p className='fixed top-[23%] right-[5%] z-10 rounded-md bg-slate-100 p-2'>
+            <p className='fixed top-[23%] right-[5%] z-10 rounded-md bg-slate-100 p-2 shadow-lg font-semibold'>
               Link copied!
             </p>
           )}
           
           <div className='flex flex-col max-w-4xl mx-auto p-3 my-7 gap-4'>
             <p className='text-2xl font-semibold'>
-              {listing.name} -  ₹{' '}
+              {listing.name} - ₹{' '}
               {listing.offer
                 ? listing.discountPrice.toLocaleString('en-US')
                 : listing.regularPrice.toLocaleString('en-US')}
