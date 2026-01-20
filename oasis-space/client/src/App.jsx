@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { useState, useEffect } from 'react'; // Import hooks
+import { useState, useEffect } from 'react';
 import Home from './pages/Home';
 import SignIn from './pages/SignIn';
 import SignUp from './pages/SignUp';
@@ -11,8 +11,9 @@ import CreateListing from './pages/CreateListing';
 import UpdateListing from './pages/UpdateListing';
 import Listing from './pages/Listing';
 import Search from './pages/Search';
-import Preloader from './components/Preloader'; // Import the new component
-import SavedListings from './pages/SavedListings'; // <--- YE LINE ADD KAREIN
+import Preloader from './components/Preloader';
+import SavedListings from './pages/SavedListings';
+import Footer from './components/Footer'; // <--- You already imported this
 
 export default function App() {
   // State to track if we are loading
@@ -35,22 +36,34 @@ export default function App() {
   // Otherwise, show the full app
   return (
     <BrowserRouter>
-      <Header />
-      <Routes>
-        <Route path='/' element={<Home />} />
-        <Route path='/sign-in' element={<SignIn />} />
-        <Route path='/sign-up' element={<SignUp />} />
-        <Route path='/about' element={<About />} />
-        <Route path='/search' element={<Search />} />
-        <Route path='/listing/:listingId' element={<Listing />} />
+      {/* 1. LAYOUT WRAPPER: Ensures footer stays at bottom */}
+      <div className="flex flex-col min-h-screen">
+        
+        <Header />
+        
+        {/* 2. MAIN CONTENT: flex-grow pushes the footer down */}
+        <main className="flex-grow">
+          <Routes>
+            <Route path='/' element={<Home />} />
+            <Route path='/sign-in' element={<SignIn />} />
+            <Route path='/sign-up' element={<SignUp />} />
+            <Route path='/about' element={<About />} />
+            <Route path='/search' element={<Search />} />
+            <Route path='/listing/:listingId' element={<Listing />} />
 
-        <Route element={<PrivateRoute />}>
-        <Route path='/saved-listings' element={<SavedListings />} />
-          <Route path='/profile' element={<Profile />} />
-          <Route path='/create-listing' element={<CreateListing />} />
-          <Route path='/update-listing/:listingId' element={<UpdateListing />} />
-        </Route>
-      </Routes>
+            <Route element={<PrivateRoute />}>
+              <Route path='/saved-listings' element={<SavedListings />} />
+              <Route path='/profile' element={<Profile />} />
+              <Route path='/create-listing' element={<CreateListing />} />
+              <Route path='/update-listing/:listingId' element={<UpdateListing />} />
+            </Route>
+          </Routes>
+        </main>
+
+        {/* 3. FOOTER COMPONENT */}
+        <Footer />
+        
+      </div>
     </BrowserRouter>
   );
 }
