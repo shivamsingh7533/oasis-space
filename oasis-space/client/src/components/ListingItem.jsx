@@ -3,7 +3,8 @@ import { MdLocationOn } from 'react-icons/md';
 
 export default function ListingItem({ listing }) {
   return (
-    <div className='bg-slate-800 shadow-md hover:shadow-lg transition-shadow overflow-hidden rounded-lg w-full sm:w-[330px]'>
+    // CHANGE 1: Width thodi kam ki (sm:w-[330px] -> sm:w-[280px]) taaki card compact lage
+    <div className='bg-slate-800 shadow-md hover:shadow-lg transition-shadow overflow-hidden rounded-lg w-full sm:w-[280px]'>
       <Link to={`/listing/${listing._id}`}>
         <img
           src={
@@ -11,9 +12,12 @@ export default function ListingItem({ listing }) {
             'https://53.fs1.hubspotusercontent-na1.net/hub/53/hubfs/Sales_Blog/real-estate-business-compressor.jpg?width=595&height=400&name=real-estate-business-compressor.jpg'
           }
           alt='listing cover'
-          className='h-[320px] sm:h-[220px] w-full object-cover hover:scale-105 transition-scale duration-300'
+          // CHANGE 2: Image Height kam ki (h-[320px] -> h-[180px])
+          className='h-[180px] sm:h-[180px] w-full object-cover hover:scale-105 transition-scale duration-300'
         />
-        <div className='p-3 flex flex-col gap-2 w-full'>
+        
+        {/* CHANGE 3: Padding kam ki (p-3 -> p-2) */}
+        <div className='p-2 flex flex-col gap-2 w-full'>
           <p className='truncate text-lg font-semibold text-white'>
             {listing.name}
           </p>
