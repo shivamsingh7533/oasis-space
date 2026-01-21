@@ -116,7 +116,7 @@ export default function Footer() {
         <div className='max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left'>
           <p>© {new Date().getFullYear()} <span className='font-bold text-slate-100'>OasisSpace</span>. All rights reserved.</p>
           <p className='flex items-center gap-1'>
-            Made with <FaHeart className='text-red-500 animate-pulse' /> by <span className='font-bold text-slate-100'>Gautam</span>
+            Made with <FaHeart className='text-red-500 animate-pulse' /> by <span className='font-bold text-slate-100'>Shivam</span>
           </p>
         </div>
       </div>

@@ -1,0 +1,66 @@
+oasis-space
+├── client
+│   ├── public
+│   │   ├── logo.png
+│   │   └── vite.svg
+│   ├── src
+│   │   ├── assets
+│   │   │   ├── home.jpg
+│   │   │   └── react.svg
+│   │   ├── components
+│   │   │   ├── Contact.jsx
+│   │   │   ├── Footer.jsx
+│   │   │   ├── Header.jsx
+│   │   │   ├── ListingItem.jsx
+│   │   │   ├── Preloader.jsx
+│   │   │   └── PrivateRoute.jsx
+│   │   ├── pages
+│   │   │   ├── About.jsx
+│   │   │   ├── CreateListing.jsx
+│   │   │   ├── Home.jsx
+│   │   │   ├── Listing.jsx
+│   │   │   ├── Profile.jsx
+│   │   │   ├── SavedListings.jsx
+│   │   │   ├── Search.jsx
+│   │   │   ├── SignIn.jsx
+│   │   │   ├── SignUp.jsx
+│   │   │   └── UpdateListing.jsx
+│   │   ├── redux
+│   │   │   ├── user
+│   │   │   │   └── userSlice.js
+│   │   │   └── store.js
+│   │   ├── App.css
+│   │   ├── App.jsx
+│   │   ├── firebase.js
+│   │   ├── index.css
+│   │   ├── main.jsx
+│   │   └── supabase.js
+│   ├── README.md
+│   ├── eslint.config.js
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
+│   ├── vercel.json
+│   └── vite.config.js
+├── server
+│   ├── controllers
+│   │   ├── auth.controller.js
+│   │   ├── listing.controller.js
+│   │   └── user.controller.js
+│   ├── models
+│   │   ├── listing.model.js
+│   │   └── user.model.js
+│   ├── routes
+│   │   ├── auth.route.js
+│   │   ├── listing.route.js
+│   │   └── user.route.js
+│   ├── utils
+│   │   ├── error.js
+│   │   └── verifyUser.js
+│   ├── .env
+│   ├── index.js
+│   ├── package-lock.json
+│   └── package.json
+└── context.txt
