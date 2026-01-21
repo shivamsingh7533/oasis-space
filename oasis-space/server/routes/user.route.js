@@ -1,24 +1,39 @@
-import express from 'express';
-import { 
-  deleteUser, 
-  test, 
-  updateUser, 
-  getUserListings, 
-  getUser,
-  saveListing,       // <--- Added comma here
-  getSavedListings   // <--- Added this new function
-} from '../controllers/user.controller.js';
-import { verifyToken } from '../utils/verifyUser.js';
+import mongoose from 'mongoose';
 
-const router = express.Router();
+const userSchema = new mongoose.Schema(
+  {
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    mobile: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    avatar: {
+      type: String,
+      default: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+    },
+    // NEW: Saved Listings Array (Listing IDs store karega)
+    savedListings: {
+      type: Array,
+      default: [],
+    }
+  },
+  { timestamps: true }
+);
 
-router.get('/test', test);
-router.post('/update/:id', verifyToken, updateUser);
-router.delete('/delete/:id', verifyToken, deleteUser);
-router.get('/listings/:id', verifyToken, getUserListings);
-router.get('/:id', verifyToken, getUser);
-router.post('/save/:id', verifyToken, saveListing);
-// --- NEW ROUTE for getting saved listings ---
-router.get('/saved/:id', verifyToken, getSavedListings); 
+const User = mongoose.model('User', userSchema);
 
-export default router;
+export default User;

@@ -1,9 +1,17 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/style.css'; // Library CSS import
 
 export default function SignUp() {
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    mobile: '',
+    password: '',
+    confirmPassword: ''
+  });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   
@@ -19,18 +27,41 @@ export default function SignUp() {
     });
   };
 
+  const handlePhoneChange = (phone) => {
+    setFormData({ ...formData, mobile: phone });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // VALIDATION 1: Mandatory Fields
-    if (!formData.email || !formData.mobile) {
-      setError("Email and Mobile Number are required!");
+    // VALIDATION 1: Check Mandatory Fields
+    if (!formData.username || !formData.email || !formData.mobile || !formData.password) {
+      setError("All fields are required!");
       return;
     }
 
     // VALIDATION 2: Mobile Number Length
     if (formData.mobile.length < 10) {
       setError("Please enter a valid mobile number.");
+      return;
+    }
+
+    // --- PASSWORD STRENGTH VALIDATION ---
+    const password = formData.password;
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
+    if (!/[A-Z]/.test(password)) {
+      setError("Password must contain at least one uppercase letter (A-Z).");
+      return;
+    }
+    if (!/[0-9]/.test(password)) {
+      setError("Password must contain at least one number (0-9).");
+      return;
+    }
+    if (!/[!@#$%^&*]/.test(password)) {
+      setError("Password must contain at least one special character (!@#$%^&*).");
       return;
     }
 
@@ -42,6 +73,7 @@ export default function SignUp() {
 
     try {
       setLoading(true);
+      setError(null); 
       
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
@@ -69,51 +101,94 @@ export default function SignUp() {
     }
   };
 
+  // --- CUSTOM STYLES FOR DARK THEME ---
+  const inputStyle = {
+    backgroundColor: '#334155', // bg-slate-700
+    color: '#e2e8f0',           // text-slate-200
+    border: '1px solid #475569', // border-slate-600
+    borderRadius: '0.5rem',
+    width: '100%',
+    height: '42px',
+    fontSize: '0.875rem',
+    paddingLeft: '48px'
+  };
+
+  const buttonStyle = {
+    backgroundColor: '#334155',
+    border: '1px solid #475569',
+    borderTopLeftRadius: '0.5rem',
+    borderBottomLeftRadius: '0.5rem',
+  };
+
+  const dropdownStyle = {
+    backgroundColor: '#1e293b', // bg-slate-800
+    border: '1px solid #475569',
+    color: '#cbd5e1'
+  };
+
   return (
-    <div className='bg-slate-900 min-h-screen flex items-center justify-center p-3'>
+    <div className='bg-slate-900 h-screen w-full flex items-center justify-center p-3 overflow-hidden'>
       
-      {/* CHANGE: Padding reduced (p-6), Width slightly constrained (max-w-sm) */}
-      <div className='bg-slate-800 p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-sm border border-slate-700'>
+      {/* --- CSS OVERRIDES --- */}
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        .react-tel-input .country-list { background-color: #1e293b !important; color: #e2e8f0 !important; }
+        .react-tel-input .country-list .search { background-color: #1e293b !important; padding: 10px !important; }
+        .react-tel-input .country-list .search-box { background-color: #334155 !important; color: #e2e8f0 !important; border: 1px solid #475569 !important; border-radius: 4px !important; margin-bottom: 0 !important; }
+        .react-tel-input .country-list .country { color: #e2e8f0 !important; }
+        .react-tel-input .country-list .country:hover, .react-tel-input .country-list .country.highlight { background-color: #334155 !important; }
+        .react-tel-input .country-list::-webkit-scrollbar { width: 8px; }
+        .react-tel-input .country-list::-webkit-scrollbar-track { background: #1e293b; }
+        .react-tel-input .country-list::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+      `}</style>
+
+      <div className='bg-slate-800 p-5 rounded-xl shadow-2xl w-full max-w-sm border border-slate-700 max-h-[90vh] overflow-y-auto custom-scrollbar'>
         
-        {/* CHANGE: Heading size reduced (text-2xl) and margin reduced (my-4) */}
-        <h1 className='text-2xl text-center font-bold my-4 text-slate-100 drop-shadow-md'>
+        <h1 className='text-2xl text-center font-bold mb-4 text-slate-100 drop-shadow-md'>
           Sign Up
         </h1>
         
-        {/* CHANGE: Gap reduced (gap-3) */}
-        <form onSubmit={handleSubmit} className='flex flex-col gap-3'>
-          {/* Username */}
+        <form onSubmit={handleSubmit} className='flex flex-col gap-2.5'>
           <input 
             type="text" 
             placeholder='username' 
-            // CHANGE: Padding reduced (p-2.5)
             className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all text-sm sm:text-base' 
             id='username' 
             onChange={handleChange} 
+            value={formData.username || ''}
             required
           />
           
-          {/* Email */}
           <input 
             type="email" 
             placeholder='email' 
             className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all text-sm sm:text-base' 
             id='email' 
             onChange={handleChange} 
+            value={formData.email || ''}
             required
           />
 
-          {/* Mobile Number */}
-          <input 
-            type="number" 
-            placeholder='mobile number' 
-            className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all appearance-none text-sm sm:text-base' 
-            id='mobile' 
-            onChange={handleChange} 
-            required
-          />
+          {/* MOBILE NUMBER INPUT */}
+          <div className='w-full'>
+            <PhoneInput
+              country={'in'}
+              value={formData.mobile}
+              onChange={handlePhoneChange}
+              enableSearch={true}
+              inputStyle={inputStyle}
+              buttonStyle={buttonStyle}
+              dropdownStyle={dropdownStyle}
+              placeholder="mobile number"
+              // FIX: 'masks' prop se dash hatakar sirf space lagaya gaya hai
+              masks={{ in: '..... .....' }} 
+            />
+          </div>
 
-          {/* Password Field */}
           <div className='relative'>
             <input 
               type={showPassword ? "text" : "password"} 
@@ -121,6 +196,7 @@ export default function SignUp() {
               className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all w-full text-sm sm:text-base' 
               id='password' 
               onChange={handleChange} 
+              value={formData.password || ''}
               required
             />
             <div 
@@ -130,8 +206,10 @@ export default function SignUp() {
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </div>
           </div>
+          <p className='text-[10px] text-slate-400 px-1 -mt-1'>
+            * Min 8 chars, 1 uppercase, 1 number, 1 special char
+          </p>
 
-          {/* Confirm Password Field */}
           <div className='relative'>
             <input 
               type={showConfirmPassword ? "text" : "password"} 
@@ -139,6 +217,7 @@ export default function SignUp() {
               className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all w-full text-sm sm:text-base' 
               id='confirmPassword' 
               onChange={handleChange} 
+              value={formData.confirmPassword || ''}
               required
             />
             <div 
@@ -151,14 +230,14 @@ export default function SignUp() {
           
           <button 
             disabled={loading} 
-            className='bg-slate-600 text-white p-2.5 rounded-lg uppercase hover:bg-slate-500 disabled:opacity-80 transition-colors font-semibold shadow-md mt-2 text-sm sm:text-base'
+            className='bg-slate-600 text-white p-2.5 rounded-lg uppercase hover:bg-slate-500 disabled:opacity-80 transition-colors font-semibold shadow-md mt-1 text-sm sm:text-base'
           >
             {loading ? 'Loading...' : 'Sign Up'}
           </button>
           
         </form>
 
-        <div className="flex gap-2 mt-4 text-slate-300 font-medium justify-center text-sm">
+        <div className="flex gap-2 mt-3 text-slate-300 font-medium justify-center text-sm">
           <p>Have an account?</p>
           <Link to={"/sign-in"}>
             <span className='text-blue-400 hover:text-blue-300 hover:underline transition-colors'>
@@ -168,9 +247,11 @@ export default function SignUp() {
         </div>
         
         {error && (
-          <p className='text-red-400 mt-3 text-center bg-red-900/20 p-2 rounded border border-red-800 text-sm'>
-            {error}
-          </p>
+          <div className='mt-3 bg-red-900/20 border border-red-800 rounded p-2 animate-pulse'>
+            <p className='text-red-400 text-xs text-center font-medium'>
+              {error}
+            </p>
+          </div>
         )}
       </div>
     </div>

@@ -14,8 +14,15 @@ export default function Header() {
     <header className='bg-slate-900 shadow-md relative z-50'>
       <div className='flex justify-between items-center max-w-6xl mx-auto p-3'>
         
-        {/* LOGO */}
-        <Link to='/'>
+        {/* LOGO SECTION - UPDATED */}
+        <Link to='/' className='flex items-center gap-2'>
+          {/* Logo Image - 'rounded-full' class added here */}
+          <img 
+            src='/logo.png' // Make sure 'logo.png' is inside 'client/public' folder
+            alt='logo' 
+            // Added 'rounded-full' to make it circular
+            className='rounded-full h-7 w-7 sm:h-9 sm:w-9 object-contain' 
+          />
           <h1 className='font-bold text-sm sm:text-xl flex flex-wrap'>
             <span className='text-slate-300'>Oasis</span>
             <span className='text-slate-100'>Space</span>
