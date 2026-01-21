@@ -8,6 +8,7 @@ oasis-space
 │   │   │   ├── home.jpg
 │   │   │   └── react.svg
 │   │   ├── components
+│   │   │   ├── AuthModal.jsx
 │   │   │   ├── Contact.jsx
 │   │   │   ├── Footer.jsx
 │   │   │   ├── Header.jsx
