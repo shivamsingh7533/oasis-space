@@ -123,59 +123,124 @@ export default function Profile() {
   };
 
   return (
-    <div className='p-3 max-w-lg mx-auto'>
-      <div className='bg-white shadow-md rounded-lg p-5 mt-5 border border-slate-200'>
-        <div className='flex flex-col items-center gap-2 mb-4'>
+    // FIX 1: Outer Container Full Height & Dark Background (bg-slate-900)
+    <div className='bg-slate-900 min-h-screen w-full flex justify-center items-start pt-10 p-3'>
+      
+      {/* FIX 2: Card Container Darker (bg-slate-800), Border & White Text */}
+      <div className='bg-slate-800 shadow-2xl rounded-xl p-6 w-full max-w-lg border border-slate-700'>
+        
+        {/* Profile Image Section */}
+        <div className='flex flex-col items-center gap-3 mb-6'>
           <input onChange={(e) => setFile(e.target.files[0])} type='file' ref={fileRef} hidden accept='image/*' />
-          <div className='relative cursor-pointer' onClick={() => fileRef.current.click()}>
-            <img src={formData.avatar || currentUser.avatar} alt='profile' className='rounded-full h-20 w-20 object-cover border-2 border-slate-100 shadow-sm' />
+          
+          <div className='relative cursor-pointer hover:opacity-90 transition-opacity' onClick={() => fileRef.current.click()}>
+            <img 
+              src={formData.avatar || currentUser.avatar} 
+              alt='profile' 
+              className='rounded-full h-24 w-24 object-cover border-4 border-slate-600 shadow-lg' 
+            />
           </div>
-          <p className='text-xs h-3 font-medium text-center'>
-            {fileUploadError && <span className='text-red-600'>{fileUploadError}</span>}
-            {uploading && <span className='text-slate-600 animate-pulse'>Uploading...</span>}
-            {updateSuccess && <span className='text-green-600 font-bold'>Profile updated!</span>}
+          
+          <p className='text-xs h-4 font-medium text-center'>
+            {fileUploadError && <span className='text-red-400'>{fileUploadError}</span>}
+            {uploading && <span className='text-slate-300 animate-pulse'>Uploading...</span>}
+            {updateSuccess && <span className='text-green-400 font-bold'>Profile updated successfully!</span>}
           </p>
         </div>
 
         {!isEditing ? (
-          <div className='flex flex-col items-center gap-1'>
-            <h1 className='text-xl font-bold text-slate-800'>{currentUser.username}</h1>
-            <p className='text-slate-500 text-sm mb-4'>{currentUser.email}</p>
-            <div className='flex gap-3'>
-              <button onClick={() => setIsEditing(true)} className='bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-medium'>Edit Profile</button>
-              <Link to={'/create-listing'} className='bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium'>Create Listing</Link>
+          // --- VIEW MODE (Dark Theme) ---
+          <div className='flex flex-col items-center gap-2'>
+            <h1 className='text-2xl font-bold text-slate-100'>{currentUser.username}</h1>
+            <p className='text-slate-400 text-sm mb-6'>{currentUser.email}</p>
+            
+            <div className='flex gap-3 w-full'>
+              <button 
+                onClick={() => setIsEditing(true)} 
+                className='flex-1 bg-slate-700 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-slate-600 border border-slate-600 transition-all shadow-md'
+              >
+                Edit Profile
+              </button>
+              <Link 
+                to={'/create-listing'} 
+                className='flex-1 bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold text-center hover:bg-green-700 transition-all shadow-md'
+              >
+                Create Listing
+              </Link>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className='flex flex-col gap-3'>
-            <input type='text' defaultValue={currentUser.username} id='username' className='bg-slate-50 p-3 rounded-lg border text-sm' onChange={handleChange} />
-            <input type='email' defaultValue={currentUser.email} id='email' className='bg-slate-50 p-3 rounded-lg border text-sm' onChange={handleChange} />
-            <input type='password' placeholder='New Password' id='password' className='bg-slate-50 p-3 rounded-lg border text-sm' onChange={handleChange} />
-            <div className='flex gap-2'>
-              <button disabled={loading} className='flex-1 bg-slate-800 text-white rounded-lg p-2 text-xs font-bold uppercase'>{loading ? 'Saving...' : 'Save'}</button>
-              <button type="button" onClick={() => setIsEditing(false)} className='bg-red-100 text-red-700 rounded-lg p-2 text-xs font-bold uppercase'>Cancel</button>
+          // --- EDIT MODE (Dark Theme Inputs) ---
+          <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
+            <input 
+              type='text' 
+              defaultValue={currentUser.username} 
+              id='username' 
+              className='bg-slate-700 text-slate-200 border border-slate-600 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all placeholder-slate-400' 
+              onChange={handleChange} 
+            />
+            <input 
+              type='email' 
+              defaultValue={currentUser.email} 
+              id='email' 
+              className='bg-slate-700 text-slate-200 border border-slate-600 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all placeholder-slate-400' 
+              onChange={handleChange} 
+            />
+            <input 
+              type='password' 
+              placeholder='New Password' 
+              id='password' 
+              className='bg-slate-700 text-slate-200 border border-slate-600 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all placeholder-slate-400' 
+              onChange={handleChange} 
+            />
+            
+            <div className='flex gap-3 mt-2'>
+              <button 
+                disabled={loading} 
+                className='flex-1 bg-slate-600 text-white rounded-lg p-3 text-sm font-bold uppercase hover:bg-slate-500 transition-all shadow-md disabled:opacity-70'
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+              <button 
+                type="button" 
+                onClick={() => setIsEditing(false)} 
+                className='bg-red-900/30 text-red-400 border border-red-900/50 rounded-lg px-5 py-3 text-sm font-bold uppercase hover:bg-red-900/50 transition-all'
+              >
+                Cancel
+              </button>
             </div>
           </form>
         )}
 
-        <div className='flex justify-between mt-4 text-xs font-medium border-t pt-3'>
-          <span onClick={handleDeleteUser} className='text-red-500 cursor-pointer hover:underline'>Delete Account</span>
-          <span onClick={handleSignOut} className='text-slate-500 cursor-pointer hover:underline'>Sign out</span>
+        {/* Footer Actions */}
+        <div className='flex justify-between mt-6 text-sm font-medium border-t border-slate-700 pt-4'>
+          <span onClick={handleDeleteUser} className='text-red-400 cursor-pointer hover:text-red-300 transition-colors'>Delete Account</span>
+          <span onClick={handleSignOut} className='text-slate-400 cursor-pointer hover:text-slate-200 transition-colors'>Sign out</span>
         </div>
 
-        {error && <p className='text-red-600 mt-2 text-center text-xs font-semibold'>{error}</p>}
-        {showListingsError && <p className='text-red-600 mt-2 text-center text-xs font-semibold'>Error showing listings</p>}
+        {error && <p className='text-red-400 mt-4 text-center text-sm font-semibold bg-red-900/20 p-2 rounded'>{error}</p>}
+        {showListingsError && <p className='text-red-400 mt-4 text-center text-sm font-semibold'>Error showing listings</p>}
 
-        <div className='mt-4'>
-          <button onClick={handleShowListings} className='w-full text-slate-600 font-semibold text-xs hover:text-slate-800 hover:underline'>
+        {/* Listings Section */}
+        <div className='mt-6'>
+          <button 
+            onClick={handleShowListings} 
+            className='w-full text-green-400 font-semibold text-sm hover:text-green-300 hover:underline transition-colors'
+          >
              Show My Listings
           </button>
+          
           {userListings.length > 0 && (
-            <div className='mt-2 flex flex-col gap-2'>
+            <div className='mt-4 flex flex-col gap-3'>
               {userListings.map((listing) => (
-                <div key={listing._id} className='border rounded p-2 flex justify-between items-center text-xs'>
-                  <span className='truncate max-w-[120px] font-medium'>{listing.name}</span>
-                  <Link to={`/update-listing/${listing._id}`} className='text-green-700 font-bold'>EDIT</Link>
+                <div key={listing._id} className='border border-slate-600 bg-slate-700/50 rounded-lg p-3 flex justify-between items-center text-sm'>
+                  <Link to={`/listing/${listing._id}`} className='text-slate-200 font-medium truncate max-w-[150px] hover:underline'>
+                    {listing.name}
+                  </Link>
+                  <div className='flex flex-col items-center gap-1'>
+                     <button onClick={() => handleDeleteUser(listing._id)} className='text-red-400 uppercase text-xs font-semibold hover:text-red-300'>Delete</button>
+                     <Link to={`/update-listing/${listing._id}`} className='text-green-400 uppercase text-xs font-semibold hover:text-green-300'>Edit</Link>
+                  </div>
                 </div>
               ))}
             </div>
