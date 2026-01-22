@@ -7,7 +7,7 @@ export default function Search() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Helper to get params
+  // Helper function to extract params from URL
   const getParamsFromUrl = () => {
     const urlParams = new URLSearchParams(location.search);
     return {
@@ -30,7 +30,7 @@ export default function Search() {
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     
-    // Sync state with URL (ESLint warning fixed via comment)
+    // Check if URL params changed to update state
     const newParams = getParamsFromUrl();
     if (JSON.stringify(newParams) !== JSON.stringify(sidebardata)) {
        // eslint-disable-next-line
@@ -74,12 +74,13 @@ export default function Search() {
     }
   };
 
-  // Function to handle Sort Tabs
+  // Function to handle Sort Buttons
   const handleSortChange = (sort, order) => {
     const urlParams = new URLSearchParams(location.search);
     urlParams.set('sort', sort);
     urlParams.set('order', order);
     const searchQuery = urlParams.toString();
+    // Navigate will trigger useEffect
     navigate(`/search?${searchQuery}`);
     setSidebardata({ ...sidebardata, sort, order });
   };

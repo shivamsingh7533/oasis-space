@@ -1,39 +1,30 @@
-import mongoose from 'mongoose';
+import express from 'express';
+import { 
+  test, 
+  updateUser, 
+  deleteUser, 
+  getUserListings, 
+  getUser,
+  saveListing,       // <-- 1. Import Naya Function
+  getSavedListings   // <-- 2. Import Naya Function
+} from '../controllers/user.controller.js';
+import { verifyToken } from '../utils/verifyUser.js';
 
-const userSchema = new mongoose.Schema(
-  {
-    username: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    mobile: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
-    avatar: {
-      type: String,
-      default: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
-    },
-    // NEW: Saved Listings Array (Listing IDs store karega)
-    savedListings: {
-      type: Array,
-      default: [],
-    }
-  },
-  { timestamps: true }
-);
+const router = express.Router();
 
-const User = mongoose.model('User', userSchema);
+// Purane Routes
+router.get('/test', test);
+router.post('/update/:id', verifyToken, updateUser);
+router.delete('/delete/:id', verifyToken, deleteUser);
+router.get('/listings/:id', verifyToken, getUserListings);
+router.get('/:id', verifyToken, getUser);
 
-export default User;
+// --- NEW ROUTES FOR SAVED LISTINGS ---
+
+// 3. Route to Save or Unsave a listing (POST method kyunki hum database modify kar rahe hain)
+router.post('/save/:id', verifyToken, saveListing);
+
+// 4. Route to Get all Saved listings (GET method)
+router.get('/saved/:id', verifyToken, getSavedListings);
+
+export default router;

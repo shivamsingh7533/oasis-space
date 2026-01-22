@@ -16,8 +16,14 @@ export default function Profile() {
   const [fileUploadError, setFileUploadError] = useState(false);
   const [formData, setFormData] = useState({});
   const [updateSuccess, setUpdateSuccess] = useState(false);
+  
+  // State for My Listings (Created by user)
   const [userListings, setUserListings] = useState([]);
   const [showListingsError, setShowListingsError] = useState(false);
+  
+  // --- NEW: State for Saved Listings (Wishlist) ---
+  const [savedListings, setSavedListings] = useState([]); 
+  
   const [isEditing, setIsEditing] = useState(false);
   const dispatch = useDispatch();
 
@@ -26,7 +32,7 @@ export default function Profile() {
   }, [file]);
 
   const handleFileUpload = async (file) => {
-    if (file.size > 20 * 1024 * 1024) { // 20MB limit
+    if (file.size > 20 * 1024 * 1024) { 
       setFileUploadError('File too large (Max 20MB)');
       return;
     }
@@ -36,7 +42,7 @@ export default function Profile() {
     try {
       const fileName = `${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage
-        .from('images') // Using your bucket named 'images'
+        .from('images') 
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
@@ -96,6 +102,21 @@ export default function Profile() {
     }
   };
 
+  // --- NEW FUNCTION: Fetch Saved Listings ---
+  const handleShowSavedListings = async () => {
+    try {
+      const res = await fetch(`/api/user/saved/${currentUser._id}`);
+      const data = await res.json();
+      if (data.success === false) {
+        console.log(data.message);
+        return;
+      }
+      setSavedListings(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   const handleDeleteUser = async () => {
     try {
       dispatch(deleteUserStart());
@@ -123,10 +144,8 @@ export default function Profile() {
   };
 
   return (
-    // FIX 1: Outer Container Full Height & Dark Background (bg-slate-900)
     <div className='bg-slate-900 min-h-screen w-full flex justify-center items-start pt-10 p-3'>
       
-      {/* FIX 2: Card Container Darker (bg-slate-800), Border & White Text */}
       <div className='bg-slate-800 shadow-2xl rounded-xl p-6 w-full max-w-lg border border-slate-700'>
         
         {/* Profile Image Section */}
@@ -149,7 +168,7 @@ export default function Profile() {
         </div>
 
         {!isEditing ? (
-          // --- VIEW MODE (Dark Theme) ---
+          // --- VIEW MODE ---
           <div className='flex flex-col items-center gap-2'>
             <h1 className='text-2xl font-bold text-slate-100'>{currentUser.username}</h1>
             <p className='text-slate-400 text-sm mb-6'>{currentUser.email}</p>
@@ -170,7 +189,7 @@ export default function Profile() {
             </div>
           </div>
         ) : (
-          // --- EDIT MODE (Dark Theme Inputs) ---
+          // --- EDIT MODE ---
           <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
             <input 
               type='text' 
@@ -221,31 +240,73 @@ export default function Profile() {
         {error && <p className='text-red-400 mt-4 text-center text-sm font-semibold bg-red-900/20 p-2 rounded'>{error}</p>}
         {showListingsError && <p className='text-red-400 mt-4 text-center text-sm font-semibold'>Error showing listings</p>}
 
-        {/* Listings Section */}
+        {/* ================= OWNED LISTINGS SECTION ================= */}
         <div className='mt-6'>
           <button 
             onClick={handleShowListings} 
             className='w-full text-green-400 font-semibold text-sm hover:text-green-300 hover:underline transition-colors'
           >
-             Show My Listings
+             Show My Listings (Created)
           </button>
           
           {userListings.length > 0 && (
             <div className='mt-4 flex flex-col gap-3'>
               {userListings.map((listing) => (
                 <div key={listing._id} className='border border-slate-600 bg-slate-700/50 rounded-lg p-3 flex justify-between items-center text-sm'>
-                  <Link to={`/listing/${listing._id}`} className='text-slate-200 font-medium truncate max-w-[150px] hover:underline'>
+                  <Link to={`/listing/${listing._id}`}>
+                    <img 
+                      src={listing.imageUrls?.[0]} 
+                      alt="listing cover" 
+                      className='h-12 w-16 object-contain rounded bg-slate-800'
+                    />
+                  </Link>
+                  <Link to={`/listing/${listing._id}`} className='text-slate-200 font-medium truncate flex-1 px-4 hover:underline'>
                     {listing.name}
                   </Link>
                   <div className='flex flex-col items-center gap-1'>
-                     <button onClick={() => handleDeleteUser(listing._id)} className='text-red-400 uppercase text-xs font-semibold hover:text-red-300'>Delete</button>
-                     <Link to={`/update-listing/${listing._id}`} className='text-green-400 uppercase text-xs font-semibold hover:text-green-300'>Edit</Link>
+                      <button onClick={() => handleDeleteUser(listing._id)} className='text-red-400 uppercase text-xs font-semibold hover:text-red-300'>Delete</button>
+                      <Link to={`/update-listing/${listing._id}`} className='text-green-400 uppercase text-xs font-semibold hover:text-green-300'>Edit</Link>
                   </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+
+        {/* ================= NEW: SAVED LISTINGS SECTION ================= */}
+        <div className='mt-6 pt-4 border-t border-slate-700'>
+          <button 
+            onClick={handleShowSavedListings} 
+            className='w-full text-blue-400 font-semibold text-sm hover:text-blue-300 hover:underline transition-colors'
+          >
+             Show Saved Listings (Wishlist)
+          </button>
+          
+          {savedListings.length > 0 && (
+            <div className='mt-4 flex flex-col gap-3'>
+              <p className='text-center text-slate-400 text-xs'>Properties you have saved</p>
+              {savedListings.map((listing) => (
+                <div key={listing._id} className='border border-slate-600 bg-slate-700/50 rounded-lg p-3 flex justify-between items-center text-sm'>
+                   <Link to={`/listing/${listing._id}`}>
+                    <img 
+                      src={listing.imageUrls?.[0]} 
+                      alt="listing cover" 
+                      className='h-12 w-16 object-contain rounded bg-slate-800'
+                    />
+                  </Link>
+                  <Link to={`/listing/${listing._id}`} className='text-slate-200 font-medium truncate flex-1 px-4 hover:underline'>
+                    {listing.name}
+                  </Link>
+                  {/* Note: View Link only. Editing/Deleting handled in Listing page */}
+                  <Link to={`/listing/${listing._id}`} className='text-blue-400 uppercase text-xs font-semibold hover:text-blue-300'>
+                    View
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
