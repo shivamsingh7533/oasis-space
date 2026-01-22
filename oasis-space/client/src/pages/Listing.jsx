@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { Navigation } from 'swiper/modules';
 import 'swiper/css/bundle';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -18,10 +18,12 @@ import {
   FaLocationArrow,
 } from 'react-icons/fa';
 
-// Fix for default Leaflet marker icon
+// Leaflet Assets
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
+import { updateUserSuccess } from '../redux/user/userSlice';
 
+// Fix for Leaflet default icon
 let DefaultIcon = L.icon({
     iconUrl: icon,
     shadowUrl: iconShadow,
@@ -36,15 +38,12 @@ export default function Listing() {
   const [error, setError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState(false);
-  
-  // Map Coordinates State
   const [coordinates, setCoordinates] = useState({ lat: 0, lng: 0 });
   const [mapLoading, setMapLoading] = useState(true);
 
-  // Map Reference for Recenter Feature
   const mapRef = useRef(null);
-
   const params = useParams();
+  const dispatch = useDispatch();
   const { currentUser } = useSelector((state) => state.user);
 
   useEffect(() => {
@@ -63,32 +62,28 @@ export default function Listing() {
         setListing(data);
         setLoading(false);
 
-        // Check if saved
+        // --- SYNC STATE ---
         if (currentUser && currentUser.savedListings && data._id) {
-            if (currentUser.savedListings.includes(data._id)) {
-                setSaved(true);
-            }
+            const isSaved = currentUser.savedListings.some(id => id.toString() === data._id);
+            setSaved(isSaved);
         }
 
-        // Geocoding Logic
+        // --- GEOCODING (OSM) ---
         if (data.address) {
             try {
                 const geoRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(data.address)}`);
                 const geoData = await geoRes.json();
                 if (geoData && geoData.length > 0) {
                     setCoordinates({ lat: parseFloat(geoData[0].lat), lng: parseFloat(geoData[0].lon) });
-                    setMapLoading(false);
-                } else {
-                    setMapLoading(false);
                 }
-            } catch (err) {
-                console.log("Map Error:", err);
+                setMapLoading(false);
+            } catch (mapErr) {
+                console.log("Map Fetch Error:", mapErr); // Fixed: 'err' variable used
                 setMapLoading(false);
             }
         }
-
-      } catch (err) {
-        console.log(err); 
+      } catch (fetchErr) {
+        console.log("Listing Fetch Error:", fetchErr); // Fixed: 'err' variable used
         setError(true);
         setLoading(false);
       }
@@ -98,24 +93,38 @@ export default function Listing() {
 
   const handleSaveListing = async () => {
     if (!currentUser) return alert("Please sign in to save listings!");
+    
     setSaved((prev) => !prev); 
+
     try {
-      const res = await fetch(`/api/user/save/${currentUser._id}`, {
+      const res = await fetch(`/api/user/save/${listing._id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listingId: listing._id }),
       });
+
       const data = await res.json();
+      
       if (data.success === false) {
-        setSaved((prev) => !prev); 
+        setSaved((prev) => !prev);
+        return;
       }
-    } catch (err) {
-      console.log(err); // FIX: Log the error to use the variable
-      setSaved((prev) => !prev); 
+
+      // Sync Redux Store
+      let updatedSavedListings = [...(currentUser.savedListings || [])];
+      if (saved) {
+         updatedSavedListings = updatedSavedListings.filter(id => id !== listing._id);
+      } else {
+         updatedSavedListings.push(listing._id);
+      }
+
+      dispatch(updateUserSuccess({ ...currentUser, savedListings: updatedSavedListings }));
+
+    } catch (saveErr) {
+      console.log("Save Logic Error:", saveErr); // Fixed: 'err' variable used
+      setSaved((prev) => !prev);
     }
   };
 
-  // Recenter Map Function
   const handleRecenterMap = () => {
     if (mapRef.current) {
         mapRef.current.flyTo([coordinates.lat, coordinates.lng], 13);
@@ -123,21 +132,21 @@ export default function Listing() {
   };
 
   return (
-    <main>
-      {loading && <p className='text-center my-7 text-2xl'>Loading...</p>}
-      {error && <p className='text-center my-7 text-2xl'>Something went wrong!</p>}
+    // OasisSpace Dark Theme Background
+    <main className="bg-[#0b0f1a] min-h-screen text-slate-200">
+      {loading && <p className='text-center py-20 text-2xl animate-pulse'>Gathering property details...</p>}
+      {error && <p className='text-center py-20 text-2xl text-red-500'>Something went wrong! Please refresh.</p>}
       
       {listing && !loading && !error && (
-        <div className='relative bg-slate-100 min-h-screen'> 
-          
-          {/* Image Slider */}
-          <Swiper modules={[Navigation]} navigation>
+        <div className='relative'> 
+          {/* Swiper Slider */}
+          <Swiper modules={[Navigation]} navigation className='listing-swiper'>
             {listing.imageUrls.map((url) => (
               <SwiperSlide key={url}>
                 <div
-                  className='h-[300px] sm:h-[400px] md:h-[550px]'
+                  className='h-[350px] sm:h-[500px]'
                   style={{
-                    background: `url(${url}) center no-repeat`,
+                    background: `linear-gradient(to bottom, transparent, rgba(11, 15, 26, 0.7)), url(${url}) center no-repeat`,
                     backgroundSize: 'cover',
                   }}
                 ></div>
@@ -145,118 +154,116 @@ export default function Listing() {
             ))}
           </Swiper>
 
-          {/* Share Button */}
-          <div className='absolute top-5 right-5 z-10 border rounded-full w-12 h-12 flex justify-center items-center bg-white cursor-pointer shadow-md hover:scale-110 transition-transform'>
-            <FaShare
-              className='text-slate-500'
-              onClick={() => {
-                navigator.clipboard.writeText(window.location.href);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
-              }}
-            />
-          </div>
-
-          {/* Save Button */}
-          <div 
-            onClick={handleSaveListing}
-            className='absolute top-20 right-5 z-10 border rounded-full w-12 h-12 flex justify-center items-center bg-white cursor-pointer shadow-md hover:scale-110 transition-transform'
-            title={saved ? "Remove from Wishlist" : "Add to Wishlist"}
-          >
-            {saved ? <FaHeart className='text-red-500 text-xl' /> : <FaRegHeart className='text-slate-500 text-xl' />}
+          {/* Floating Actions */}
+          <div className='absolute top-5 right-5 z-10 flex gap-4'>
+            <div className='bg-slate-800/80 backdrop-blur-md border border-slate-700 p-3 rounded-full cursor-pointer hover:scale-110 transition-all shadow-xl'
+                 onClick={() => {
+                   navigator.clipboard.writeText(window.location.href);
+                   setCopied(true);
+                   setTimeout(() => setCopied(false), 2000);
+                 }}>
+              <FaShare className='text-white' />
+            </div>
+            
+            <div onClick={handleSaveListing}
+                 className='bg-slate-800/80 backdrop-blur-md border border-slate-700 p-3 rounded-full cursor-pointer hover:scale-110 transition-all shadow-xl'>
+              {saved ? <FaHeart className='text-red-500 text-xl' /> : <FaRegHeart className='text-white text-xl' />}
+            </div>
           </div>
 
           {copied && (
-            <p className='fixed top-[23%] right-[5%] z-10 rounded-md bg-slate-800 text-white p-2 shadow-lg font-semibold'>
-              Link copied!
-            </p>
+            <p className='fixed top-[15%] right-5 z-20 rounded-md bg-indigo-600 text-white p-2 text-xs shadow-lg'>URL Copied!</p>
           )}
 
-          {/* Listing Info */}
-          <div className='flex flex-col max-w-4xl mx-auto p-3 my-7 gap-4'>
-            <p className='text-2xl font-bold text-slate-900'>
-              {listing.name} - ₹{' '}
-              {listing.offer
-                ? listing.discountPrice.toLocaleString('en-IN')
-                : listing.regularPrice.toLocaleString('en-IN')}
-              {listing.type === 'rent' && ' / month'}
-            </p>
-
-            <p className='flex items-center gap-2 text-slate-600 text-sm font-medium'>
-              <FaMapMarkerAlt className='text-green-700' />
-              {listing.address}
-            </p>
-
-            <div className='flex gap-4'>
-              <p className='bg-red-900 w-full max-w-[200px] text-white text-center p-1 rounded-md shadow-sm font-semibold'>
-                {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
-              </p>
-              {listing.offer && (
-                <p className='bg-green-900 w-full max-w-[200px] text-white text-center p-1 rounded-md shadow-sm font-semibold'>
-                   ₹{+listing.regularPrice - +listing.discountPrice} OFF
+          {/* Information Section */}
+          <div className='max-w-4xl mx-auto p-4 flex flex-col gap-6 -mt-10 relative z-10'>
+            
+            {/* Header Card */}
+            <div className="bg-slate-800/90 backdrop-blur-lg p-6 rounded-3xl border border-slate-700 shadow-2xl">
+                <h1 className='text-3xl font-extrabold text-white mb-2'>
+                  {listing.name}
+                </h1>
+                <p className='flex items-center gap-2 text-indigo-400 text-sm font-medium'>
+                  <FaMapMarkerAlt className='text-indigo-500' />
+                  {listing.address}
                 </p>
-              )}
+
+                <div className="flex items-center justify-between mt-6 flex-wrap gap-4">
+                    <p className='text-3xl font-bold text-white'>
+                         ₹ {listing.offer ? listing.discountPrice.toLocaleString('en-IN') : listing.regularPrice.toLocaleString('en-IN')}
+                         {listing.type === 'rent' && <span className='text-sm text-slate-400 font-normal'> / month</span>}
+                    </p>
+                    <div className='flex gap-3'>
+                      <span className='bg-red-500/10 text-red-400 border border-red-500/30 px-5 py-1.5 rounded-full text-xs font-bold uppercase'>
+                        {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
+                      </span>
+                      {listing.offer && (
+                        <span className='bg-green-500/10 text-green-400 border border-green-500/30 px-5 py-1.5 rounded-full text-xs font-bold'>
+                           ₹{(+listing.regularPrice - +listing.discountPrice).toLocaleString('en-IN')} OFF
+                        </span>
+                      )}
+                    </div>
+                </div>
             </div>
 
-            <p className='text-slate-700 leading-relaxed bg-white p-4 rounded-lg shadow-sm'>
-              <span className='font-bold text-slate-900 block mb-1'>Description:</span>
-              {listing.description}
-            </p>
-
-            <ul className='text-green-800 font-semibold text-sm flex flex-wrap items-center gap-4 sm:gap-6 bg-white p-4 rounded-lg shadow-sm'>
-              <li className='flex items-center gap-2 whitespace-nowrap'><FaBed className='text-xl' />{listing.bedrooms} Beds</li>
-              <li className='flex items-center gap-2 whitespace-nowrap'><FaBath className='text-xl' />{listing.bathrooms} Baths</li>
-              <li className='flex items-center gap-2 whitespace-nowrap'><FaParking className='text-xl' />{listing.parking ? 'Parking' : 'No Parking'}</li>
-              <li className='flex items-center gap-2 whitespace-nowrap'><FaChair className='text-xl' />{listing.furnished ? 'Furnished' : 'Unfurnished'}</li>
+            {/* Quick Specs Grid */}
+            <ul className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+              <li className='bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col items-center gap-1'>
+                  <FaBed className='text-indigo-400 text-2xl' />
+                  <span className="text-white font-bold">{listing.bedrooms} Beds</span>
+              </li>
+              <li className='bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col items-center gap-1'>
+                  <FaBath className='text-indigo-400 text-2xl' />
+                  <span className="text-white font-bold">{listing.bathrooms} Baths</span>
+              </li>
+              <li className='bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col items-center gap-1'>
+                  <FaParking className='text-indigo-400 text-2xl' />
+                  <span className="text-white font-bold">{listing.parking ? 'Parking' : 'None'}</span>
+              </li>
+              <li className='bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col items-center gap-1'>
+                  <FaChair className='text-indigo-400 text-2xl' />
+                  <span className="text-white font-bold">{listing.furnished ? 'Furnished' : 'No'}</span>
+              </li>
             </ul>
 
-            {currentUser && listing.userRef !== currentUser._id && (
-               <button onClick={() => window.location.href = `mailto:landlord@gmail.com?subject=${listing.name}`} className='bg-slate-700 text-white rounded-lg uppercase hover:opacity-95 p-3 font-semibold shadow-lg mt-4'>
-               Contact Landlord
-             </button>
-            )}
+            {/* Description Area */}
+            <div className='bg-slate-800 p-7 rounded-3xl border border-slate-700 shadow-lg'>
+              <h2 className='text-white font-bold text-xl mb-4'>Description</h2>
+              <p className='text-slate-400 text-base leading-relaxed'>{listing.description}</p>
+            </div>
 
-            {/* --- MAP SECTION --- */}
-            <div className='bg-white p-4 rounded-lg shadow-sm mt-4 z-0'>
-                <div className="flex justify-between items-center mb-3">
-                    <h3 className='text-lg font-bold text-slate-900'>Location</h3>
-                    {/* Recenter Button */}
+            {/* Map Area */}
+            <div className='bg-slate-800 p-4 rounded-3xl border border-slate-700 shadow-lg overflow-hidden'>
+                <div className="flex justify-between items-center mb-4 px-2">
+                    <h3 className='font-bold text-white flex items-center gap-2'><FaLocationArrow className="text-indigo-400"/> Map View</h3>
                     {!mapLoading && coordinates.lat !== 0 && (
-                        <button 
-                            onClick={handleRecenterMap}
-                            className="text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 py-1 px-3 rounded flex items-center gap-1 transition-colors border border-slate-300"
-                            title="Reset Map View"
-                        >
-                            <FaLocationArrow className="text-xs" /> Recenter
+                        <button onClick={handleRecenterMap} className="text-xs bg-slate-700 hover:bg-indigo-600 text-slate-200 py-1.5 px-4 rounded-full transition-all border border-slate-600">
+                             Recenter
                         </button>
                     )}
                 </div>
                 
-                {!mapLoading && coordinates.lat !== 0 ? (
-                    <div className='h-[400px] w-full rounded-lg overflow-hidden border border-slate-300 z-0 relative'>
-                        <MapContainer 
-                            ref={mapRef}
-                            center={[coordinates.lat, coordinates.lng]} 
-                            zoom={13} 
-                            scrollWheelZoom={false} 
-                            style={{ height: '100%', width: '100%' }}
-                        >
-                            <TileLayer
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
-                            <Marker position={[coordinates.lat, coordinates.lng]}>
-                                <Popup>{listing.address}</Popup>
-                            </Marker>
+                <div className='h-[350px] w-full rounded-2xl overflow-hidden grayscale brightness-[0.7] border border-slate-700'>
+                    {!mapLoading && coordinates.lat !== 0 ? (
+                        <MapContainer ref={mapRef} center={[coordinates.lat, coordinates.lng]} zoom={13} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                            <Marker position={[coordinates.lat, coordinates.lng]}><Popup>{listing.address}</Popup></Marker>
                         </MapContainer>
-                    </div>
-                ) : (
-                    <div className='h-[200px] w-full bg-slate-200 rounded-lg flex items-center justify-center text-slate-500'>
-                        {mapLoading ? 'Loading Map...' : 'Location not found on map'}
-                    </div>
-                )}
+                    ) : (
+                        <div className='h-full w-full bg-slate-900 flex items-center justify-center text-slate-500 text-sm'>
+                            {mapLoading ? 'Finding location...' : 'Map not available for this address'}
+                        </div>
+                    )}
+                </div>
             </div>
 
+            {/* Contact Host Button */}
+            {currentUser && listing.userRef !== currentUser._id && (
+               <button onClick={() => window.location.href = `mailto:support@oasisspace.com?subject=${listing.name}`} 
+                       className='bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl uppercase hover:opacity-95 p-4 font-extrabold shadow-2xl tracking-widest transition-all mb-10'>
+                 Message Landlord
+               </button>
+            )}
           </div>
         </div>
       )}

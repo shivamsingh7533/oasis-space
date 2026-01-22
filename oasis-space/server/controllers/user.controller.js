@@ -1,12 +1,10 @@
-import bcryptjs from 'bcryptjs';
 import User from '../models/user.model.js';
 import Listing from '../models/listing.model.js';
 import { errorHandler } from '../utils/error.js';
+import bcryptjs from 'bcryptjs';
 
 export const test = (req, res) => {
-  res.json({
-    message: 'Api route is working!',
-  });
+  res.json({ message: 'Api route is working!' });
 };
 
 export const updateUser = async (req, res, next) => {
@@ -16,7 +14,6 @@ export const updateUser = async (req, res, next) => {
     if (req.body.password) {
       req.body.password = bcryptjs.hashSync(req.body.password, 10);
     }
-
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       {
@@ -25,20 +22,18 @@ export const updateUser = async (req, res, next) => {
           email: req.body.email,
           password: req.body.password,
           avatar: req.body.avatar,
+          mobile: req.body.mobile,
         },
       },
       { new: true }
     );
-
     const { password, ...rest } = updatedUser._doc;
-
     res.status(200).json(rest);
   } catch (error) {
     next(error);
   }
 };
 
-// --- CRITICAL FIX: deleteUser function added back ---
 export const deleteUser = async (req, res, next) => {
   if (req.user.id !== req.params.id)
     return next(errorHandler(401, 'You can only delete your own account!'));
@@ -67,68 +62,59 @@ export const getUserListings = async (req, res, next) => {
 export const getUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
-
     if (!user) return next(errorHandler(404, 'User not found!'));
-
     const { password: pass, ...rest } = user._doc;
-
     res.status(200).json(rest);
   } catch (error) {
     next(error);
   }
 };
 
-// --- NEW FUNCTION: Save or Unsave a Listing ---
+// --- FIX 1: SAFE SAVE LISTING ---
 export const saveListing = async (req, res, next) => {
-  if (req.user.id !== req.params.id) {
-    return next(errorHandler(401, 'You can only update your own account!'));
-  }
-
   try {
-    const user = await User.findById(req.params.id);
-    const listingId = req.body.listingId; 
+    const listingId = req.params.id; 
+    const userId = req.user.id;
 
-    if (user.savedListings.includes(listingId)) {
-      // Unsave (Remove)
-      await User.findByIdAndUpdate(
-        req.params.id,
-        {
-          $pull: { savedListings: listingId },
-        },
-        { new: true }
-      );
-      res.status(200).json('Listing has been removed from saved items');
+    const user = await User.findById(userId);
+    if (!user) return next(errorHandler(404, 'User not found!'));
+
+    // ✅ SAFETY CHECK: Agar savedListings nahi hai, to empty array lo
+    const savedListings = user.savedListings || [];
+
+    const isSaved = savedListings.some((id) => id.toString() === listingId);
+
+    if (isSaved) {
+      await User.findByIdAndUpdate(userId, {
+        $pull: { savedListings: listingId },
+      });
+      res.status(200).json('Listing removed from wishlist');
     } else {
-      // Save (Add)
-      await User.findByIdAndUpdate(
-        req.params.id,
-        {
-          $push: { savedListings: listingId },
-        },
-        { new: true }
-      );
-      res.status(200).json('Listing saved successfully');
+      await User.findByIdAndUpdate(userId, {
+        $addToSet: { savedListings: listingId },
+      });
+      res.status(200).json('Listing saved to wishlist');
     }
   } catch (error) {
     next(error);
   }
 };
 
-// --- NEW FUNCTION: Get All Saved Listings ---
+// --- FIX 2: SAFE GET SAVED LISTINGS ---
 export const getSavedListings = async (req, res, next) => {
-  if (req.user.id !== req.params.id) {
-    return next(errorHandler(401, 'You can only view your own saved listings!'));
-  }
-
   try {
-    const user = await User.findById(req.params.id);
-    
-    // Convert IDs to Listing Objects
+    const user = await User.findById(req.user.id);
+    if (!user) return next(errorHandler(404, 'User not found'));
+
+    // ✅ SAFETY CHECK
+    const savedListingsIds = user.savedListings || [];
+
     const savedListings = await Promise.all(
-      user.savedListings.map((listingId) => Listing.findById(listingId))
+        savedListingsIds.map((listingId) => Listing.findById(listingId))
     );
 
-    res.status(200).json(savedListings);
+    const validListings = savedListings.filter(listing => listing !== null);
+    res.status(200).json(validListings);
   } catch (error) {
     next(error);
   }
