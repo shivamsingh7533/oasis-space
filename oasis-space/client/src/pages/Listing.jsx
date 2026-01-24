@@ -22,6 +22,7 @@ import {
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import { updateUserSuccess } from '../redux/user/userSlice';
+import EMICalculator from '../components/EMICalculator'; // ✅ Added Calculator Import
 
 // Fix for Leaflet default icon
 let DefaultIcon = L.icon({
@@ -78,12 +79,12 @@ export default function Listing() {
                 }
                 setMapLoading(false);
             } catch (mapErr) {
-                console.log("Map Fetch Error:", mapErr); // Fixed: 'err' variable used
+                console.log("Map Fetch Error:", mapErr);
                 setMapLoading(false);
             }
         }
       } catch (fetchErr) {
-        console.log("Listing Fetch Error:", fetchErr); // Fixed: 'err' variable used
+        console.log("Listing Fetch Error:", fetchErr);
         setError(true);
         setLoading(false);
       }
@@ -120,7 +121,7 @@ export default function Listing() {
       dispatch(updateUserSuccess({ ...currentUser, savedListings: updatedSavedListings }));
 
     } catch (saveErr) {
-      console.log("Save Logic Error:", saveErr); // Fixed: 'err' variable used
+      console.log("Save Logic Error:", saveErr);
       setSaved((prev) => !prev);
     }
   };
@@ -190,8 +191,8 @@ export default function Listing() {
 
                 <div className="flex items-center justify-between mt-6 flex-wrap gap-4">
                     <p className='text-3xl font-bold text-white'>
-                         ₹ {listing.offer ? listing.discountPrice.toLocaleString('en-IN') : listing.regularPrice.toLocaleString('en-IN')}
-                         {listing.type === 'rent' && <span className='text-sm text-slate-400 font-normal'> / month</span>}
+                          ₹ {listing.offer ? listing.discountPrice.toLocaleString('en-IN') : listing.regularPrice.toLocaleString('en-IN')}
+                          {listing.type === 'rent' && <span className='text-sm text-slate-400 font-normal'> / month</span>}
                     </p>
                     <div className='flex gap-3'>
                       <span className='bg-red-500/10 text-red-400 border border-red-500/30 px-5 py-1.5 rounded-full text-xs font-bold uppercase'>
@@ -231,6 +232,11 @@ export default function Listing() {
               <h2 className='text-white font-bold text-xl mb-4'>Description</h2>
               <p className='text-slate-400 text-base leading-relaxed'>{listing.description}</p>
             </div>
+
+            {/* ✅ EMI Calculator (Integrated here) */}
+            {listing.type === 'sale' && (
+              <EMICalculator price={listing.offer ? listing.discountPrice : listing.regularPrice} />
+            )}
 
             {/* Map Area */}
             <div className='bg-slate-800 p-4 rounded-3xl border border-slate-700 shadow-lg overflow-hidden'>

@@ -149,7 +149,8 @@ export default function Home() {
                             <div className='absolute bottom-0 left-0 p-4 sm:p-6 w-full'>
                                 <h3 className='text-white text-xl sm:text-2xl font-bold drop-shadow-md truncate'>{listing.name}</h3>
                                 <p className='text-slate-200 font-medium text-sm sm:text-base'>
-                                    ${listing.offer ? listing.discountPrice.toLocaleString() : listing.regularPrice.toLocaleString()}
+                                    {/* ✅ CHANGED: Currency to ₹ and Locale to en-IN */}
+                                    ₹ {listing.offer ? listing.discountPrice.toLocaleString('en-IN') : listing.regularPrice.toLocaleString('en-IN')}
                                     {listing.type === 'rent' && ' / month'}
                                 </p>
                                 <Link to={`/listing/${listing._id}`} className='inline-block mt-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded shadow-lg transition'>
