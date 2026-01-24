@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { FaHome, FaUsers, FaBuilding, FaChartPie, FaBell, FaTrash, FaTimes, FaStar, FaEdit } from 'react-icons/fa';
+// --- 1. RECHARTS IMPORTS (ResponsiveContainer hataya gaya hai) 📊 ---
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 // --- SIDEBAR COMPONENT ---
 const Sidebar = ({ activeTab, setActiveTab, pendingRequests }) => (
@@ -24,6 +26,7 @@ const Sidebar = ({ activeTab, setActiveTab, pendingRequests }) => (
       >
           <div className="relative">
             <FaUsers /> 
+            {/* SIDEBAR NOTIFICATION BADGE */}
             {pendingRequests > 0 && <span className="absolute -top-2 -right-2 bg-red-500 text-[10px] w-5 h-5 rounded-full flex items-center justify-center text-white font-bold animate-pulse">{pendingRequests}</span>}
           </div> 
           Users
@@ -74,9 +77,12 @@ export default function Dashboard() {
       }
     };
 
-    fetchData(); 
+    fetchData(); // 1. Turant Load karein
+    
+    // 2. Har 10 Second mein refresh karein (Polling)
     const interval = setInterval(fetchData, 10000); 
-    return () => clearInterval(interval);
+
+    return () => clearInterval(interval); // Cleanup
   }, [currentUser.role]);
 
   // --- ACTIONS ---
@@ -115,6 +121,8 @@ export default function Dashboard() {
         });
         const data = await res.json();
         if (data.success === false) return alert(data.message);
+        
+        // Optimistic Update (Turant UI change karein)
         setUsers((prev) => prev.map((u) => u._id === userId ? { ...u, sellerStatus: status } : u));
     } catch (error) { console.log(error); }
   };
@@ -123,43 +131,63 @@ export default function Dashboard() {
     try {
         const res = await fetch(`/api/listing/feature/${listingId}`, { method: 'POST' });
         const data = await res.json();
-        // Check for 404 or other errors
-        if (data.success === false) return console.log("Feature Error:", data.message);
-        
+        if (data.success === false) return console.log(data.message);
         setListings((prev) => prev.map((item) => 
             item._id === listingId ? { ...item, featured: !item.featured } : item
         ));
-    } catch (error) { console.log("Network Error:", error); }
+    } catch (error) { console.log(error); }
   };
 
-  // --- STATS CALCULATION ---
-  // ✅ FIX: Removed 'totalRent' unused variable
+  // --- 2. STATS & CHART DATA PREPARATION 📊 ---
   const totalSale = listings.filter(l => l.type === 'sale').length;
+  const totalRent = listings.filter(l => l.type === 'rent').length;
   const pendingRequests = users.filter(u => u.sellerStatus === 'pending').length;
+
+  // Pie Chart Data (Rent vs Sale)
+  const pieData = [
+    { name: 'Rent', value: totalRent },
+    { name: 'Sale', value: totalSale },
+  ];
+  const PIE_COLORS = ['#3B82F6', '#10B981']; // Blue for Rent, Green for Sale
+
+  // Bar Chart Data (User Status)
+  const barData = [
+    { name: 'Regular', value: users.filter(u => !u.sellerStatus || u.sellerStatus === 'regular').length },
+    { name: 'Pending', value: pendingRequests },
+    { name: 'Sellers', value: users.filter(u => u.sellerStatus === 'approved').length },
+  ];
 
   return (
     <div className="flex h-screen bg-slate-950 text-white overflow-hidden font-sans">
+      
+      {/* SIDEBAR */}
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} pendingRequests={pendingRequests} />
 
+      {/* MAIN CONTENT AREA */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
+        
+        {/* TOP HEADER */}
         <header className="bg-slate-900/80 backdrop-blur-md border-b border-slate-800 p-4 flex justify-between items-center z-10">
             <h2 className="text-lg font-semibold text-slate-200 capitalize">{activeTab} Dashboard</h2>
             <div className="flex items-center gap-4">
-                <div className="relative cursor-pointer hover:bg-slate-800 p-2 rounded-full transition" onClick={() => setActiveTab('users')} title="View Pending Requests">
+                {/* BELL ICON NOTIFICATION */}
+                <div className="relative cursor-pointer hover:bg-slate-800 p-2 rounded-full transition" onClick={() => setActiveTab('users')}>
                     <FaBell className="text-slate-400 text-xl" />
                     {pendingRequests > 0 && <span className="absolute top-1 right-1 bg-red-500 w-3 h-3 rounded-full border-2 border-slate-900 animate-pulse"></span>}
                 </div>
-                
-                {/* ✅ FIXED: Profile Clickable */}
+                {/* PROFILE LINK */}
                 <Link to='/profile'>
                     <img src={currentUser.avatar} alt="admin" className="w-9 h-9 rounded-full border border-slate-600 hover:border-blue-500 transition cursor-pointer object-cover" />
                 </Link>
             </div>
         </header>
 
+        {/* SCROLLABLE CONTENT */}
         <main className="flex-1 overflow-y-auto p-6 bg-gradient-to-br from-slate-950 to-slate-900">
+            
             {loading ? <p className="text-center animate-pulse mt-10">Loading Data...</p> : (
                 <>
+                {/* --- TAB: OVERVIEW --- */}
                 {activeTab === 'overview' && (
                     <div className="animate-fade-in-up">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -171,19 +199,64 @@ export default function Dashboard() {
                                 <h3 className="text-slate-400 text-sm font-bold uppercase">Total Properties</h3>
                                 <p className="text-3xl font-bold mt-2">{listings.length}</p>
                             </div>
+                            {/* Pending Requests Card */}
                             <div className="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg group relative overflow-hidden">
                                 <div className={`absolute right-0 top-0 w-24 h-24 rounded-full blur-2xl transition ${pendingRequests > 0 ? 'bg-red-500/20' : 'bg-slate-500/10'}`}></div>
                                 <h3 className="text-slate-400 text-sm font-bold uppercase">Pending Requests</h3>
                                 <p className={`text-3xl font-bold mt-2 ${pendingRequests > 0 ? 'text-red-400' : 'text-slate-200'}`}>{pendingRequests}</p>
                             </div>
                             <div className="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-lg group">
-                                <h3 className="text-slate-400 text-sm font-bold uppercase">For Sale</h3>
-                                <p className="text-3xl font-bold mt-2 text-orange-400">{totalSale}</p>
+                                <h3 className="text-slate-400 text-sm font-bold uppercase">Featured</h3>
+                                <p className="text-3xl font-bold mt-2 text-yellow-400">{listings.filter(l => l.featured).length}</p>
+                            </div>
+                        </div>
+
+                        {/* 2. CHARTS SECTION 📊 */}
+                        <div className='grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8'>
+                            
+                            {/* PIE CHART: Rent vs Sale */}
+                            <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex flex-col items-center justify-center overflow-x-auto'>
+                                <h3 className="text-slate-200 text-lg font-bold mb-4 self-start">Property Distribution</h3>
+                                
+                                {/* ✅ FIX: Fixed Size Chart (No ResponsiveContainer) */}
+                                <PieChart width={320} height={300}>
+                                    <Pie
+                                        data={pieData}
+                                        cx="50%"
+                                        cy="50%"
+                                        labelLine={false}
+                                        label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                        outerRadius={100}
+                                        fill="#8884d8"
+                                        dataKey="value"
+                                    >
+                                        {pieData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} itemStyle={{ color: '#fff' }} />
+                                    <Legend />
+                                </PieChart>
+                            </div>
+
+                            {/* BAR CHART: User Roles */}
+                            <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex flex-col items-center justify-center overflow-x-auto'>
+                                <h3 className="text-slate-200 text-lg font-bold mb-4 self-start">User Statistics</h3>
+                                
+                                {/* ✅ FIX: Fixed Size Chart (No ResponsiveContainer) */}
+                                <BarChart width={350} height={300} data={barData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                                    <XAxis dataKey="name" stroke="#94a3b8" />
+                                    <YAxis stroke="#94a3b8" />
+                                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} cursor={{fill: '#334155', opacity: 0.4}} />
+                                    <Bar dataKey="value" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={50} />
+                                </BarChart>
                             </div>
                         </div>
                     </div>
                 )}
 
+                {/* --- TAB: USERS --- */}
                 {activeTab === 'users' && (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-fade-in-up">
                         {users.map((user) => (
@@ -219,6 +292,7 @@ export default function Dashboard() {
                     </div>
                 )}
 
+                {/* --- TAB: LISTINGS --- */}
                 {activeTab === 'listings' && (
                     <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden animate-fade-in-up">
                         <table className="w-full text-left text-sm text-slate-400">
@@ -266,6 +340,7 @@ export default function Dashboard() {
         </main>
       </div>
 
+      {/* --- MODAL --- */}
       {selectedUser && (
         <div className="fixed inset-0 z-50 flex justify-center items-center p-4">
              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setSelectedUser(null)}></div>
