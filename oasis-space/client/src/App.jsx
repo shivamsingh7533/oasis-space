@@ -13,7 +13,11 @@ import Listing from './pages/Listing';
 import Search from './pages/Search';
 import Preloader from './components/Preloader';
 import SavedListings from './pages/SavedListings';
-import Footer from './components/Footer'; // <--- You already imported this
+import Footer from './components/Footer';
+
+// --- NEW IMPORTS FOR ADMIN PANEL ---
+import Dashboard from './pages/Dashboard';
+import AdminRoute from './components/AdminRoute';
 
 export default function App() {
   // State to track if we are loading
@@ -44,6 +48,7 @@ export default function App() {
         {/* 2. MAIN CONTENT: flex-grow pushes the footer down */}
         <main className="flex-grow">
           <Routes>
+            {/* Public Routes */}
             <Route path='/' element={<Home />} />
             <Route path='/sign-in' element={<SignIn />} />
             <Route path='/sign-up' element={<SignUp />} />
@@ -51,6 +56,12 @@ export default function App() {
             <Route path='/search' element={<Search />} />
             <Route path='/listing/:listingId' element={<Listing />} />
 
+            {/* --- ADMIN PROTECTED ROUTES --- */}
+            <Route element={<AdminRoute />}>
+              <Route path='/dashboard' element={<Dashboard />} />
+            </Route>
+
+            {/* User Private Routes */}
             <Route element={<PrivateRoute />}>
               <Route path='/saved-listings' element={<SavedListings />} />
               <Route path='/profile' element={<Profile />} />

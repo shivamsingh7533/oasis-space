@@ -1,9 +1,16 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import Listing from '../models/listing.model.js';
+import User from '../models/user.model.js'; 
 import { errorHandler } from '../utils/error.js';
 
+// 1. Create Listing (With Seller Permission Check) 💼
 export const createListing = async (req, res, next) => {
   try {
+    if (req.body.type === 'sale') {
+        const user = await User.findById(req.user.id);
+        if (user.sellerStatus !== 'approved' && user.role !== 'admin') {
+            return next(errorHandler(403, 'Permission Denied! You need to be an Approved Seller to sell properties.'));
+        }
+    }
     const listing = await Listing.create(req.body);
     return res.status(201).json(listing);
   } catch (error) {
@@ -11,18 +18,18 @@ export const createListing = async (req, res, next) => {
   }
 };
 
+// 2. Delete Listing (Owner OR Admin) 🛡️
 export const deleteListing = async (req, res, next) => {
   const listing = await Listing.findById(req.params.id);
-
-  if (!listing) {
-    return next(errorHandler(404, 'Listing not found!'));
-  }
-
-  if (req.user.id !== listing.userRef) {
-    return next(errorHandler(401, 'You can only delete your own listings!'));
-  }
+  if (!listing) return next(errorHandler(404, 'Listing not found!'));
 
   try {
+    const user = await User.findById(req.user.id);
+    // Check: Owner ya Admin
+    if (req.user.id !== listing.userRef && user.role !== 'admin') {
+      return next(errorHandler(401, 'You can only delete your own listings!'));
+    }
+
     await Listing.findByIdAndDelete(req.params.id);
     res.status(200).json('Listing has been deleted!');
   } catch (error) {
@@ -30,19 +37,25 @@ export const deleteListing = async (req, res, next) => {
   }
 };
 
+// 3. Update Listing (SAFE MODE: Owner nahi badlega) 🛡️✏️
 export const updateListing = async (req, res, next) => {
   const listing = await Listing.findById(req.params.id);
-  if (!listing) {
-    return next(errorHandler(404, 'Listing not found!'));
-  }
-  if (req.user.id !== listing.userRef) {
-    return next(errorHandler(401, 'You can only update your own listings!'));
-  }
+  if (!listing) return next(errorHandler(404, 'Listing not found!'));
 
   try {
+    const user = await User.findById(req.user.id);
+    
+    // Check: Owner ya Admin
+    if (req.user.id !== listing.userRef && user.role !== 'admin') {
+        return next(errorHandler(401, 'You can only update your own listings!'));
+    }
+
+    // 🔥 FIX: userRef ko body se hata dein taaki admin owner na ban jaye
+    const { userRef, ...rest } = req.body;
+
     const updatedListing = await Listing.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      rest, 
       { new: true }
     );
     res.status(200).json(updatedListing);
@@ -51,54 +64,47 @@ export const updateListing = async (req, res, next) => {
   }
 };
 
+// 4. Get Single Listing
 export const getListing = async (req, res, next) => {
   try {
     const listing = await Listing.findById(req.params.id);
-    if (!listing) {
-      return next(errorHandler(404, 'Listing not found!'));
-    }
+    if (!listing) return next(errorHandler(404, 'Listing not found!'));
     res.status(200).json(listing);
   } catch (error) {
     next(error);
   }
 };
 
-// --- THIS IS THE SEARCH FUNCTION ---
+// 5. Get All Listings (UPDATED FOR HOME PAGE SLIDER 🌟)
 export const getListings = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 9;
     const startIndex = parseInt(req.query.startIndex) || 0;
     
-    // 1. Handle "Offer" Filter
     let offer = req.query.offer;
-    if (offer === undefined || offer === 'false') {
-      offer = { $in: [false, true] }; // If unchecked, show ALL
-    }
+    if (offer === undefined || offer === 'false') offer = { $in: [false, true] };
 
-    // 2. Handle "Furnished" Filter
     let furnished = req.query.furnished;
-    if (furnished === undefined || furnished === 'false') {
-      furnished = { $in: [false, true] };
-    }
+    if (furnished === undefined || furnished === 'false') furnished = { $in: [false, true] };
 
-    // 3. Handle "Parking" Filter
     let parking = req.query.parking;
-    if (parking === undefined || parking === 'false') {
-      parking = { $in: [false, true] };
-    }
+    if (parking === undefined || parking === 'false') parking = { $in: [false, true] };
 
-    // 4. Handle "Type" Filter (Rent/Sale)
     let type = req.query.type;
-    if (type === undefined || type === 'all') {
-      type = { $in: ['sale', 'rent'] };
+    if (type === undefined || type === 'all') type = { $in: ['sale', 'rent'] };
+
+    // 👇 ADDED: Featured Filter for Home Page
+    let featured = req.query.featured;
+    if (featured === undefined || featured === 'false') {
+        featured = { $in: [false, true] };
+    } else {
+        featured = true;
     }
 
-    // 5. Handle Search Term & Sorting
     const searchTerm = req.query.searchTerm || '';
     const sort = req.query.sort || 'createdAt';
     const order = req.query.order || 'desc';
 
-    // 6. Find in Database (SEARCH BY NAME OR ADDRESS)
     const listings = await Listing.find({
       $or: [
         { name: { $regex: searchTerm, $options: 'i' } },
@@ -108,65 +114,69 @@ export const getListings = async (req, res, next) => {
       furnished,
       parking,
       type,
+      featured, // <--- Added here
     })
       .sort({ [sort]: order })
       .limit(limit)
       .skip(startIndex);
 
     return res.status(200).json(listings);
-    
   } catch (error) {
     next(error);
   }
 };
 
-// --- AI DESCRIPTION GENERATOR ---
+// 6. Admin Get All Listings 👑
+export const getAdminListings = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== 'admin') return next(errorHandler(403, 'Access Denied!'));
 
-// server/controllers/listing.controller.js
+    const listings = await Listing.find().sort({ createdAt: -1 });
+    res.status(200).json(listings);
+  } catch (error) {
+    next(error);
+  }
+};
 
+// 7. Toggle Featured Status 🌟
+export const featureListing = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (user.role !== 'admin') return next(errorHandler(403, 'Access Denied!'));
+
+    const listing = await Listing.findById(req.params.id);
+    if (!listing) return next(errorHandler(404, 'Listing not found'));
+
+    listing.featured = !listing.featured;
+    await listing.save();
+    res.status(200).json(listing);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 8. AI Generator
 export const generateDescription = async (req, res, next) => {
   try {
     const { prompt } = req.body;
-    
-    // Check API Key
-    if (!process.env.GEMINI_API_KEY) {
-      return next(errorHandler(500, 'Gemini API Key is missing!'));
-    }
+    if (!process.env.GEMINI_API_KEY) return next(errorHandler(500, 'API Key missing!'));
 
-    const finalPrompt = `Write a professional real estate description (within 100 words) for: ${prompt}.`;
-
-    // UPDATED: Using 'gemini-2.5-flash' (Based on your JSON list)
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: finalPrompt }] }],
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: `Write a real estate description for: ${prompt}` }] }] }),
       }
     );
-
     const data = await response.json();
-
-    // Check for Google Errors
-    if (!response.ok) {
-      console.log("Google API Error:", data);
-      return next(errorHandler(response.status, `Google Error: ${data.error?.message}`));
-    }
-
-    // Extract Text safely
-    if (data.candidates && data.candidates.length > 0 && data.candidates[0].content) {
-      const text = data.candidates[0].content.parts[0].text;
-      res.status(200).json(text);
+    if (data.candidates?.[0]?.content) {
+      res.status(200).json(data.candidates[0].content.parts[0].text);
     } else {
       res.status(500).json("No description generated.");
     }
-
   } catch (error) {
-    console.log("Server Error:", error);
     next(error);
   }
 };

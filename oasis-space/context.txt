@@ -8,6 +8,7 @@ oasis-space
 │   │   │   ├── home.jpg
 │   │   │   └── react.svg
 │   │   ├── components
+│   │   │   ├── AdminRoute.jsx
 │   │   │   ├── AuthModal.jsx
 │   │   │   ├── Contact.jsx
 │   │   │   ├── Footer.jsx
@@ -18,6 +19,7 @@ oasis-space
 │   │   ├── pages
 │   │   │   ├── About.jsx
 │   │   │   ├── CreateListing.jsx
+│   │   │   ├── Dashboard.jsx
 │   │   │   ├── Home.jsx
 │   │   │   ├── Listing.jsx
 │   │   │   ├── Profile.jsx

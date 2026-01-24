@@ -46,6 +46,11 @@ const listingSchema = new mongoose.Schema(
       type: Boolean,
       required: true,
     },
+    // --- NEW FIELD: FEATURED (VIP) ---
+    featured: {
+      type: Boolean,
+      default: false, 
+    },
     imageUrls: {
       type: Array,
       required: true,

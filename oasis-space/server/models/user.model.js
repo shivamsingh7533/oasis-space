@@ -25,6 +25,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
     },
+    // --- NEW ROLE FIELD ADDED HERE ---
+    role: {
+      type: String,
+      enum: ['user', 'seller', 'admin'], // केवल ये 3 रोल्स ही हो सकते हैं
+      default: 'user', // डिफ़ॉल्ट रूप से सब नॉर्मल यूजर होंगे
+    },
     savedListings: {
       type: Array,
       default: [],
@@ -33,8 +39,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// CHANGE HERE: Check if model exists before creating
-// Agar mongoose.models.User exist karta hai to wo use karo, warna naya banao
+// Check if model exists before creating
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 export default User;

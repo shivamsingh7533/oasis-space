@@ -1,5 +1,9 @@
 {
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.18"
+  },
+  "dependencies": {
+    "react-phone-input-2": "^2.15.1",
+    "tree-node-cli": "^1.6.0"
   }
 }

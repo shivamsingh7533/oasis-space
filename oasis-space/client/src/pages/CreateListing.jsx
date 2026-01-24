@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../supabase';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { FaMagic, FaLink, FaCloudUploadAlt, FaTrashAlt } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaTrashAlt } from 'react-icons/fa';
 
 export default function CreateListing() {
   const { currentUser } = useSelector((state) => state.user);
@@ -29,12 +29,12 @@ export default function CreateListing() {
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
 
+  // --- IMAGE UPLOAD LOGIC ---
   const handleImageSubmit = (files) => {
     if (files.length > 0 && files.length + formData.imageUrls.length < 7) {
       setUploading(true);
       setImageUploadError(false);
       const promises = [];
-
       for (let i = 0; i < files.length; i++) {
         if (files[i].size > 20 * 1024 * 1024) {
           setUploading(false);
@@ -43,219 +43,255 @@ export default function CreateListing() {
         }
         promises.push(storeImage(files[i]));
       }
-
-      Promise.all(promises)
-        .then((urls) => {
-          setFormData({
-            ...formData,
-            imageUrls: formData.imageUrls.concat(urls),
-          });
+      Promise.all(promises).then((urls) => {
+          setFormData({ ...formData, imageUrls: formData.imageUrls.concat(urls) });
           setUploading(false);
-        })
-        .catch((err) => {
-          console.log("Upload Error:", err); // Fixed: 'err' variable used
-          setImageUploadError('Image upload failed');
-          setUploading(false);
-        });
-    } else {
-      setImageUploadError('Maximum 6 images allowed.');
-      setUploading(false);
-    }
+        }).catch((err) => { console.log(err); setImageUploadError('Image upload failed'); setUploading(false); });
+    } else { setImageUploadError('Maximum 6 images allowed.'); setUploading(false); }
   };
 
   const storeImage = async (file) => {
     const fileName = new Date().getTime() + '_' + file.name;
-    const { error: uploadErr } = await supabase.storage
-      .from('images')
-      .upload(fileName, file, { cacheControl: '3600', upsert: false });
-
+    const { error: uploadErr } = await supabase.storage.from('images').upload(fileName, file, { cacheControl: '3600', upsert: false });
     if (uploadErr) throw uploadErr;
-    const { data: publicData } = supabase.storage
-      .from('images')
-      .getPublicUrl(fileName);
+    const { data: publicData } = supabase.storage.from('images').getPublicUrl(fileName);
     return publicData.publicUrl;
   };
 
+  // --- PASTE URL HANDLER ---
   const handleAddImageUrl = () => {
-    if (!imageUrlInput.trim() || !imageUrlInput.includes('http')) {
-         return setImageUploadError('Please enter a valid image URL.');
-    }
-    if (formData.imageUrls.length >= 6) {
-      return setImageUploadError('Maximum 6 images allowed.');
-    }
+    if (!imageUrlInput.trim()) return setImageUploadError('Please enter an image URL.');
+    
+    if (formData.imageUrls.length >= 6) return setImageUploadError('Maximum 6 images allowed.');
+    
     setFormData({ ...formData, imageUrls: [...formData.imageUrls, imageUrlInput] });
     setImageUrlInput('');
     setImageUploadError(false);
   };
 
-  const handleRemoveImage = (index) => {
-    setFormData({
-      ...formData,
-      imageUrls: formData.imageUrls.filter((_, i) => i !== index),
-    });
+  const handleRemoveImage = (index) => { 
+    setFormData({ ...formData, imageUrls: formData.imageUrls.filter((_, i) => i !== index) }); 
   };
 
+  // --- MODIFIED HANDLE CHANGE (SELLER CHECK) 🛡️ ---
   const handleChange = (e) => {
+    // 1. Check Permission specifically for 'Sell' checkbox
+    if (e.target.id === 'sale') {
+        if (currentUser.sellerStatus !== 'approved' && currentUser.role !== 'admin') {
+            alert("Permission Denied! You must be an Approved Seller to post 'Sale' listings.");
+            return; // Stop here, do not update state
+        }
+    }
+
+    // 2. Normal Logic
     if (e.target.id === 'sale' || e.target.id === 'rent') {
-      setFormData({ ...formData, type: e.target.id });
+        setFormData({ ...formData, type: e.target.id });
     }
+
     if (['parking', 'furnished', 'offer'].includes(e.target.id)) {
-      setFormData({ ...formData, [e.target.id]: e.target.checked });
+        setFormData({ ...formData, [e.target.id]: e.target.checked });
     }
+
     if (['number', 'text', 'textarea'].includes(e.target.type)) {
-      setFormData({ ...formData, [e.target.id]: e.target.value });
+        setFormData({ ...formData, [e.target.id]: e.target.value });
     }
   };
 
   const handleAIGenerate = async (e) => {
     e.preventDefault(); 
-    if (!formData.name || !formData.address) {
-        setError('Name and Address required for AI generation.');
-        return;
-    }
-    try {
-        setAiLoading(true);
-        setError(false);
-        const promptText = `Name: ${formData.name}, Address: ${formData.address}, Type: ${formData.type}, Beds: ${formData.bedrooms}, Baths: ${formData.bathrooms}.`;
-        const res = await fetch('/api/listing/generate-ai', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: promptText }),
-        });
+    if (!formData.name || !formData.address) { setError('Name and Address required for AI.'); return; }
+    try { setAiLoading(true); setError(false);
+        const promptText = `Name: ${formData.name}, Address: ${formData.address}, Type: ${formData.type}, Beds: ${formData.bedrooms}.`;
+        const res = await fetch('/api/listing/generate-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: promptText }) });
         const data = await res.json();
-        if (data.success === false) {
-            setError(data.message);
-        } else {
-            setFormData({ ...formData, description: data });
-        }
+        if (data.success === false) setError(data.message); else setFormData({ ...formData, description: data });
         setAiLoading(false);
-    } catch (err) {
-        console.log("AI Error:", err); // Fixed: 'err' variable used
-        setError('AI Generation Failed.');
-        setAiLoading(false);
-    }
+    } catch (err) { console.log(err); setError('AI Failed.'); setAiLoading(false); }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (formData.imageUrls.length < 1) return setError('At least one image is required');
-      setLoading(true);
-      setError(false);
-      const res = await fetch('/api/listing/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, userRef: currentUser?._id }),
+      if (+formData.regularPrice < +formData.discountPrice) return setError('Discount price must be lower than regular price');
+      
+      setLoading(true); setError(false);
+      
+      const res = await fetch('/api/listing/create', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ ...formData, userRef: currentUser?._id }) 
       });
-      const data = await res.json();
+      
+      const data = await res.json(); 
       setLoading(false);
-      if (data.success === false) setError(data.message);
-      else navigate(`/listing/${data._id}`);
-    } catch (err) {
-      console.log("Submit Error:", err);
-      setError('Form submission failed.');
-      setLoading(false);
-    }
+      
+      if (data.success === false) {
+          setError(data.message); 
+      } else {
+          navigate(`/listing/${data._id}`);
+      }
+    } catch (err) { console.log(err); setError('Failed to create listing'); setLoading(false); }
   };
 
-  // OasisSpace UI Styles
-  const inputBase = "border-slate-700 bg-slate-800 text-white placeholder-slate-500 p-3 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-sm w-full";
-  const labelBase = "text-xs font-bold text-slate-400 uppercase tracking-widest ml-1 mb-1 block";
+  // Styles matching Profile Page
+  const inputClass = "bg-slate-700 text-white rounded-lg p-3 w-full border border-slate-600 focus:outline-none focus:border-indigo-500 placeholder-slate-400";
+  const labelClass = "text-slate-300 font-semibold mb-2 block";
 
   return (
-    <div className='min-h-screen bg-[#0b0f1a] py-10 px-4 flex items-center justify-center'>
-      <main className='max-w-4xl w-full mx-auto bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden'>
+    <div className='min-h-screen bg-slate-900 flex items-center justify-center p-4 py-10'>
+      {/* Centered Card matching Profile Page Style */}
+      <div className='max-w-4xl w-full bg-slate-800 rounded-lg shadow-2xl p-8 border border-slate-700'>
         
-        {/* Header Section */}
-        <div className="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-700 p-6 text-center">
-             <h1 className='text-3xl font-extrabold text-white'>Create a Listing</h1>
-             <p className="text-slate-200 mt-1 text-sm">Fill in the details to publish your property</p>
-        </div>
-
-        <form onSubmit={handleSubmit} className='flex flex-col md:flex-row gap-8 p-8'>
+        <h1 className='text-3xl font-bold text-center text-white mb-8'>Create a Listing</h1>
+        
+        <form onSubmit={handleSubmit} className='flex flex-col sm:flex-row gap-6'>
           
-          {/* Left Column */}
+          {/* LEFT COLUMN */}
           <div className='flex flex-col gap-4 flex-1'>
-            <div>
-                <label className={labelBase}>Property Name</label>
-                <input type='text' id='name' placeholder='e.g., Luxury Villa' className={inputBase} required onChange={handleChange} value={formData.name} />
-            </div>
             
-            <div className="relative">
-                <label className={labelBase}>Description</label>
-                <textarea id='description' placeholder='Describe your place...' className={`${inputBase} h-28 resize-none`} required onChange={handleChange} value={formData.description} />
-                <button type='button' onClick={handleAIGenerate} disabled={aiLoading}
-                    className='absolute bottom-2 right-2 bg-slate-900/80 text-indigo-400 border border-indigo-500/30 text-[10px] px-3 py-1.5 rounded-full hover:bg-indigo-600 hover:text-white transition-all font-bold'>
-                    {aiLoading ? 'Magic...' : <><FaMagic className="inline mr-1" /> AI Generate</>}
+            <div>
+                <label className={labelClass}>Property Name</label>
+                <input type='text' id='name' placeholder='Name' className={inputClass} onChange={handleChange} value={formData.name} required />
+            </div>
+
+            <div className='relative'>
+                <label className={labelClass}>Description</label>
+                <textarea id='description' placeholder='Description' className={`${inputClass} h-32 resize-none`} onChange={handleChange} value={formData.description} required />
+                <button type='button' onClick={handleAIGenerate} disabled={aiLoading} className='absolute bottom-3 right-3 text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-500 transition'>
+                    {aiLoading ? 'Magic...' : 'AI Generate'}
                 </button>
             </div>
 
             <div>
-                <label className={labelBase}>Full Address</label>
-                <input type='text' id='address' placeholder='Street, City, State' className={inputBase} required onChange={handleChange} value={formData.address} />
-            </div>
-            
-            <div className='grid grid-cols-3 gap-3 bg-slate-800/40 p-3 rounded-2xl border border-slate-800'>
-              {['sale', 'rent', 'parking', 'furnished', 'offer'].map((item) => (
-                <div key={item} className='flex gap-2 items-center'>
-                  <input type='checkbox' id={item} className='w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500' onChange={handleChange} checked={item === 'sale' || item === 'rent' ? formData.type === item : formData[item]} />
-                  <span className="text-slate-300 capitalize text-xs">{item}</span>
-                </div>
-              ))}
+                <label className={labelClass}>Address</label>
+                <input type='text' id='address' placeholder='Address' className={inputClass} onChange={handleChange} value={formData.address} required />
             </div>
 
-            <div className='flex gap-4'>
-              <div className='flex-1 bg-slate-800 p-3 rounded-2xl border border-slate-700'>
-                <label className={labelBase}>Bedrooms</label>
-                <input type='number' id='bedrooms' min='1' max='10' className='bg-transparent text-white font-bold w-full focus:outline-none' onChange={handleChange} value={formData.bedrooms} />
+            {/* Checkboxes */}
+            <div className='flex flex-wrap gap-4 mt-2'>
+              <div className='flex gap-2 items-center'>
+                <input type='checkbox' id='sale' className='w-5 h-5 accent-indigo-600' onChange={handleChange} checked={formData.type === 'sale'} />
+                <span className='text-slate-300'>Sell</span>
               </div>
-              <div className='flex-1 bg-slate-800 p-3 rounded-2xl border border-slate-700'>
-                <label className={labelBase}>Bathrooms</label>
-                <input type='number' id='bathrooms' min='1' max='10' className='bg-transparent text-white font-bold w-full focus:outline-none' onChange={handleChange} value={formData.bathrooms} />
+              <div className='flex gap-2 items-center'>
+                <input type='checkbox' id='rent' className='w-5 h-5 accent-indigo-600' onChange={handleChange} checked={formData.type === 'rent'} />
+                <span className='text-slate-300'>Rent</span>
               </div>
+              <div className='flex gap-2 items-center'>
+                <input type='checkbox' id='parking' className='w-5 h-5 accent-indigo-600' onChange={handleChange} checked={formData.parking} />
+                <span className='text-slate-300'>Parking</span>
+              </div>
+              <div className='flex gap-2 items-center'>
+                <input type='checkbox' id='furnished' className='w-5 h-5 accent-indigo-600' onChange={handleChange} checked={formData.furnished} />
+                <span className='text-slate-300'>Furnished</span>
+              </div>
+              <div className='flex gap-2 items-center'>
+                <input type='checkbox' id='offer' className='w-5 h-5 accent-indigo-600' onChange={handleChange} checked={formData.offer} />
+                <span className='text-slate-300'>Offer</span>
+              </div>
+            </div>
+
+            {/* Beds/Baths */}
+            <div className='flex gap-4 flex-wrap'>
+              <div className='flex items-center gap-2'>
+                <input type='number' id='bedrooms' min='1' max='10' className={`${inputClass} w-20`} onChange={handleChange} value={formData.bedrooms} />
+                <span className='text-slate-300'>Beds</span>
+              </div>
+              <div className='flex items-center gap-2'>
+                <input type='number' id='bathrooms' min='1' max='10' className={`${inputClass} w-20`} onChange={handleChange} value={formData.bathrooms} />
+                <span className='text-slate-300'>Baths</span>
+              </div>
+            </div>
+
+            {/* Price */}
+            <div className='flex flex-col gap-4'>
+                <div className='flex items-center gap-2'>
+                    <input type='number' id='regularPrice' min='50' max='10000000' className={`${inputClass} w-32`} onChange={handleChange} value={formData.regularPrice} required />
+                    <div className='flex flex-col'>
+                        <span className='text-slate-300'>Regular price</span>
+                        {formData.type === 'rent' && <span className='text-xs text-slate-400'>(₹ / month)</span>}
+                    </div>
+                </div>
+
+                {formData.offer && (
+                    <div className='flex items-center gap-2 animate-pulse'>
+                        <input type='number' id='discountPrice' min='0' max='10000000' className={`${inputClass} w-32 border-indigo-500`} onChange={handleChange} value={formData.discountPrice} required />
+                        <div className='flex flex-col'>
+                            <span className='text-indigo-400 font-bold'>Discount price</span>
+                            {formData.type === 'rent' && <span className='text-xs text-indigo-400'>(₹ / month)</span>}
+                        </div>
+                    </div>
+                )}
             </div>
           </div>
 
-          {/* Right Column */}
-          <div className='flex flex-col flex-1 gap-5'>
+          {/* RIGHT COLUMN - IMAGE UPLOAD SECTION */}
+          <div className='flex flex-col flex-1 gap-6'>
             <div>
-                <label className={labelBase}>Images (Max 6)</label>
-                <div className="flex gap-2 mb-2">
-                    <input type="text" placeholder="Paste URL..." className={`${inputBase} py-2`} value={imageUrlInput} onChange={(e) => setImageUrlInput(e.target.value)} />
-                    <button type='button' onClick={handleAddImageUrl} className="bg-indigo-600 text-white px-4 rounded-xl font-bold text-xs hover:bg-indigo-500">Add</button>
-                </div>
-                <label className="flex justify-center items-center h-12 bg-slate-700 border-2 border-dashed border-slate-500 rounded-xl cursor-pointer hover:bg-slate-600 text-slate-300 transition-all">
-                    <FaCloudUploadAlt className="mr-2" /> Upload Files
-                    <input type='file' className='hidden' onChange={(e) => handleImageSubmit(e.target.files)} accept='image/*' multiple />
+              <label className={`${labelClass} mb-3`}>Images (Max 6)</label>
+              
+              {/* PASTE URL SECTION */}
+              <div className="flex gap-2 mb-4">
+                  <input 
+                    type="text" 
+                    placeholder="Paste image URL here..." 
+                    className={inputClass} 
+                    value={imageUrlInput} 
+                    onChange={(e) => setImageUrlInput(e.target.value)} 
+                  />
+                  <button 
+                    type='button' 
+                    onClick={handleAddImageUrl} 
+                    className='bg-slate-700 text-white border border-slate-600 px-4 py-2 rounded-lg hover:bg-slate-600 transition'
+                  >
+                    Add
+                  </button>
+              </div>
+
+              {/* UPLOAD FILE BUTTON */}
+              <div className='flex gap-4'>
+                <label className='flex-1 flex flex-col items-center justify-center p-4 border-2 border-slate-600 border-dashed rounded-lg cursor-pointer hover:bg-slate-700/50 transition'>
+                    <FaCloudUploadAlt className='text-3xl text-slate-400 mb-2' />
+                    <span className='text-slate-400 text-sm'>Select from device</span>
+                    <input onChange={(e) => handleImageSubmit(e.target.files)} className='hidden' type='file' id='images' accept='image/*' multiple />
                 </label>
-                {imageUploadError && <p className="text-red-400 text-[10px] mt-1 ml-1">{imageUploadError}</p>}
-            </div>
-
-            <div className="flex flex-col gap-2 max-h-[180px] overflow-y-auto pr-1">
-                {formData.imageUrls.map((url, index) => (
-                    <div key={url} className='flex justify-between p-2 bg-slate-800 border border-slate-700 rounded-xl items-center group'>
-                        <div className="flex items-center gap-3">
-                            <span className="text-slate-500 font-bold text-[10px]">#{index + 1}</span>
-                            <img src={url} alt='listing' className='w-12 h-10 object-cover rounded-lg' />
-                        </div>
-                        <button type='button' onClick={() => handleRemoveImage(index)} className='p-2 text-slate-500 hover:text-red-400'><FaTrashAlt className="w-3 h-3" /></button>
+              </div>
+              
+              <p className='text-red-400 text-sm mt-2 text-center'>{imageUploadError && imageUploadError}</p>
+              
+              {/* UPLOADED IMAGES LIST - With Better Error Handling */}
+              {formData.imageUrls.length > 0 && (
+                <div className="flex flex-col gap-2 mt-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                  {formData.imageUrls.map((url, index) => (
+                    <div key={index} className='flex justify-between items-center bg-slate-700 p-2 rounded-lg border border-slate-600'>
+                      <img 
+                          src={url} 
+                          alt='listing' 
+                          className='w-20 h-16 object-cover rounded-md bg-slate-600'
+                          onError={(e) => {
+                             e.target.onerror = null; 
+                             // Fallback to a reliable placeholder if link is broken
+                             e.target.src = "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg";
+                          }} 
+                      />
+                      <button type='button' onClick={() => handleRemoveImage(index)} className='p-2 text-red-400 hover:text-red-300 uppercase font-semibold text-sm'>
+                        <FaTrashAlt />
+                      </button>
                     </div>
-                ))}
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="mt-auto pt-4 border-t border-slate-800">
-                <div className='mb-4'>
-                    <label className={labelBase}>Regular Price {formData.type === 'rent' && '($/Mo)'}</label>
-                    <input type='number' id='regularPrice' className={`${inputBase} text-lg font-extrabold`} onChange={handleChange} value={formData.regularPrice} />
-                </div>
-                <button disabled={loading || uploading} className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white p-4 rounded-2xl font-black uppercase tracking-tighter shadow-xl hover:opacity-90 disabled:opacity-50 transition-all">
-                   {loading ? 'Publishing...' : 'Publish Listing'}
-                </button>
-                {error && <p className='text-red-400 text-xs mt-3 text-center font-bold bg-red-900/20 p-2 rounded-lg'>{error}</p>}
-            </div>
+            {/* SUBMIT BUTTON */}
+            <button disabled={loading || uploading} className='mt-auto p-4 bg-green-600 text-white rounded-lg uppercase hover:bg-green-700 disabled:opacity-80 transition shadow-lg font-bold'>
+              {loading ? 'Creating...' : 'Create Listing'}
+            </button>
+            {error && <p className='text-red-400 text-sm text-center'>{error}</p>}
           </div>
         </form>
-      </main>
+      </div>
     </div>
   );
 }

@@ -21,7 +21,7 @@ export default function Profile() {
   const [userListings, setUserListings] = useState([]);
   const [showListingsError, setShowListingsError] = useState(false);
   
-  // --- NEW: State for Saved Listings (Wishlist) ---
+  // State for Saved Listings (Wishlist)
   const [savedListings, setSavedListings] = useState([]); 
   
   const [isEditing, setIsEditing] = useState(false);
@@ -102,7 +102,6 @@ export default function Profile() {
     }
   };
 
-  // --- NEW FUNCTION: Fetch Saved Listings ---
   const handleShowSavedListings = async () => {
     try {
       const res = await fetch(`/api/user/saved/${currentUser._id}`);
@@ -117,6 +116,27 @@ export default function Profile() {
     }
   };
 
+  // --- NEW: HANDLE SELLER REQUEST BUTTON ---
+  const handleSellerRequest = async () => {
+    try {
+        const res = await fetch('/api/user/request-seller', {
+            method: 'POST',
+        });
+        const data = await res.json();
+        if (data.success === false) {
+            alert(data.message);
+            return;
+        }
+        
+        // ✅ FIX: Update Redux state immediately (No reload needed)
+        dispatch(updateUserSuccess(data));
+        alert("Request Sent! Admin will verify you soon.");
+        
+    } catch (error) {
+        console.log(error);
+    }
+  };
+
   const handleDeleteUser = async () => {
     try {
       dispatch(deleteUserStart());
@@ -128,6 +148,24 @@ export default function Profile() {
       }
       dispatch(deleteUserSuccess(data));
     } catch (err) { dispatch(deleteUserFailure(err.message)); }
+  };
+  
+  // NOTE: Listing Delete ke liye alag function hona chahiye, 
+  // abhi aap 'handleDeleteUser' use kar rahe hain jo account delete kar dega.
+  const handleListingDelete = async (listingId) => {
+    try {
+      const res = await fetch(`/api/listing/delete/${listingId}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success === false) {
+        console.log(data.message);
+        return;
+      }
+      setUserListings((prev) => prev.filter((listing) => listing._id !== listingId));
+    } catch (error) {
+      console.log(error.message);
+    }
   };
 
   const handleSignOut = async () => {
@@ -231,6 +269,34 @@ export default function Profile() {
           </form>
         )}
 
+        {/* --- SELLER REQUEST BOX (Hidden for Admin) --- */}
+        {currentUser.role !== 'admin' && (
+            <div className='mt-6 p-4 bg-slate-700/50 rounded-lg border border-slate-600 flex flex-col items-center text-center'>
+                <h3 className='font-semibold text-lg mb-2 text-slate-200'>Sell on OasisSpace 💼</h3>
+                
+                {currentUser.sellerStatus === 'approved' ? (
+                    <div className='text-green-400 font-bold flex items-center gap-2'>
+                        <span>✅ You are a Verified Seller</span>
+                    </div>
+                ) : currentUser.sellerStatus === 'pending' ? (
+                    <div className='text-yellow-400 font-bold flex items-center gap-2'>
+                        <span>⏳ Verification Pending</span>
+                    </div>
+                ) : (
+                    <>
+                    <p className='text-sm text-slate-400 mb-3'>Want to sell property? Request admin approval.</p>
+                    <button 
+                        onClick={handleSellerRequest}
+                        type='button' 
+                        className='bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition w-full shadow-md font-semibold'
+                    >
+                        Request to become a Seller
+                    </button>
+                    </>
+                )}
+            </div>
+        )}
+
         {/* Footer Actions */}
         <div className='flex justify-between mt-6 text-sm font-medium border-t border-slate-700 pt-4'>
           <span onClick={handleDeleteUser} className='text-red-400 cursor-pointer hover:text-red-300 transition-colors'>Delete Account</span>
@@ -264,7 +330,8 @@ export default function Profile() {
                     {listing.name}
                   </Link>
                   <div className='flex flex-col items-center gap-1'>
-                      <button onClick={() => handleDeleteUser(listing._id)} className='text-red-400 uppercase text-xs font-semibold hover:text-red-300'>Delete</button>
+                      {/* Fixed: Used handleListingDelete instead of handleDeleteUser */}
+                      <button onClick={() => handleListingDelete(listing._id)} className='text-red-400 uppercase text-xs font-semibold hover:text-red-300'>Delete</button>
                       <Link to={`/update-listing/${listing._id}`} className='text-green-400 uppercase text-xs font-semibold hover:text-green-300'>Edit</Link>
                   </div>
                 </div>
@@ -273,7 +340,7 @@ export default function Profile() {
           )}
         </div>
 
-        {/* ================= NEW: SAVED LISTINGS SECTION ================= */}
+        {/* ================= SAVED LISTINGS SECTION ================= */}
         <div className='mt-6 pt-4 border-t border-slate-700'>
           <button 
             onClick={handleShowSavedListings} 
@@ -297,7 +364,6 @@ export default function Profile() {
                   <Link to={`/listing/${listing._id}`} className='text-slate-200 font-medium truncate flex-1 px-4 hover:underline'>
                     {listing.name}
                   </Link>
-                  {/* Note: View Link only. Editing/Deleting handled in Listing page */}
                   <Link to={`/listing/${listing._id}`} className='text-blue-400 uppercase text-xs font-semibold hover:text-blue-300'>
                     View
                   </Link>
