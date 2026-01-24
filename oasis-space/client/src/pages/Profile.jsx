@@ -104,7 +104,7 @@ export default function Profile() {
 
   const handleShowSavedListings = async () => {
     try {
-      const res = await fetch(`/api/user/saved/${currentUser._id}`);
+      const res = await fetch(`/api/user/saved`); // Fixed endpoint to match route
       const data = await res.json();
       if (data.success === false) {
         console.log(data.message);
@@ -119,16 +119,19 @@ export default function Profile() {
   // --- NEW: HANDLE SELLER REQUEST BUTTON ---
   const handleSellerRequest = async () => {
     try {
-        const res = await fetch('/api/user/request-seller', {
+        // ✅ FIX: Added ID to URL to match Backend Route
+        const res = await fetch(`/api/user/request-seller/${currentUser._id}`, {
             method: 'POST',
         });
         const data = await res.json();
+        
         if (data.success === false) {
-            alert(data.message);
+            // alert(data.message); // Optional alert
+            console.log(data.message);
             return;
         }
         
-        // ✅ FIX: Update Redux state immediately (No reload needed)
+        // Update Redux state immediately so UI changes to "Pending"
         dispatch(updateUserSuccess(data));
         alert("Request Sent! Admin will verify you soon.");
         
@@ -150,8 +153,6 @@ export default function Profile() {
     } catch (err) { dispatch(deleteUserFailure(err.message)); }
   };
   
-  // NOTE: Listing Delete ke liye alag function hona chahiye, 
-  // abhi aap 'handleDeleteUser' use kar rahe hain jo account delete kar dega.
   const handleListingDelete = async (listingId) => {
     try {
       const res = await fetch(`/api/listing/delete/${listingId}`, {
@@ -218,12 +219,16 @@ export default function Profile() {
               >
                 Edit Profile
               </button>
-              <Link 
-                to={'/create-listing'} 
-                className='flex-1 bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold text-center hover:bg-green-700 transition-all shadow-md'
-              >
-                Create Listing
-              </Link>
+              
+              {/* Show 'Create Listing' only if approved or admin */}
+              {(currentUser.role === 'admin' || currentUser.sellerStatus === 'approved') && (
+                  <Link 
+                    to={'/create-listing'} 
+                    className='flex-1 bg-green-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold text-center hover:bg-green-700 transition-all shadow-md'
+                  >
+                    Create Listing
+                  </Link>
+              )}
             </div>
           </div>
         ) : (
@@ -330,7 +335,6 @@ export default function Profile() {
                     {listing.name}
                   </Link>
                   <div className='flex flex-col items-center gap-1'>
-                      {/* Fixed: Used handleListingDelete instead of handleDeleteUser */}
                       <button onClick={() => handleListingDelete(listing._id)} className='text-red-400 uppercase text-xs font-semibold hover:text-red-300'>Delete</button>
                       <Link to={`/update-listing/${listing._id}`} className='text-green-400 uppercase text-xs font-semibold hover:text-green-300'>Edit</Link>
                   </div>

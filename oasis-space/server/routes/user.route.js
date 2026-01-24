@@ -1,42 +1,47 @@
-import express from 'express';
-import { 
-  test, 
-  updateUser, 
-  deleteUser, 
-  getUserListings, 
-  getUser,
-  saveListing,       
-  getSavedListings,  
-  getUsers,
-  requestSeller,      // User ke liye
-  verifySeller        // Admin ke liye (Controller mein yahi naam hai)
-} from '../controllers/user.controller.js';
-import { verifyToken } from '../utils/verifyUser.js';
+import mongoose from 'mongoose';
 
-const router = express.Router();
+const userSchema = new mongoose.Schema(
+  {
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    avatar: {
+      type: String,
+      default: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+    },
+    role: {
+        type: String,
+        default: 'user', // 'user' or 'admin'
+        enum: ['user', 'admin']
+    },
+    // 👇👇 YE FIELD ADD KARNA ZAROORI HAI 👇👇
+    sellerStatus: {
+        type: String,
+        default: 'regular', // Options: 'regular', 'pending', 'approved', 'rejected'
+        enum: ['regular', 'pending', 'approved', 'rejected']
+    },
+    // 👆👆 YAHAN TAK 👆👆
+    
+    savedListings: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: 'Listing',
+        default: [],
+    }
+  },
+  { timestamps: true }
+);
 
-// 1. Test Route
-router.get('/test', test);
+const User = mongoose.model('User', userSchema);
 
-// 2. ADMIN ROUTE 
-router.get('/getusers', verifyToken, getUsers);
-
-// 3. SELLER FEATURES 💼
-router.post('/request-seller', verifyToken, requestSeller);         // User Request
-router.post('/verify-seller/:id', verifyToken, verifySeller);       // Admin Approve/Reject
-
-// 4. WISHLIST ROUTES ❤️
-router.post('/save/:id', verifyToken, saveListing);                 // Save/Unsave Listing
-router.get('/saved', verifyToken, getSavedListings);                // Get Wishlist (Token se ID lega)
-
-// 5. Update & Delete
-router.post('/update/:id', verifyToken, updateUser);
-router.delete('/delete/:id', verifyToken, deleteUser);
-
-// 6. User Listings
-router.get('/listings/:id', verifyToken, getUserListings);
-
-// 7. Get Public User Info (Isse hamesha LAST mein rakhein)
-router.get('/:id', verifyToken, getUser);
-
-export default router;
+export default User;
