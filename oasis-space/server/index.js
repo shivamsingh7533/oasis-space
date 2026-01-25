@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
+import cors from 'cors'; // ✅ IMP: Import CORS
 
 // Import Routes
 import userRouter from './routes/user.route.js';
@@ -22,6 +23,13 @@ mongoose
 
 const app = express();
 
+// --- ✅ CORS CONFIGURATION (MOST IMPORTANT) ---
+// Isse Vercel wala frontend Render wale backend se baat kar payega
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173', // Live URL ya Localhost
+  credentials: true, // Cookies (Token) allow karne ke liye zaroori hai
+}));
+
 // --- MIDDLEWARES ---
 app.use(express.json());
 app.use(cookieParser()); // Auth check ke liye zaroori
@@ -31,17 +39,15 @@ app.use('/api/user', userRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/listing', listingRouter);
 
-// 👇 NEW: Root Route for API Testing (Fix for "Cannot GET /")
+// 👇 ROOT ROUTE (API Health Check)
 // Jab aap https://oasis-space.onrender.com kholenge, to ye dikhega
 app.get('/', (req, res) => {
   res.status(200).json({ 
     message: '🚀 OasisSpace API is working successfully on Render!',
-    status: 'Active'
+    status: 'Active',
+    client: process.env.CLIENT_URL || 'Localhost'
   });
 });
-
-// ❌ NOTE: Maine yahan se Static Files serve karne wala code HATA DIYA hai.
-// Kyunki Frontend Vercel par hai, to Backend ko usse serve karne ki zaroorat nahi.
 
 // --- GLOBAL ERROR HANDLER ---
 app.use((err, req, res, next) => {
