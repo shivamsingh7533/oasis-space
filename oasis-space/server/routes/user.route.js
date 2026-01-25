@@ -1,47 +1,40 @@
-import mongoose from 'mongoose';
+import express from 'express';
+import { 
+  test, 
+  updateUser, 
+  deleteUser, 
+  getUserListings, 
+  getUser, 
+  saveListing,
+  getSavedListings,
+  getUsers,        // ✅ Dashboard ke liye zaroori
+  requestSeller,   // ✅ Seller feature ke liye
+  verifySeller     // ✅ Admin feature ke liye
+} from '../controllers/user.controller.js';
+import { verifyToken } from '../utils/verifyUser.js';
 
-const userSchema = new mongoose.Schema(
-  {
-    username: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
-    avatar: {
-      type: String,
-      default: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
-    },
-    role: {
-        type: String,
-        default: 'user', // 'user' or 'admin'
-        enum: ['user', 'admin']
-    },
-    // 👇👇 YE FIELD ADD KARNA ZAROORI HAI 👇👇
-    sellerStatus: {
-        type: String,
-        default: 'regular', // Options: 'regular', 'pending', 'approved', 'rejected'
-        enum: ['regular', 'pending', 'approved', 'rejected']
-    },
-    // 👆👆 YAHAN TAK 👆👆
-    
-    savedListings: {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref: 'Listing',
-        default: [],
-    }
-  },
-  { timestamps: true }
-);
+const router = express.Router();
 
-const User = mongoose.model('User', userSchema);
+// 1. Test Route
+router.get('/test', test);
 
-export default User;
+// 2. Auth Required Routes (Update/Delete)
+router.post('/update/:id', verifyToken, updateUser);
+router.delete('/delete/:id', verifyToken, deleteUser);
+
+// 3. User Specific Routes (Listings & Wishlist)
+router.get('/listings/:id', verifyToken, getUserListings);
+router.get('/saved', verifyToken, getSavedListings); // ⚠️ Isse '/:id' se pehle rakhna zaroori hai
+router.post('/save/:id', verifyToken, saveListing);
+
+// 4. ADMIN DASHBOARD ROUTE (Ye missing tha!) 🔥
+router.get('/getusers', verifyToken, getUsers);
+
+// 5. SELLER VERIFICATION ROUTES 💼
+router.post('/request-seller/:id', verifyToken, requestSeller);
+router.post('/verify-seller/:id', verifyToken, verifySeller);
+
+// 6. Public/Dynamic Route (Sabse last mein rakhein)
+router.get('/:id', verifyToken, getUser);
+
+export default router;

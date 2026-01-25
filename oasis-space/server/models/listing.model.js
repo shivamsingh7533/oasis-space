@@ -46,7 +46,7 @@ const listingSchema = new mongoose.Schema(
       type: Boolean,
       required: true,
     },
-    // --- NEW FIELD: FEATURED (VIP) ---
+    // --- FEATURED FIELD (For Home Page Slider) ---
     featured: {
       type: Boolean,
       default: false, 
@@ -63,6 +63,7 @@ const listingSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-const Listing = mongoose.model('Listing', listingSchema);
+// 👇👇👇 CRASH FIX YAHAN HAI 👇👇👇
+const Listing = mongoose.models.Listing || mongoose.model('Listing', listingSchema);
 
 export default Listing;

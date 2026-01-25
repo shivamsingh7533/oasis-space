@@ -12,6 +12,7 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    // Mobile unique hona chahiye
     mobile: {
       type: String,
       required: true,
@@ -25,21 +26,30 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
     },
-    // --- NEW ROLE FIELD ADDED HERE ---
+    // --- ROLE FIELD (Admin Control) ---
     role: {
       type: String,
-      enum: ['user', 'seller', 'admin'], // केवल ये 3 रोल्स ही हो सकते हैं
-      default: 'user', // डिफ़ॉल्ट रूप से सब नॉर्मल यूजर होंगे
+      enum: ['user', 'admin'],
+      default: 'user',
     },
+    // --- SELLER STATUS (Verification Logic) ---
+    sellerStatus: {
+        type: String,
+        enum: ['regular', 'pending', 'approved', 'rejected'],
+        default: 'regular',
+    },
+    // --- WISHLIST (Advanced Reference) ---
     savedListings: {
-      type: Array,
+      type: [mongoose.Schema.Types.ObjectId], 
+      ref: 'Listing', 
       default: [],
     }
   },
   { timestamps: true }
 );
 
-// Check if model exists before creating
+// 👇👇👇 CRASH FIX YAHAN HAI 👇👇👇
+// Agar model pehle se bana hai to wahi use karega, warna naya banayega
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 export default User;

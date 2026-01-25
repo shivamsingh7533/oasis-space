@@ -19,6 +19,10 @@ import Footer from './components/Footer';
 import Dashboard from './pages/Dashboard';
 import AdminRoute from './components/AdminRoute';
 
+// --- 👇 NEW IMPORTS FOR PASSWORD RESET 👇 ---
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+
 export default function App() {
   // State to track if we are loading
   const [loading, setLoading] = useState(true);
@@ -55,6 +59,10 @@ export default function App() {
             <Route path='/about' element={<About />} />
             <Route path='/search' element={<Search />} />
             <Route path='/listing/:listingId' element={<Listing />} />
+
+            {/* 👇 PASSWORD RESET ROUTES ADDED HERE 👇 */}
+            <Route path='/forgot-password' element={<ForgotPassword />} />
+            <Route path='/reset-password/:id/:token' element={<ResetPassword />} />
 
             {/* --- ADMIN PROTECTED ROUTES --- */}
             <Route element={<AdminRoute />}>

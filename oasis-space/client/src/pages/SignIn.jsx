@@ -49,31 +49,25 @@ export default function SignIn() {
   return (
     <div className='bg-slate-900 min-h-screen flex items-center justify-center p-3'>
       
-      {/* CHANGE: Reduced padding (p-6), constrained width (max-w-sm) */}
       <div className='bg-slate-800 p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-sm border border-slate-700'>
         
-        {/* CHANGE: Smaller Heading (text-2xl) & Margin (my-4) */}
         <h1 className='text-2xl text-center font-bold my-4 text-slate-100 drop-shadow-md'>
           Sign In
         </h1>
         
-        {/* CHANGE: Reduced Gap (gap-3) */}
         <form onSubmit={handleSubmit} className='flex flex-col gap-3'>
           <input 
             type="email" 
             placeholder='email' 
-            // CHANGE: Smaller padding (p-2.5) & Responsive text
             className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all text-sm sm:text-base' 
             id='email' 
             onChange={handleChange} 
           />
           
-          {/* Password Field */}
           <div className='relative'>
             <input 
               type={showPassword ? "text" : "password"} 
               placeholder='password' 
-              // CHANGE: Smaller padding & text
               className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all w-full text-sm sm:text-base' 
               id='password' 
               onChange={handleChange} 
@@ -86,13 +80,22 @@ export default function SignIn() {
             </div>
           </div>
           
-          {/* CHANGE: Button padding (p-2.5) & Margin (mt-2) */}
           <button 
             disabled={loading} 
             className='bg-slate-600 text-white p-2.5 rounded-lg uppercase hover:bg-slate-500 disabled:opacity-80 transition-colors font-semibold shadow-md mt-2 text-sm sm:text-base'
           >
             {loading ? 'Loading...' : 'Sign In'}
           </button>
+
+          {/* 👇 FORGOT PASSWORD LINK ADDED HERE 👇 */}
+          <div className='flex justify-end'>
+            <Link to='/forgot-password'>
+                <span className='text-blue-400 hover:text-blue-300 text-sm hover:underline transition-colors'>
+                    Forgot Password?
+                </span>
+            </Link>
+          </div>
+
         </form>
         
         <div className="flex gap-2 mt-4 text-slate-300 font-medium justify-center text-sm">

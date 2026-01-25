@@ -1,7 +1,14 @@
 oasis-space
 ├── client
+│   ├── dev-dist
+│   │   ├── registerSW.js
+│   │   ├── sw.js
+│   │   └── workbox-5a5d9309.js
 │   ├── public
 │   │   ├── logo.png
+│   │   ├── logo192.png
+│   │   ├── logo512.png
+│   │   ├── manifest.json
 │   │   └── vite.svg
 │   ├── src
 │   │   ├── assets
@@ -11,6 +18,8 @@ oasis-space
 │   │   │   ├── AdminRoute.jsx
 │   │   │   ├── AuthModal.jsx
 │   │   │   ├── Contact.jsx
+│   │   │   ├── DashUsers.jsx
+│   │   │   ├── EMICalculator.jsx
 │   │   │   ├── Footer.jsx
 │   │   │   ├── Header.jsx
 │   │   │   ├── ListingItem.jsx
@@ -20,9 +29,11 @@ oasis-space
 │   │   │   ├── About.jsx
 │   │   │   ├── CreateListing.jsx
 │   │   │   ├── Dashboard.jsx
+│   │   │   ├── ForgotPassword.jsx
 │   │   │   ├── Home.jsx
 │   │   │   ├── Listing.jsx
 │   │   │   ├── Profile.jsx
+│   │   │   ├── ResetPassword.jsx
 │   │   │   ├── SavedListings.jsx
 │   │   │   ├── Search.jsx
 │   │   │   ├── SignIn.jsx

@@ -1,29 +1,33 @@
 import jwt from 'jsonwebtoken';
 import { errorHandler } from './error.js';
 
-// --- 1. EXISTING: LOGIN CHECK ---
 export const verifyToken = (req, res, next) => {
-  // Check if the cookie exists
-  const token = req.cookies.access_token;
-
-  if (!token) return next(errorHandler(401, 'Unauthorized'));
-
-  // Verify the token is valid
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return next(errorHandler(403, 'Forbidden'));
-
-    req.user = user; // Save user info to request
-    next(); // Move to the next step
-  });
-};
-
-// --- 2. NEW: ADMIN CHECK ---
-export const verifyAdmin = (req, res, next) => {
-    // verifyToken पहले चलेगा, इसलिए req.user में डेटा आ चुका होगा
-    if (req.user && req.user.role === 'admin') {
-        next(); // अगर Admin है, तो जाने दो
-    } else {
-        // अगर User या Seller है, तो रोक दो
-        return next(errorHandler(403, 'Access Denied! Admin privileges required.'));
+  try {
+    // Crash prevention: Check if cookies object exists
+    if (!req.cookies) {
+        console.log("No cookies found! Is cookie-parser installed?");
+        return next(errorHandler(500, 'Internal Server Error: Cookie Parser missing'));
     }
+
+    const token = req.cookies.access_token;
+
+    if (!token) {
+        return next(errorHandler(401, 'Unauthorized: No Token Found'));
+    }
+
+    if (!process.env.JWT_SECRET) {
+        console.log("JWT_SECRET missing in .env file!");
+        return next(errorHandler(500, 'Server Config Error'));
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) return next(errorHandler(403, 'Forbidden: Invalid Token'));
+
+      req.user = user;
+      next();
+    });
+  } catch (error) {
+      console.log("Auth Middleware Error:", error);
+      next(error);
+  }
 };

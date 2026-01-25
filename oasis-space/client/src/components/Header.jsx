@@ -1,4 +1,4 @@
-import { FaBars, FaTimes, FaSignOutAlt, FaTimesCircle, FaHome, FaInfoCircle, FaHeart, FaPlusCircle, FaUser } from 'react-icons/fa';
+import { FaBars, FaTimes, FaSignOutAlt, FaTimesCircle, FaHome, FaInfoCircle, FaHeart, FaPlusCircle, FaUser, FaDownload } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useState, useEffect, useRef } from 'react';
@@ -8,14 +8,59 @@ import {
 
 export default function Header() {
   const { currentUser } = useSelector((state) => state.user);
-  const [isOpen, setIsOpen] = useState(false); // Mobile Menu State
-  const [profileOpen, setProfileOpen] = useState(false); // Desktop Popup State
-  const profileRef = useRef(); 
+  const [isOpen, setIsOpen] = useState(false); 
+  const [profileOpen, setProfileOpen] = useState(false); 
   
+  // 👇 PWA STATE FIXED (Lazy Initialization) 👇
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  
+  // ✅ FIX: State ko yahi initialize karein, useEffect mein nahi
+  const [isAppInstalled, setIsAppInstalled] = useState(() => {
+    // Agar browser window available hai aur app standalone mode mein hai
+    if (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches) {
+      return true;
+    }
+    return false;
+  });
+  
+  const profileRef = useRef(); 
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const closeMenu = () => setIsOpen(false);
+
+  // --- PWA INSTALL LOGIC 📱 ---
+  useEffect(() => {
+    // ❌ Yahan se 'setIsAppInstalled(true)' hata diya gaya hai (Warning Fix)
+
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setIsAppInstalled(false);
+    };
+
+    const handleAppInstalled = () => {
+      setDeferredPrompt(null);
+      setIsAppInstalled(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
 
   // --- SIGN OUT FUNCTION ---
   const handleSignOut = async () => {
@@ -76,6 +121,17 @@ export default function Header() {
 
         {/* DESKTOP MENU (Hidden on Mobile) */}
         <ul className='hidden sm:flex gap-4 items-center'>
+          
+          {/* 👇 DESKTOP INSTALL BUTTON 👇 */}
+          {deferredPrompt && !isAppInstalled && (
+            <button 
+                onClick={handleInstallClick} 
+                className='flex items-center gap-2 bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition text-sm font-semibold animate-pulse shadow-lg shadow-green-900/50'
+            >
+                <FaDownload /> Install App
+            </button>
+          )}
+
           <Link to='/'><li className='text-slate-300 hover:text-white hover:underline transition-colors'>Home</li></Link>
           <Link to='/about'><li className='text-slate-300 hover:text-white hover:underline transition-colors'>About</li></Link>
           <Link to='/saved-listings'><li className='text-slate-300 hover:text-white hover:underline transition-colors'>Wishlist</li></Link>
@@ -122,34 +178,43 @@ export default function Header() {
         </ul>
 
         {/* MOBILE HAMBURGER ICON */}
-        <div className='sm:hidden cursor-pointer z-50' onClick={() => setIsOpen(!isOpen)}>
-           {!isOpen && <FaBars className='text-white text-xl' />}
+        <div className='sm:hidden cursor-pointer z-50 flex items-center gap-4'>
+            {deferredPrompt && !isAppInstalled && (
+                 <FaDownload onClick={handleInstallClick} className='text-green-500 animate-pulse text-lg' />
+            )}
+           
+           <div onClick={() => setIsOpen(!isOpen)}>
+               {!isOpen && <FaBars className='text-white text-xl' />}
+           </div>
         </div>
       </div>
 
-      {/* --- NEW SIDE DRAWER MOBILE MENU --- */}
-      
-      {/* 1. Transparent Overlay (Detects click outside) */}
+      {/* --- SIDE DRAWER MOBILE MENU --- */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[1px] transition-opacity" 
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px] transition-opacity" 
           onClick={closeMenu}
         ></div>
       )}
 
-      {/* 2. Sliding Drawer */}
       <div className={`fixed top-0 right-0 h-full w-[75%] sm:w-[50%] bg-slate-900 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-l border-slate-700 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         
-        {/* Drawer Header (Close Button) */}
         <div className='flex justify-between items-center p-5 border-b border-slate-700'>
           <span className='text-slate-100 font-bold text-lg'>Menu</span>
           <FaTimes className='text-slate-300 text-2xl cursor-pointer hover:text-white' onClick={closeMenu} />
         </div>
 
-        {/* Drawer Content (Sections) */}
         <div className='flex flex-col p-2 overflow-y-auto h-full pb-20'>
           
-          {/* Section 1: Main Navigation */}
+          {/* MOBILE INSTALL BUTTON */}
+          {deferredPrompt && !isAppInstalled && (
+             <div className='flex flex-col py-2 border-b border-slate-700'>
+                <button onClick={() => { handleInstallClick(); closeMenu(); }} className='flex items-center gap-3 p-3 bg-green-600/10 text-green-400 hover:bg-green-600 hover:text-white rounded-lg transition-all w-full text-left'>
+                   <FaDownload className="text-lg" /> <span className='font-bold'>Install App</span>
+                </button>
+             </div>
+          )}
+
           <div className='flex flex-col py-2 border-b border-slate-700'>
             <Link to='/' onClick={closeMenu} className='flex items-center gap-3 p-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all'>
               <FaHome className="text-lg" /> <span className='font-medium'>Home</span>
@@ -162,14 +227,12 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* Section 2: Actions */}
           <div className='flex flex-col py-2 border-b border-slate-700'>
             <Link to='/create-listing' onClick={closeMenu} className='flex items-center gap-3 p-3 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-all'>
                <FaPlusCircle className="text-lg" /> <span className='font-medium'>Create Listing</span>
             </Link>
           </div>
 
-          {/* Section 3: Profile / Auth */}
           <div className='flex flex-col py-2'>
             {currentUser ? (
               <>

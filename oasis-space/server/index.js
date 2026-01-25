@@ -10,37 +10,40 @@ import listingRouter from './routes/listing.route.js';
 
 dotenv.config();
 
-// --- DATABASE CONNECTION START ---
+// --- DATABASE CONNECTION ---
 mongoose
-  .connect(process.env.MONGO, {
-    // These options allow connection on strict networks (Jio/Airtel)
-    family: 4, // Force IPv4 (Crucial for fixing DNS timeouts)
-  })
+  .connect(process.env.MONGO, { family: 4 }) // IPv4 Force for stability
   .then(() => {
     console.log('✅ Connected to MongoDB!');
   })
   .catch((err) => {
     console.log('❌ MongoDB Connection Error:', err);
   });
-// --- DATABASE CONNECTION END ---
 
 const app = express();
 
-// Middleware
+// --- MIDDLEWARES ---
 app.use(express.json());
-app.use(cookieParser());
+app.use(cookieParser()); // Auth check ke liye zaroori
 
-// Server Listen
-app.listen(3000, () => {
-  console.log('🚀 Server running on port: 3000');
-});
-
-// Routes
+// --- ROUTES ---
 app.use('/api/user', userRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/listing', listingRouter);
 
-// Global Error Middleware
+// 👇 NEW: Root Route for API Testing (Fix for "Cannot GET /")
+// Jab aap https://oasis-space.onrender.com kholenge, to ye dikhega
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    message: '🚀 OasisSpace API is working successfully on Render!',
+    status: 'Active'
+  });
+});
+
+// ❌ NOTE: Maine yahan se Static Files serve karne wala code HATA DIYA hai.
+// Kyunki Frontend Vercel par hai, to Backend ko usse serve karne ki zaroorat nahi.
+
+// --- GLOBAL ERROR HANDLER ---
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
@@ -49,4 +52,9 @@ app.use((err, req, res, next) => {
     statusCode,
     message,
   });
+});
+
+// --- SERVER LISTEN ---
+app.listen(3000, () => {
+  console.log('🚀 Server running on port: 3000');
 });

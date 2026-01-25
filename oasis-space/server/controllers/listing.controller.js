@@ -8,7 +8,7 @@ export const createListing = async (req, res, next) => {
     if (req.body.type === 'sale') {
         const user = await User.findById(req.user.id);
         if (user.sellerStatus !== 'approved' && user.role !== 'admin') {
-            return next(errorHandler(403, 'Permission Denied! You need to be an Approved Seller to sell properties.'));
+            return next(errorHandler(403, 'Permission Denied! Only Approved Sellers can list properties for SALE.'));
         }
     }
     const listing = await Listing.create(req.body);
@@ -25,11 +25,9 @@ export const deleteListing = async (req, res, next) => {
 
   try {
     const user = await User.findById(req.user.id);
-    // Check: Owner ya Admin
     if (req.user.id !== listing.userRef && user.role !== 'admin') {
       return next(errorHandler(401, 'You can only delete your own listings!'));
     }
-
     await Listing.findByIdAndDelete(req.params.id);
     res.status(200).json('Listing has been deleted!');
   } catch (error) {
@@ -37,22 +35,17 @@ export const deleteListing = async (req, res, next) => {
   }
 };
 
-// 3. Update Listing (SAFE MODE: Owner nahi badlega) 🛡️✏️
+// 3. Update Listing (SAFE MODE) 🛡️✏️
 export const updateListing = async (req, res, next) => {
   const listing = await Listing.findById(req.params.id);
   if (!listing) return next(errorHandler(404, 'Listing not found!'));
 
   try {
     const user = await User.findById(req.user.id);
-    
-    // Check: Owner ya Admin
     if (req.user.id !== listing.userRef && user.role !== 'admin') {
         return next(errorHandler(401, 'You can only update your own listings!'));
     }
-
-    // 🔥 FIX: userRef ko body se hata dein taaki admin owner na ban jaye
     const { userRef, ...rest } = req.body;
-
     const updatedListing = await Listing.findByIdAndUpdate(
       req.params.id,
       rest, 
@@ -75,7 +68,7 @@ export const getListing = async (req, res, next) => {
   }
 };
 
-// 5. Get All Listings (UPDATED FOR HOME PAGE SLIDER 🌟)
+// 5. Get All Listings (Search & Filters) 🌟
 export const getListings = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 9;
@@ -93,7 +86,6 @@ export const getListings = async (req, res, next) => {
     let type = req.query.type;
     if (type === undefined || type === 'all') type = { $in: ['sale', 'rent'] };
 
-    // 👇 ADDED: Featured Filter for Home Page
     let featured = req.query.featured;
     if (featured === undefined || featured === 'false') {
         featured = { $in: [false, true] };
@@ -114,7 +106,7 @@ export const getListings = async (req, res, next) => {
       furnished,
       parking,
       type,
-      featured, // <--- Added here
+      featured, 
     })
       .sort({ [sort]: order })
       .limit(limit)
@@ -126,15 +118,32 @@ export const getListings = async (req, res, next) => {
   }
 };
 
-// 6. Admin Get All Listings 👑
+// 👇👇👇 6. Admin Get All Listings (CRASH PROOF VERSION) 🛡️ 👇👇👇
 export const getAdminListings = async (req, res, next) => {
   try {
+    // 🛡️ Safety Check 1: Kya User Login hai?
+    if (!req.user || !req.user.id) {
+        console.log("Admin Listing Error: User not authenticated (req.user missing)");
+        // 401 Error return karega, Server Crash nahi hoga
+        return next(errorHandler(401, 'User not authenticated! Please login again.'));
+    }
+
+    // 🛡️ Safety Check 2: Database Check
     const user = await User.findById(req.user.id);
-    if (!user || user.role !== 'admin') return next(errorHandler(403, 'Access Denied!'));
+    if (!user) {
+         return next(errorHandler(404, 'User not found in database!'));
+    }
+
+    // 🛡️ Safety Check 3: Admin Role Check
+    if (user.role !== 'admin') {
+         console.log(`Access Denied: User ${user.username} is not admin.`);
+         return next(errorHandler(403, 'Access Denied! Admins only.'));
+    }
 
     const listings = await Listing.find().sort({ createdAt: -1 });
     res.status(200).json(listings);
   } catch (error) {
+    console.log("CRASH PREVENTED IN ADMIN LISTINGS:", error.message); 
     next(error);
   }
 };
@@ -151,31 +160,6 @@ export const featureListing = async (req, res, next) => {
     listing.featured = !listing.featured;
     await listing.save();
     res.status(200).json(listing);
-  } catch (error) {
-    next(error);
-  }
-};
-
-// 8. AI Generator
-export const generateDescription = async (req, res, next) => {
-  try {
-    const { prompt } = req.body;
-    if (!process.env.GEMINI_API_KEY) return next(errorHandler(500, 'API Key missing!'));
-
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: `Write a real estate description for: ${prompt}` }] }] }),
-      }
-    );
-    const data = await response.json();
-    if (data.candidates?.[0]?.content) {
-      res.status(200).json(data.candidates[0].content.parts[0].text);
-    } else {
-      res.status(500).json("No description generated.");
-    }
   } catch (error) {
     next(error);
   }
