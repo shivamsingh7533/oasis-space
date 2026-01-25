@@ -39,7 +39,13 @@ app.use('/api/user', userRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/listing', listingRouter);
 
-// 👇 ROOT ROUTE (API Health Check)
+// 👇 NEW PING ROUTE (For Cron Job) ⚡
+// Cron-job.org is route ko hit karega server ko jagaye rakhne ke liye
+app.get('/ping', (req, res) => {
+  res.status(200).json({ message: 'pong' });
+});
+
+// 👇 ROOT ROUTE (API Health Check for Humans)
 // Jab aap https://oasis-space.onrender.com kholenge, to ye dikhega
 app.get('/', (req, res) => {
   res.status(200).json({ 
