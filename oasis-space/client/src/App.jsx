@@ -23,6 +23,9 @@ import AdminRoute from './components/AdminRoute';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
+// --- ✅ NEW IMPORT FOR OTP VERIFICATION ---
+import VerifyEmail from './pages/VerifyEmail';
+
 export default function App() {
   // State to track if we are loading
   const [loading, setLoading] = useState(true);
@@ -56,11 +59,15 @@ export default function App() {
             <Route path='/' element={<Home />} />
             <Route path='/sign-in' element={<SignIn />} />
             <Route path='/sign-up' element={<SignUp />} />
+            
+            {/* ✅ NEW ROUTE: Verify Email Page */}
+            <Route path='/verify-email' element={<VerifyEmail />} />
+
             <Route path='/about' element={<About />} />
             <Route path='/search' element={<Search />} />
             <Route path='/listing/:listingId' element={<Listing />} />
 
-            {/* 👇 PASSWORD RESET ROUTES ADDED HERE 👇 */}
+            {/* 👇 PASSWORD RESET ROUTES 👇 */}
             <Route path='/forgot-password' element={<ForgotPassword />} />
             <Route path='/reset-password/:id/:token' element={<ResetPassword />} />
 

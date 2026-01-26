@@ -23,6 +23,7 @@ oasis-space
 │   │   │   ├── Footer.jsx
 │   │   │   ├── Header.jsx
 │   │   │   ├── ListingItem.jsx
+│   │   │   ├── OAuth.jsx
 │   │   │   ├── Preloader.jsx
 │   │   │   └── PrivateRoute.jsx
 │   │   ├── pages
@@ -38,7 +39,8 @@ oasis-space
 │   │   │   ├── Search.jsx
 │   │   │   ├── SignIn.jsx
 │   │   │   ├── SignUp.jsx
-│   │   │   └── UpdateListing.jsx
+│   │   │   ├── UpdateListing.jsx
+│   │   │   └── VerifyEmail.jsx
 │   │   ├── redux
 │   │   │   ├── user
 │   │   │   │   └── userSlice.js
@@ -49,6 +51,7 @@ oasis-space
 │   │   ├── index.css
 │   │   ├── main.jsx
 │   │   └── supabase.js
+│   ├── .env
 │   ├── README.md
 │   ├── eslint.config.js
 │   ├── index.html

@@ -43,12 +43,25 @@ const userSchema = new mongoose.Schema(
       type: [mongoose.Schema.Types.ObjectId], 
       ref: 'Listing', 
       default: [],
+    },
+    
+    // 👇✅ NEW: OTP & VERIFICATION FIELDS ADDED 👇
+    isVerified: {
+      type: Boolean,
+      default: false, // Default false rahega jab tak OTP verify na ho
+    },
+    otp: {
+      type: String, // OTP store karne ke liye
+      default: null,
+    },
+    otpExpires: {
+      type: Date, // OTP expiry time ke liye (e.g. 10 mins)
+      default: null,
     }
   },
   { timestamps: true }
 );
 
-// 👇👇👇 CRASH FIX YAHAN HAI 👇👇👇
 // Agar model pehle se bana hai to wahi use karega, warna naya banayega
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 

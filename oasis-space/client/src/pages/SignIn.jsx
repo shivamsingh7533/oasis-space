@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { signInStart, signInSuccess, signInFailure } from '../redux/user/userSlice';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa'; // ✅ Spinner icon import kiya
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
@@ -14,7 +14,7 @@ export default function SignIn() {
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.id]: e.target.value,
+      [e.target.id]: e.target.value.trim(), // ✅ Input trim bhi kar diya safety ke liye
     });
   };
 
@@ -80,14 +80,21 @@ export default function SignIn() {
             </div>
           </div>
           
+          {/* 👇 IMPROVED BUTTON WITH LOADER 👇 */}
           <button 
             disabled={loading} 
-            className='bg-slate-600 text-white p-2.5 rounded-lg uppercase hover:bg-slate-500 disabled:opacity-80 transition-colors font-semibold shadow-md mt-2 text-sm sm:text-base'
+            className='bg-slate-600 text-white p-2.5 rounded-lg uppercase hover:bg-slate-500 disabled:opacity-80 transition-colors font-semibold shadow-md mt-2 text-sm sm:text-base flex justify-center items-center gap-2'
           >
-            {loading ? 'Loading...' : 'Sign In'}
+            {loading ? (
+              <>
+                <FaSpinner className='animate-spin text-lg' /> {/* 🔥 Spinner Icon */}
+                <span>Loading...</span>
+              </>
+            ) : (
+              'Sign In'
+            )}
           </button>
 
-          {/* 👇 FORGOT PASSWORD LINK ADDED HERE 👇 */}
           <div className='flex justify-end'>
             <Link to='/forgot-password'>
                 <span className='text-blue-400 hover:text-blue-300 text-sm hover:underline transition-colors'>

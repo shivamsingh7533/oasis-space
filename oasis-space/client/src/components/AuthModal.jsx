@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { signInStart, signInSuccess, signInFailure } from '../redux/user/userSlice';
-import { FaTimes, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { FaTimes, FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom'; // ✅ Import useNavigate for redirection
+import OAuth from './OAuth'; // ✅ Google Auth Button
 
 export default function AuthModal({ onClose }) {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -11,9 +13,10 @@ export default function AuthModal({ onClose }) {
   const [error, setError] = useState(null);
   
   const dispatch = useDispatch();
+  const navigate = useNavigate(); // ✅ Hook initialize kiya
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    setFormData({ ...formData, [e.target.id]: e.target.value.trim() }); // ✅ Auto-Trim
   };
 
   const handleSubmit = async (e) => {
@@ -43,10 +46,12 @@ export default function AuthModal({ onClose }) {
       setLoading(false);
       
       if (isSignUp) {
-        setIsSignUp(false);
-        setError("Account created! Please login.");
-        setFormData({});
+        // ✅ SUCCESSFUL SIGNUP LOGIC
+        // Modal band karo aur Verify Page par bhejo
+        onClose(); 
+        navigate('/verify-email', { state: { email: formData.email } }); 
       } else {
+        // ✅ SUCCESSFUL SIGNIN LOGIC
         dispatch(signInSuccess(data));
         onClose(); 
       }
@@ -59,8 +64,6 @@ export default function AuthModal({ onClose }) {
   };
 
   return (
-    // FIX: bg-black/60 ensure karega ki background transparent ho
-    // backdrop-blur-sm peeche ki website ko dhundhla karega
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-all duration-300">
       
       <div className="bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl border border-slate-700 relative overflow-hidden animate-fadeIn">
@@ -81,14 +84,25 @@ export default function AuthModal({ onClose }) {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {isSignUp && (
-              <input
-                type="text"
-                placeholder="Username"
-                id="username"
-                className="bg-slate-900 border border-slate-700 text-slate-200 rounded-lg p-3 focus:outline-none focus:border-slate-500 placeholder:text-slate-500"
-                onChange={handleChange}
-                required
-              />
+              <>
+                <input
+                  type="text"
+                  placeholder="Username"
+                  id="username"
+                  className="bg-slate-900 border border-slate-700 text-slate-200 rounded-lg p-3 focus:outline-none focus:border-slate-500 placeholder:text-slate-500"
+                  onChange={handleChange}
+                  required
+                />
+                {/* ✅ MOBILE FIELD REQUIRED FOR BACKEND */}
+                <input
+                  type="text"
+                  placeholder="Mobile Number"
+                  id="mobile"
+                  className="bg-slate-900 border border-slate-700 text-slate-200 rounded-lg p-3 focus:outline-none focus:border-slate-500 placeholder:text-slate-500"
+                  onChange={handleChange}
+                  required
+                />
+              </>
             )}
 
             <input
@@ -119,10 +133,21 @@ export default function AuthModal({ onClose }) {
 
             <button 
               disabled={loading}
-              className="bg-slate-100 text-slate-900 font-bold p-3 rounded-lg hover:bg-slate-200 transition-colors mt-2 uppercase disabled:opacity-70 shadow-md"
+              className="bg-slate-100 text-slate-900 font-bold p-3 rounded-lg hover:bg-slate-200 transition-colors mt-2 uppercase disabled:opacity-70 shadow-md flex justify-center items-center gap-2"
             >
-              {loading ? 'Processing...' : (isSignUp ? 'Sign Up' : 'Sign In')}
+              {loading ? (
+                <>
+                  <FaSpinner className='animate-spin' />
+                  <span>Processing...</span>
+                </>
+              ) : (
+                isSignUp ? 'Sign Up' : 'Sign In'
+              )}
             </button>
+
+            {/* ✅ GOOGLE AUTH BUTTON */}
+            <OAuth />
+
           </form>
 
           <div className="flex gap-2 mt-5 justify-center text-sm">

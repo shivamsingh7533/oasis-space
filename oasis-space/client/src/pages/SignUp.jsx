@@ -1,12 +1,16 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import PhoneInput from 'react-phone-input-2';
-import 'react-phone-input-2/lib/style.css'; // Library CSS import
+import 'react-phone-input-2/lib/style.css'; 
+import OAuth from '../components/OAuth'; // Ye component folder me hai
+
+// ✅ CORRECT IMPORT: (Kyunki VerifyEmail.jsx bhi 'pages' folder me hi hai)
+import VerifyEmailModal from './VerifyEmail'; 
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
-    username: '',
+    fullName: '', 
     email: '',
     mobile: '',
     password: '',
@@ -18,12 +22,12 @@ export default function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
-  const navigate = useNavigate();
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.id]: e.target.value,
+      [e.target.id]: e.target.value, // Trim hataya taaki space allowed ho
     });
   };
 
@@ -34,38 +38,23 @@ export default function SignUp() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // VALIDATION 1: Check Mandatory Fields
-    if (!formData.username || !formData.email || !formData.mobile || !formData.password) {
+    // --- VALIDATIONS ---
+    if (!formData.fullName || !formData.email || !formData.mobile || !formData.password) {
       setError("All fields are required!");
       return;
     }
-
-    // VALIDATION 2: Mobile Number Length
     if (formData.mobile.length < 10) {
       setError("Please enter a valid mobile number.");
       return;
     }
-
-    // --- PASSWORD STRENGTH VALIDATION ---
+    
+    // Password Strength
     const password = formData.password;
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters long.");
-      return;
-    }
-    if (!/[A-Z]/.test(password)) {
-      setError("Password must contain at least one uppercase letter (A-Z).");
-      return;
-    }
-    if (!/[0-9]/.test(password)) {
-      setError("Password must contain at least one number (0-9).");
-      return;
-    }
-    if (!/[!@#$%^&*]/.test(password)) {
-      setError("Password must contain at least one special character (!@#$%^&*).");
-      return;
-    }
+    if (password.length < 8) { setError("Password must be at least 8 characters long."); return; }
+    if (!/[A-Z]/.test(password)) { setError("Password must contain at least one uppercase letter (A-Z)."); return; }
+    if (!/[0-9]/.test(password)) { setError("Password must contain at least one number (0-9)."); return; }
+    if (!/[!@#$%^&*]/.test(password)) { setError("Password must contain at least one special character (!@#$%^&*)."); return; }
 
-    // VALIDATION 3: Passwords Match
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match!");
       return;
@@ -75,12 +64,18 @@ export default function SignUp() {
       setLoading(true);
       setError(null); 
       
+      // Full Name se Unique Username banana
+      const generatedUsername = formData.fullName.split(' ').join('').toLowerCase() + Math.random().toString(36).slice(-4);
+
+      const finalData = {
+        ...formData,
+        username: generatedUsername
+      };
+      
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(finalData),
       });
 
       const data = await res.json();
@@ -93,7 +88,9 @@ export default function SignUp() {
       
       setLoading(false);
       setError(null);
-      navigate('/sign-in');
+      
+      // ✅ SUCCESS! OPEN MODAL
+      setShowVerifyModal(true);
       
     } catch (error) {
       setLoading(false);
@@ -101,50 +98,31 @@ export default function SignUp() {
     }
   };
 
-  // --- CUSTOM STYLES FOR DARK THEME ---
-  const inputStyle = {
-    backgroundColor: '#334155', // bg-slate-700
-    color: '#e2e8f0',           // text-slate-200
-    border: '1px solid #475569', // border-slate-600
-    borderRadius: '0.5rem',
-    width: '100%',
-    height: '42px',
-    fontSize: '0.875rem',
-    paddingLeft: '48px'
-  };
-
-  const buttonStyle = {
-    backgroundColor: '#334155',
-    border: '1px solid #475569',
-    borderTopLeftRadius: '0.5rem',
-    borderBottomLeftRadius: '0.5rem',
-  };
-
-  const dropdownStyle = {
-    backgroundColor: '#1e293b', // bg-slate-800
-    border: '1px solid #475569',
-    color: '#cbd5e1'
-  };
+  // --- STYLES ---
+  const inputStyle = { backgroundColor: '#334155', color: '#e2e8f0', border: '1px solid #475569', borderRadius: '0.5rem', width: '100%', height: '42px', fontSize: '0.875rem', paddingLeft: '48px' };
+  const buttonStyle = { backgroundColor: '#334155', border: '1px solid #475569', borderTopLeftRadius: '0.5rem', borderBottomLeftRadius: '0.5rem' };
+  const dropdownStyle = { backgroundColor: '#1e293b', border: '1px solid #475569', color: '#cbd5e1' };
 
   return (
-    <div className='bg-slate-900 h-screen w-full flex items-center justify-center p-3 overflow-hidden'>
+    <div className='bg-slate-900 h-screen w-full flex items-center justify-center p-3 overflow-hidden relative'>
       
-      {/* --- CSS OVERRIDES --- */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
-
         .react-tel-input .country-list { background-color: #1e293b !important; color: #e2e8f0 !important; }
-        .react-tel-input .country-list .search { background-color: #1e293b !important; padding: 10px !important; }
-        .react-tel-input .country-list .search-box { background-color: #334155 !important; color: #e2e8f0 !important; border: 1px solid #475569 !important; border-radius: 4px !important; margin-bottom: 0 !important; }
-        .react-tel-input .country-list .country { color: #e2e8f0 !important; }
+        .react-tel-input .country-list .search { background-color: #1e293b !important; }
+        .react-tel-input .country-list .search-box { background-color: #334155 !important; color: #e2e8f0 !important; border: 1px solid #475569 !important; }
         .react-tel-input .country-list .country:hover, .react-tel-input .country-list .country.highlight { background-color: #334155 !important; }
-        .react-tel-input .country-list::-webkit-scrollbar { width: 8px; }
-        .react-tel-input .country-list::-webkit-scrollbar-track { background: #1e293b; }
-        .react-tel-input .country-list::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
       `}</style>
+
+      {/* ✅ RENDER MODAL */}
+      {showVerifyModal && (
+        <VerifyEmailModal 
+          email={formData.email} 
+          onClose={() => setShowVerifyModal(false)} 
+        />
+      )}
 
       <div className='bg-slate-800 p-5 rounded-xl shadow-2xl w-full max-w-sm border border-slate-700 max-h-[90vh] overflow-y-auto custom-scrollbar'>
         
@@ -153,85 +131,49 @@ export default function SignUp() {
         </h1>
         
         <form onSubmit={handleSubmit} className='flex flex-col gap-2.5'>
+
+          {/* ✅ GOOGLE BUTTON */}
+          <OAuth />
+
+          <div className="flex items-center my-2">
+            <div className="flex-grow border-t border-slate-600"></div>
+            <span className="flex-shrink-0 mx-2 text-slate-400 text-xs">OR CONTINUE WITH EMAIL</span>
+            <div className="flex-grow border-t border-slate-600"></div>
+          </div>
+
+          {/* FULL NAME */}
           <input 
             type="text" 
-            placeholder='username' 
+            placeholder='Full Name' 
             className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all text-sm sm:text-base' 
-            id='username' 
+            id='fullName' 
             onChange={handleChange} 
-            value={formData.username || ''}
-            required
+            value={formData.fullName || ''}
+            required 
           />
           
-          <input 
-            type="email" 
-            placeholder='email' 
-            className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all text-sm sm:text-base' 
-            id='email' 
-            onChange={handleChange} 
-            value={formData.email || ''}
-            required
-          />
+          <input type="email" placeholder='Email' className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all text-sm sm:text-base' id='email' onChange={handleChange} value={formData.email || ''} required />
 
-          {/* MOBILE NUMBER INPUT */}
           <div className='w-full'>
-            <PhoneInput
-              country={'in'}
-              value={formData.mobile}
-              onChange={handlePhoneChange}
-              enableSearch={true}
-              inputStyle={inputStyle}
-              buttonStyle={buttonStyle}
-              dropdownStyle={dropdownStyle}
-              placeholder="mobile number"
-              // FIX: 'masks' prop se dash hatakar sirf space lagaya gaya hai
-              masks={{ in: '..... .....' }} 
-            />
+            <PhoneInput country={'in'} value={formData.mobile} onChange={handlePhoneChange} enableSearch={true} inputStyle={inputStyle} buttonStyle={buttonStyle} dropdownStyle={dropdownStyle} placeholder="Mobile Number" masks={{ in: '..... .....' }} />
           </div>
 
           <div className='relative'>
-            <input 
-              type={showPassword ? "text" : "password"} 
-              placeholder='password' 
-              className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all w-full text-sm sm:text-base' 
-              id='password' 
-              onChange={handleChange} 
-              value={formData.password || ''}
-              required
-            />
-            <div 
-              className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-slate-200 text-base p-1'
-              onClick={() => setShowPassword(!showPassword)}
-            >
+            <input type={showPassword ? "text" : "password"} placeholder='Password' className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all w-full text-sm sm:text-base' id='password' onChange={handleChange} value={formData.password || ''} required />
+            <div className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-slate-200 text-base p-1' onClick={() => setShowPassword(!showPassword)}>
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </div>
           </div>
-          <p className='text-[10px] text-slate-400 px-1 -mt-1'>
-            * Min 8 chars, 1 uppercase, 1 number, 1 special char
-          </p>
+          <p className='text-[10px] text-slate-400 px-1 -mt-1'>* Min 8 chars, 1 uppercase, 1 number, 1 special char</p>
 
           <div className='relative'>
-            <input 
-              type={showConfirmPassword ? "text" : "password"} 
-              placeholder='confirm password' 
-              className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all w-full text-sm sm:text-base' 
-              id='confirmPassword' 
-              onChange={handleChange} 
-              value={formData.confirmPassword || ''}
-              required
-            />
-            <div 
-              className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-slate-200 text-base p-1'
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            >
+            <input type={showConfirmPassword ? "text" : "password"} placeholder='Confirm Password' className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all w-full text-sm sm:text-base' id='confirmPassword' onChange={handleChange} value={formData.confirmPassword || ''} required />
+            <div className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-slate-200 text-base p-1' onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
               {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
             </div>
           </div>
           
-          <button 
-            disabled={loading} 
-            className='bg-slate-600 text-white p-2.5 rounded-lg uppercase hover:bg-slate-500 disabled:opacity-80 transition-colors font-semibold shadow-md mt-1 text-sm sm:text-base'
-          >
+          <button disabled={loading} className='bg-slate-600 text-white p-2.5 rounded-lg uppercase hover:bg-slate-500 disabled:opacity-80 transition-colors font-semibold shadow-md mt-1 text-sm sm:text-base'>
             {loading ? 'Loading...' : 'Sign Up'}
           </button>
           

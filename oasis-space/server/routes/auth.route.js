@@ -3,19 +3,21 @@ import {
   signup, 
   signin, 
   signout, 
-  google,           // ✅ Added Google Auth
-  forgotPassword,   // ✅ Added Forgot Password
-  resetPassword     // ✅ Added Reset Password
+  google, 
+  forgotPassword, 
+  resetPassword,
+  verifyEmail // ✅ NEW: Added verifyEmail import
 } from '../controllers/auth.controller.js';
 
 const router = express.Router();
 
 router.post('/signup', signup);
+router.post('/verify-email', verifyEmail); // ✅ NEW: Route for OTP Verification
 router.post('/signin', signin);
-router.post('/google', google); // ✅ Google Route
+router.post('/google', google);
 router.get('/signout', signout);
 
-// 👇 New Routes for Password Reset 👇
+// 👇 Routes for Password Reset 👇
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password/:id/:token', resetPassword);
 
