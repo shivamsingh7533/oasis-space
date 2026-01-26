@@ -12,17 +12,29 @@ export const signup = async (req, res, next) => {
     return next(errorHandler(400, 'All fields are required'));
   }
 
-  if (password.length < 8) return next(errorHandler(400, 'Password must be at least 8 characters long'));
-  if (!/[A-Z]/.test(password)) return next(errorHandler(400, 'Password must contain at least one uppercase letter'));
-  if (!/[0-9]/.test(password)) return next(errorHandler(400, 'Password must contain at least one number'));
-  if (!/[!@#$%^&*]/.test(password)) return next(errorHandler(400, 'Password must contain at least one special character'));
+  // ✅ FIX 1: Trim inputs to remove accidental spaces
+  const cleanUsername = username.trim();
+  const cleanEmail = email.trim();
+  const cleanPassword = password.trim(); // Password se bhi space hatao
+
+  if (cleanPassword.length < 8) return next(errorHandler(400, 'Password must be at least 8 characters long'));
+  if (!/[A-Z]/.test(cleanPassword)) return next(errorHandler(400, 'Password must contain at least one uppercase letter'));
+  if (!/[0-9]/.test(cleanPassword)) return next(errorHandler(400, 'Password must contain at least one number'));
+  if (!/[!@#$%^&*]/.test(cleanPassword)) return next(errorHandler(400, 'Password must contain at least one special character'));
 
   if (!/^\d+$/.test(mobile)) return next(errorHandler(400, 'Mobile number must contain only digits'));
   if (mobile.length < 8 || mobile.length > 15) return next(errorHandler(400, 'Invalid mobile number length'));
 
   try {
-    const hashedPassword = bcryptjs.hashSync(password, 10);
-    const newUser = new User({ username, email, password: hashedPassword, mobile });
+    const hashedPassword = bcryptjs.hashSync(cleanPassword, 10);
+    
+    const newUser = new User({ 
+      username: cleanUsername, 
+      email: cleanEmail, 
+      password: hashedPassword, 
+      mobile 
+    });
+    
     await newUser.save();
     res.status(201).json({ success: true, message: "User created successfully!" });
   } catch (error) {
@@ -35,23 +47,53 @@ export const signup = async (req, res, next) => {
   }
 };
 
-// --- 2. SIGN IN ---
+// --- 2. SIGN IN (Debugging Added) ---
 export const signin = async (req, res, next) => {
   const { email, password } = req.body;
-  if (!email || !password || email === '' || password === '') return next(errorHandler(400, 'All fields are required'));
+  
+  if (!email || !password || email === '' || password === '') {
+    return next(errorHandler(400, 'All fields are required'));
+  }
 
   try {
-    const validUser = await User.findOne({ email });
-    if (!validUser) return next(errorHandler(404, 'User not found!'));
+    // ✅ FIX 2: Email ko trim karo taaki space ki wajah se fail na ho
+    const cleanEmail = email.trim();
+    
+    // 🔍 DEBUGGING LOGS (Terminal check karein)
+    console.log("---- LOGIN ATTEMPT ----");
+    console.log("Input Email:", cleanEmail);
+    console.log("Input Password:", password);
 
+    const validUser = await User.findOne({ email: cleanEmail });
+    
+    if (!validUser) {
+      console.log("❌ User not found in DB");
+      return next(errorHandler(404, 'User not found!'));
+    }
+
+    console.log("✅ User Found:", validUser.username);
+    console.log("DB Hashed Password:", validUser.password);
+
+    // ✅ FIX 3: Compare Sync
     const validPassword = bcryptjs.compareSync(password, validUser.password);
-    if (!validPassword) return next(errorHandler(401, 'Wrong credentials!'));
+    
+    if (!validPassword) {
+      console.log("❌ Password Mismatch! (Hash compare failed)");
+      return next(errorHandler(401, 'Wrong credentials!'));
+    }
+
+    console.log("✅ Password Matched!");
 
     const token = jwt.sign({ id: validUser._id }, process.env.JWT_SECRET);
     const { password: pass, ...rest } = validUser._doc;
 
-    res.cookie('access_token', token, { httpOnly: true }).status(200).json(rest);
+    res
+      .cookie('access_token', token, { httpOnly: true })
+      .status(200)
+      .json(rest);
+      
   } catch (error) {
+    console.log("Error in signin:", error);
     next(error);
   }
 };
@@ -94,7 +136,7 @@ export const signout = async (req, res, next) => {
   }
 };
 
-// --- 5. FORGOT PASSWORD (DYNAMIC URL FIX 🌍) ---
+// --- 5. FORGOT PASSWORD ---
 export const forgotPassword = async (req, res, next) => {
   const { email } = req.body;
   try {
@@ -111,7 +153,6 @@ export const forgotPassword = async (req, res, next) => {
       },
     });
 
-    // 👇 FIXED: Ab ye env variable se URL uthayega, nahi mila to localhost lega
     const clientURL = process.env.CLIENT_URL || 'http://localhost:5173';
     const resetLink = `${clientURL}/reset-password/${user._id}/${token}`;
 
