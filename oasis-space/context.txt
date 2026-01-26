@@ -5,9 +5,9 @@ oasis-space
 │   │   ├── sw.js
 │   │   └── workbox-5a5d9309.js
 │   ├── public
+│   │   ├── icon-192.png
+│   │   ├── icon-512.png
 │   │   ├── logo.png
-│   │   ├── logo192.png
-│   │   ├── logo512.png
 │   │   ├── manifest.json
 │   │   └── vite.svg
 │   ├── src

@@ -4,14 +4,19 @@ import { useEffect, useState } from 'react';
 
 export default function Header() {
   const { currentUser } = useSelector((state) => state.user);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  
+  // ✅ FIX: State ko shuru mein hi Global Variable se initialize kar diya
+  // Isse useEffect mein setState karne ki zaroorat nahi padegi
+  const [deferredPrompt, setDeferredPrompt] = useState(window.deferredPrompt || null);
 
   useEffect(() => {
-    // PWA Install Event Listener
+    // Sirf naye events ke liye listener lagao
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      console.log("✅ PWA Install Event Captured!");
+      // Global variable bhi update rakho
+      window.deferredPrompt = e;
+      console.log("✅ Header: Captured new install event.");
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -22,23 +27,33 @@ export default function Header() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    const promptEvent = deferredPrompt || window.deferredPrompt;
+    
+    if (!promptEvent) return;
+
+    // Prompt dikhao
+    promptEvent.prompt();
+
+    // User ka response wait karo
+    const { outcome } = await promptEvent.userChoice;
     console.log(`User response: ${outcome}`);
+
+    // Button hata do (State clean)
     setDeferredPrompt(null);
+    window.deferredPrompt = null;
   };
 
   return (
     <header className='bg-slate-900 shadow-md sticky top-0 z-50'>
       <div className='flex justify-between items-center max-w-6xl mx-auto p-3'>
         
-        {/* LOGO - Fixed to use existing icon-192.png */}
+        {/* LOGO LINK */}
         <Link to='/'>
           <h1 className='font-bold text-sm sm:text-xl flex flex-wrap items-center'>
+             {/* Using icon-192.png explicitly */}
              <img 
                src="/icon-192.png" 
-               alt="OasisSpace Logo" 
+               alt="logo" 
                className="w-8 h-8 mr-2 object-cover rounded-full bg-white p-0.5" 
              />
             <span className='text-slate-200'>Oasis</span>
@@ -46,9 +61,10 @@ export default function Header() {
           </h1>
         </Link>
 
-        {/* NAVIGATION & INSTALL BUTTON */}
+        {/* NAVIGATION MENUS */}
         <ul className='flex gap-4 items-center'>
-          {/* Install Button Logic */}
+          
+          {/* ✅ INSTALL BUTTON */}
           {deferredPrompt && (
             <button 
               onClick={handleInstallClick}
