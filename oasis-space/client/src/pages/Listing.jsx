@@ -16,13 +16,15 @@ import {
   FaHeart,
   FaRegHeart,
   FaLocationArrow,
+  FaCalculator, 
+  FaMapMarkedAlt
 } from 'react-icons/fa';
 
 // Leaflet Assets
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 import { updateUserSuccess } from '../redux/user/userSlice';
-import EMICalculator from '../components/EMICalculator'; // ✅ Added Calculator Import
+import EMICalculator from '../components/EMICalculator';
 
 // Fix for Leaflet default icon
 let DefaultIcon = L.icon({
@@ -41,6 +43,10 @@ export default function Listing() {
   const [saved, setSaved] = useState(false);
   const [coordinates, setCoordinates] = useState({ lat: 0, lng: 0 });
   const [mapLoading, setMapLoading] = useState(true);
+  
+  // ✅ Toggle States for Features
+  const [showMap, setShowMap] = useState(false);
+  const [showEMI, setShowEMI] = useState(false);
 
   const mapRef = useRef(null);
   const params = useParams();
@@ -233,41 +239,68 @@ export default function Listing() {
               <p className='text-slate-400 text-base leading-relaxed'>{listing.description}</p>
             </div>
 
-            {/* ✅ EMI Calculator (Integrated here) */}
-            {listing.type === 'sale' && (
-              <EMICalculator price={listing.offer ? listing.discountPrice : listing.regularPrice} />
+            {/* ✅ ACTION BUTTONS (Toggle Map & Calculator) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Map Toggle Button */}
+                <button 
+                    onClick={() => setShowMap(!showMap)} 
+                    className={`flex items-center justify-center gap-2 p-4 rounded-2xl border font-bold transition-all shadow-lg ${showMap ? 'bg-indigo-600 text-white border-indigo-500' : 'bg-slate-800 text-indigo-400 border-slate-700 hover:border-indigo-500'}`}
+                >
+                    <FaMapMarkedAlt className='text-xl' /> 
+                    {showMap ? 'Hide Map' : 'View on Map'}
+                </button>
+
+                {/* Calculator Toggle Button (Only for Sale) */}
+                {listing.type === 'sale' && (
+                    <button 
+                        onClick={() => setShowEMI(!showEMI)} 
+                        className={`flex items-center justify-center gap-2 p-4 rounded-2xl border font-bold transition-all shadow-lg ${showEMI ? 'bg-green-600 text-white border-green-500' : 'bg-slate-800 text-green-400 border-slate-700 hover:border-green-500'}`}
+                    >
+                        <FaCalculator className='text-xl' />
+                        {showEMI ? 'Hide Calculator' : 'Mortgage Calculator'}
+                    </button>
+                )}
+            </div>
+
+            {/* ✅ CONDITIONAL RENDER: EMI Calculator */}
+            {showEMI && listing.type === 'sale' && (
+              <div className="animate-fadeIn">
+                 <EMICalculator price={listing.offer ? listing.discountPrice : listing.regularPrice} />
+              </div>
             )}
 
-            {/* Map Area */}
-            <div className='bg-slate-800 p-4 rounded-3xl border border-slate-700 shadow-lg overflow-hidden'>
-                <div className="flex justify-between items-center mb-4 px-2">
-                    <h3 className='font-bold text-white flex items-center gap-2'><FaLocationArrow className="text-indigo-400"/> Map View</h3>
-                    {!mapLoading && coordinates.lat !== 0 && (
-                        <button onClick={handleRecenterMap} className="text-xs bg-slate-700 hover:bg-indigo-600 text-slate-200 py-1.5 px-4 rounded-full transition-all border border-slate-600">
-                             Recenter
-                        </button>
-                    )}
+            {/* ✅ CONDITIONAL RENDER: Map Area */}
+            {showMap && (
+                <div className='bg-slate-800 p-4 rounded-3xl border border-slate-700 shadow-lg overflow-hidden animate-fadeIn'>
+                    <div className="flex justify-between items-center mb-4 px-2">
+                        <h3 className='font-bold text-white flex items-center gap-2'><FaLocationArrow className="text-indigo-400"/> Location</h3>
+                        {!mapLoading && coordinates.lat !== 0 && (
+                            <button onClick={handleRecenterMap} className="text-xs bg-slate-700 hover:bg-indigo-600 text-slate-200 py-1.5 px-4 rounded-full transition-all border border-slate-600">
+                                 Recenter
+                            </button>
+                        )}
+                    </div>
+                    
+                    <div className='h-[350px] w-full rounded-2xl overflow-hidden grayscale brightness-[0.7] border border-slate-700'>
+                        {!mapLoading && coordinates.lat !== 0 ? (
+                            <MapContainer ref={mapRef} center={[coordinates.lat, coordinates.lng]} zoom={13} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
+                                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                                <Marker position={[coordinates.lat, coordinates.lng]}><Popup>{listing.address}</Popup></Marker>
+                            </MapContainer>
+                        ) : (
+                            <div className='h-full w-full bg-slate-900 flex items-center justify-center text-slate-500 text-sm'>
+                                {mapLoading ? 'Finding location...' : 'Map not available for this address'}
+                            </div>
+                        )}
+                    </div>
                 </div>
-                
-                <div className='h-[350px] w-full rounded-2xl overflow-hidden grayscale brightness-[0.7] border border-slate-700'>
-                    {!mapLoading && coordinates.lat !== 0 ? (
-                        <MapContainer ref={mapRef} center={[coordinates.lat, coordinates.lng]} zoom={13} scrollWheelZoom={false} style={{ height: '100%', width: '100%' }}>
-                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                            <Marker position={[coordinates.lat, coordinates.lng]}><Popup>{listing.address}</Popup></Marker>
-                        </MapContainer>
-                    ) : (
-                        <div className='h-full w-full bg-slate-900 flex items-center justify-center text-slate-500 text-sm'>
-                            {mapLoading ? 'Finding location...' : 'Map not available for this address'}
-                        </div>
-                    )}
-                </div>
-            </div>
+            )}
 
             {/* Contact Host Button */}
             {currentUser && listing.userRef !== currentUser._id && (
                <button onClick={() => window.location.href = `mailto:support@oasisspace.com?subject=${listing.name}`} 
                        className='bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl uppercase hover:opacity-95 p-4 font-extrabold shadow-2xl tracking-widest transition-all mb-10'>
-                 Message Landlord
+                  Message Landlord
                </button>
             )}
           </div>

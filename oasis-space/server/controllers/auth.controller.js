@@ -4,8 +4,54 @@ import jwt from 'jsonwebtoken';
 import { errorHandler } from '../utils/error.js';
 import nodemailer from 'nodemailer'; 
 
-// 🔥 Helper Function: Email bhejne ke liye
-const sendEmail = async (to, subject, text) => {
+// 🔥 HTML EMAIL TEMPLATES (DESIGN)
+const getWelcomeTemplate = (username) => `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f4; padding: 20px; border-radius: 10px;">
+  <div style="background-color: #10b981; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0;">Welcome to OasisSpace! 🌴</h1>
+  </div>
+  <div style="background-color: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+    <h2 style="color: #333;">Hello ${username},</h2>
+    <p style="color: #666; font-size: 16px; line-height: 1.6;">
+      We are thrilled to have you on board! Your account has been successfully verified.
+    </p>
+    <p style="color: #666; font-size: 16px; line-height: 1.6;">
+      Start exploring the best properties or list your own space today. We are here to help you find your perfect oasis.
+    </p>
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Go to Dashboard</a>
+    </div>
+    <p style="margin-top: 30px; font-size: 12px; color: #999; text-align: center;">
+      If you did not create this account, please ignore this email.
+    </p>
+  </div>
+</div>
+`;
+
+const getOtpTemplate = (otp) => `
+<div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
+  <div style="background-color: #334155; padding: 20px; text-align: center;">
+    <h2 style="color: #ffffff; margin: 0;">Password Reset Request</h2>
+  </div>
+  <div style="padding: 30px; background-color: #ffffff; text-align: center;">
+    <p style="color: #555; font-size: 16px;">Use the code below to reset your password. This code expires in 15 minutes.</p>
+    <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+      <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e293b;">${otp}</span>
+    </div>
+    <p style="color: #999; font-size: 14px;">Do not share this code with anyone.</p>
+  </div>
+</div>
+`;
+
+const getSuccessTemplate = (username) => `
+<div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #d1fae5; background-color: #ecfdf5; border-radius: 8px;">
+  <h2 style="color: #047857; text-align: center;">Password Changed Successfully</h2>
+  <p style="color: #065f46; text-align: center;">Hello ${username}, your password has been updated. You can now login with your new credentials.</p>
+</div>
+`;
+
+// 🔥 Helper Function: Updated for HTML Support
+const sendEmail = async (to, subject, htmlContent) => {
   try {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -19,7 +65,7 @@ const sendEmail = async (to, subject, text) => {
       from: `"OasisSpace Security" <${process.env.EMAIL_USER}>`,
       to,
       subject,
-      text,
+      html: htmlContent, // Changed from text to html
     };
 
     await transporter.sendMail(mailOptions);
@@ -54,7 +100,6 @@ export const signup = async (req, res, next) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpires = Date.now() + 10 * 60 * 1000; // 10 Minutes expiry
 
-    // 🛑 DEBUG: OTP ko Terminal me print karo (Taaki test kar sako bina email ke)
     console.log(`🔒 GENERATED OTP for ${cleanEmail}: ${otp}`);
 
     const newUser = new User({ 
@@ -69,11 +114,11 @@ export const signup = async (req, res, next) => {
     
     await newUser.save();
 
-    // 🔥 Send OTP Email
+    // 🔥 Send Signup OTP (Simple HTML)
     await sendEmail(
       cleanEmail,
       'Verify your Account - OasisSpace',
-      `Your Verification OTP is: ${otp}. It is valid for 10 minutes.`
+      `<h3>Your Verification OTP is: <span style="color:blue">${otp}</span></h3><p>It is valid for 10 minutes.</p>`
     );
 
     res.status(201).json({ success: true, message: "User created! Please verify your OTP sent to email." });
@@ -88,12 +133,11 @@ export const signup = async (req, res, next) => {
   }
 };
 
-// ✅ 1.5 VERIFY EMAIL (UPDATED FIX)
+// ✅ 1.5 VERIFY EMAIL (UPDATED: Sends Welcome Email)
 export const verifyEmail = async (req, res, next) => {
   const { email, otp } = req.body;
 
   try {
-    // FIX 1: Email ko trim karke search karo
     const cleanEmail = email.trim();
     const user = await User.findOne({ email: cleanEmail });
     
@@ -103,8 +147,6 @@ export const verifyEmail = async (req, res, next) => {
       return res.status(200).json({ message: 'User is already verified' });
     }
 
-    // FIX 2: OTP Comparison Logic (String conversion zaroori hai)
-    // Database me OTP number ho sakta hai, aur req.body me string.
     if (user.otp.toString() !== otp.toString()) {
       return next(errorHandler(400, 'Invalid OTP'));
     }
@@ -117,6 +159,13 @@ export const verifyEmail = async (req, res, next) => {
     user.otp = null;
     user.otpExpires = null;
     await user.save();
+
+    // 🚀 NEW: Send Welcome Email after successful verification
+    sendEmail(
+      user.email,
+      'Welcome to OasisSpace! 🌴',
+      getWelcomeTemplate(user.username)
+    );
 
     res.status(200).json({ success: true, message: 'Email verified successfully! You can now login.' });
 
@@ -140,7 +189,6 @@ export const signin = async (req, res, next) => {
     const validPassword = bcryptjs.compareSync(password, validUser.password);
     if (!validPassword) return next(errorHandler(401, 'Wrong credentials!'));
 
-    // Check if verified
     if (validUser.isVerified === false) {
        return next(errorHandler(401, 'Please verify your email first!'));
     }
@@ -148,11 +196,11 @@ export const signin = async (req, res, next) => {
     const token = jwt.sign({ id: validUser._id }, process.env.JWT_SECRET);
     const { password: pass, ...rest } = validUser._doc;
 
-    // 🔥 Send Login Alert
+    // Login Alert
     sendEmail(
       validUser.email,
       'New Login Detected - OasisSpace',
-      `Hello ${validUser.username},\n\nA new login was detected on your account just now.\n\nIf this was you, ignore this email.`
+      `<p>Hello ${validUser.username}, a new login was detected on your account.</p>`
     );
 
     res
@@ -170,21 +218,30 @@ export const signin = async (req, res, next) => {
   }
 };
 
-// ✅ 3. GOOGLE AUTH
+// ✅ 3. GOOGLE AUTH (UPDATED: Sends Welcome Email to New Users)
 export const google = async (req, res, next) => {
   try {
     const user = await User.findOne({ email: req.body.email });
     
-    const sendResponse = (userData, statusCode) => {
+    const sendResponse = (userData, statusCode, isNewUser = false) => {
       const token = jwt.sign({ id: userData._id }, process.env.JWT_SECRET);
       const { password: pass, ...rest } = userData._doc;
 
-      // 🔥 Send Google Login Alert
-      sendEmail(
-        userData.email,
-        'New Google Login - OasisSpace',
-        `Hello ${userData.username},\n\nYou successfully logged in via Google.\n\nTime: ${new Date().toLocaleString()}`
-      );
+      if (isNewUser) {
+        // 🚀 NEW: Send Welcome Email for Google Signups
+        sendEmail(
+            userData.email,
+            'Welcome to OasisSpace! 🌴',
+            getWelcomeTemplate(userData.username)
+        );
+      } else {
+        // Login Alert for existing users
+        sendEmail(
+            userData.email,
+            'New Google Login - OasisSpace',
+            `<p>Hello ${userData.username}, logged in via Google.</p>`
+        );
+      }
       
       res
         .cookie('access_token', token, { 
@@ -198,7 +255,7 @@ export const google = async (req, res, next) => {
     };
 
     if (user) {
-      sendResponse(user, 200);
+      sendResponse(user, 200, false); // Existing user
     } else {
       const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
       const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
@@ -211,7 +268,7 @@ export const google = async (req, res, next) => {
         isVerified: true 
       });
       await newUser.save();
-      sendResponse(newUser, 200);
+      sendResponse(newUser, 200, true); // New user
     }
   } catch (error) {
     next(error);
@@ -228,46 +285,69 @@ export const signout = async (req, res, next) => {
   }
 };
 
-// --- 5. FORGOT PASSWORD ---
+// --- 5. FORGOT PASSWORD (UPDATED: Sends OTP instead of Link) ---
 export const forgotPassword = async (req, res, next) => {
   const { email } = req.body;
   try {
     const user = await User.findOne({ email });
     if (!user) return next(errorHandler(404, 'User not found!'));
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    // 🚀 Generate OTP instead of Token
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = Date.now() + 15 * 60 * 1000; // 15 mins
 
-    const clientURL = process.env.CLIENT_URL || 'http://localhost:5173';
-    const resetLink = `${clientURL}/reset-password/${user._id}/${token}`;
+    user.otp = otp;
+    user.otpExpires = otpExpires;
+    await user.save();
 
-    // 🔥 Send Forgot Password Email
+    // 🔥 Send OTP Email
     await sendEmail(
       user.email,
-      'Reset your Password - OasisSpace',
-      `Click the link to reset your password: ${resetLink}`
+      'Reset Password OTP - OasisSpace',
+      getOtpTemplate(otp)
     );
 
-    res.status(200).json({ message: 'Email sent successfully!' });
+    res.status(200).json({ success: true, message: 'OTP sent to your email!' });
 
   } catch (error) {
     next(error);
   }
 };
 
-// --- 6. RESET PASSWORD ---
+// --- 6. RESET PASSWORD (UPDATED: Verifies OTP) ---
 export const resetPassword = async (req, res, next) => {
-  const { id, token } = req.params;
-  const { password } = req.body;
+  // 🛑 Note: Frontend must now send { email, otp, password } in body
+  // instead of using params for token
+  const { email, otp, password } = req.body;
 
   try {
-    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
-      if (err) return next(errorHandler(403, 'Link Expired or Invalid'));
-      
-      const hashedPassword = bcryptjs.hashSync(password, 10);
-      
-      await User.findByIdAndUpdate(id, { password: hashedPassword });
-      res.status(200).json({ message: 'Password updated successfully!' });
-    });
+    const user = await User.findOne({ email });
+    if (!user) return next(errorHandler(404, 'User not found'));
+
+    if (!user.otp || user.otp.toString() !== otp.toString()) {
+        return next(errorHandler(400, 'Invalid OTP'));
+    }
+
+    if (user.otpExpires < Date.now()) {
+        return next(errorHandler(400, 'OTP Expired'));
+    }
+
+    // Hash New Password
+    const hashedPassword = bcryptjs.hashSync(password, 10);
+    
+    user.password = hashedPassword;
+    user.otp = null;
+    user.otpExpires = null;
+    await user.save();
+
+    // 🚀 NEW: Send Password Changed Confirmation
+    sendEmail(
+        user.email,
+        'Password Changed Successfully',
+        getSuccessTemplate(user.username)
+    );
+
+    res.status(200).json({ success: true, message: 'Password updated successfully! Please login.' });
   } catch (error) {
     next(error);
   }
