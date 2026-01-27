@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../supabase'; // Ensure this path is correct based on your file structure
+import { supabase } from '../supabase';
 import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaCloudUploadAlt, FaTrashAlt } from 'react-icons/fa';
@@ -9,7 +9,6 @@ export default function UpdateListing() {
   const navigate = useNavigate();
   const params = useParams();
   
-  // Form State
   const [formData, setFormData] = useState({
     imageUrls: [],
     name: '',
@@ -23,9 +22,9 @@ export default function UpdateListing() {
     offer: false,
     parking: false,
     furnished: false,
+    userRef: '', 
   });
   
-  // UI States
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [imageUploadError, setImageUploadError] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -33,24 +32,22 @@ export default function UpdateListing() {
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
 
-  // --- 1. FETCH EXISTING DATA (Crucial for Update Page) ---
+  // --- 1. FETCH DATA ---
   useEffect(() => {
     const fetchListing = async () => {
       try {
         const listingId = params.listingId;
         const res = await fetch(`/api/listing/get/${listingId}`);
         const data = await res.json();
-        
         if (data.success === false) {
           console.log(data.message);
           return;
         }
-        setFormData(data);
+        setFormData(data); 
       } catch (error) {
         console.log(error);
       }
     };
-
     fetchListing();
   }, [params.listingId]);
 
@@ -62,56 +59,43 @@ export default function UpdateListing() {
       const promises = [];
 
       for (let i = 0; i < files.length; i++) {
-        if (files[i].size > 20 * 1024 * 1024) { // 20MB Limit
-          setUploading(false);
-          setImageUploadError('File too large! Max 20MB per image.');
-          return;
-        }
         promises.push(storeImage(files[i]));
       }
 
       Promise.all(promises)
         .then((urls) => {
-          setFormData({
-            ...formData,
-            imageUrls: formData.imageUrls.concat(urls),
-          });
+          setFormData({ ...formData, imageUrls: formData.imageUrls.concat(urls) });
+          setImageUploadError(false);
           setUploading(false);
         })
         .catch((err) => {
-          console.log(err);
-          setImageUploadError('Image upload failed');
+          setImageUploadError('Image upload failed (2 MB max per image)');
           setUploading(false);
+          console.log(err);
         });
     } else {
-      setImageUploadError('Maximum 6 images allowed.');
+      setImageUploadError('You can only upload 6 images per listing');
       setUploading(false);
     }
   };
 
+  // ✅ FIX: Removed 'new Promise' wrapper. Async function automatically returns a Promise.
   const storeImage = async (file) => {
-    const fileName = new Date().getTime() + '_' + file.name;
-    const { error: uploadErr } = await supabase.storage
-      .from('images')
-      .upload(fileName, file, { cacheControl: '3600', upsert: false });
-
-    if (uploadErr) throw uploadErr;
-    
-    const { data: publicData } = supabase.storage
-      .from('images')
-      .getPublicUrl(fileName);
+      const fileName = new Date().getTime() + file.name;
       
-    return publicData.publicUrl;
-  };
+      // Upload to Supabase
+      const { error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(fileName, file);
 
-  // --- 3. PASTE URL HANDLER ---
-  const handleAddImageUrl = () => {
-    if (!imageUrlInput.trim()) return setImageUploadError('Please enter an image URL.');
-    if (formData.imageUrls.length >= 6) return setImageUploadError('Maximum 6 images allowed.');
-    
-    setFormData({ ...formData, imageUrls: [...formData.imageUrls, imageUrlInput] });
-    setImageUrlInput('');
-    setImageUploadError(false);
+      if (uploadError) throw uploadError;
+
+      // Get Public URL
+      const { data } = supabase.storage
+        .from('images')
+        .getPublicUrl(fileName);
+
+      return data.publicUrl;
   };
 
   const handleRemoveImage = (index) => {
@@ -121,7 +105,13 @@ export default function UpdateListing() {
     });
   };
 
-  // --- 4. FORM HANDLERS ---
+  const handleAddImageUrl = () => {
+    if (!imageUrlInput.trim()) return setImageUploadError('Please enter a valid URL');
+    setFormData({ ...formData, imageUrls: [...formData.imageUrls, imageUrlInput] });
+    setImageUrlInput('');
+  };
+
+  // --- 3. FORM HANDLERS ---
   const handleChange = (e) => {
     if (e.target.id === 'sale' || e.target.id === 'rent') {
       setFormData({ ...formData, type: e.target.id });
@@ -138,26 +128,18 @@ export default function UpdateListing() {
     e.preventDefault(); 
     if (!formData.name || !formData.address) { setError('Name and Address required for AI.'); return; }
     try { 
-        setAiLoading(true); 
-        setError(false);
+        setAiLoading(true); setError(false);
         const promptText = `Name: ${formData.name}, Address: ${formData.address}, Type: ${formData.type}, Beds: ${formData.bedrooms}.`;
         const res = await fetch('/api/listing/generate-ai', { 
-            method: 'POST', 
-            headers: { 'Content-Type': 'application/json' }, 
-            body: JSON.stringify({ prompt: promptText }) 
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: promptText }) 
         });
         const data = await res.json();
-        if (data.success === false) setError(data.message); 
-        else setFormData({ ...formData, description: data });
+        if (data.success === false) setError(data.message); else setFormData({ ...formData, description: data });
         setAiLoading(false);
-    } catch (err) { 
-        console.log(err); 
-        setError('AI Failed.'); 
-        setAiLoading(false); 
-    }
+    } catch (err) { console.log(err); setError('AI Failed.'); setAiLoading(false); }
   };
 
-  // --- 5. SUBMIT (UPDATE) LOGIC ---
+  // --- 4. SUBMIT LOGIC ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -167,11 +149,12 @@ export default function UpdateListing() {
       setLoading(true);
       setError(false);
 
-      // Using the UPDATE API endpoint
+      const finalUserRef = formData.userRef || currentUser._id;
+
       const res = await fetch(`/api/listing/update/${params.listingId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, userRef: currentUser._id }),
+        body: JSON.stringify({ ...formData, userRef: finalUserRef }),
       });
 
       const data = await res.json();
@@ -188,21 +171,17 @@ export default function UpdateListing() {
     }
   };
 
-  // --- STYLES (Matching CreateListing) ---
   const inputClass = "bg-slate-700 text-white rounded-lg p-3 w-full border border-slate-600 focus:outline-none focus:border-indigo-500 placeholder-slate-400";
   const labelClass = "text-slate-300 font-semibold mb-2 block";
 
   return (
     <div className='min-h-screen bg-slate-900 flex items-center justify-center p-4 py-10'>
-      {/* Centered Card */}
       <div className='max-w-4xl w-full bg-slate-800 rounded-lg shadow-2xl p-8 border border-slate-700'>
-        
-        <h1 className='text-3xl font-bold text-center text-white mb-8'>Update Listing</h1>
+        <h1 className='text-3xl font-bold text-center text-white mb-8'>Update Listing <span className='text-sm font-normal text-slate-500'>(Admin Mode)</span></h1>
         
         <form onSubmit={handleSubmit} className='flex flex-col sm:flex-row gap-6'>
-          
-          {/* LEFT COLUMN */}
-          <div className='flex flex-col gap-4 flex-1'>
+            
+             <div className='flex flex-col gap-4 flex-1'>
             
             <div>
                 <label className={labelClass}>Property Name</label>
@@ -314,7 +293,7 @@ export default function UpdateListing() {
               
               <p className='text-red-400 text-sm mt-2 text-center'>{imageUploadError && imageUploadError}</p>
               
-              {/* UPLOADED IMAGES LIST - With Fallback Error Handling */}
+              {/* UPLOADED IMAGES LIST */}
               {formData.imageUrls.length > 0 && (
                 <div className="flex flex-col gap-2 mt-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                   {formData.imageUrls.map((url, index) => (

@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // ✅ useEffect import kiya
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { signInStart, signInSuccess, signInFailure } from '../redux/user/userSlice';
-import { FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa'; // ✅ Spinner icon import kiya
+import { FaEye, FaEyeSlash, FaSpinner } from 'react-icons/fa'; 
 
 export default function SignIn() {
   const [formData, setFormData] = useState({});
@@ -11,10 +11,15 @@ export default function SignIn() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  // ✅ FIX: Page load hote hi purana error saaf kar denge
+  useEffect(() => {
+    dispatch(signInFailure(null)); // Error reset
+  }, [dispatch]);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.id]: e.target.value.trim(), // ✅ Input trim bhi kar diya safety ke liye
+      [e.target.id]: e.target.value.trim(), 
     });
   };
 
@@ -80,14 +85,13 @@ export default function SignIn() {
             </div>
           </div>
           
-          {/* 👇 IMPROVED BUTTON WITH LOADER 👇 */}
           <button 
             disabled={loading} 
             className='bg-slate-600 text-white p-2.5 rounded-lg uppercase hover:bg-slate-500 disabled:opacity-80 transition-colors font-semibold shadow-md mt-2 text-sm sm:text-base flex justify-center items-center gap-2'
           >
             {loading ? (
               <>
-                <FaSpinner className='animate-spin text-lg' /> {/* 🔥 Spinner Icon */}
+                <FaSpinner className='animate-spin text-lg' /> 
                 <span>Loading...</span>
               </>
             ) : (

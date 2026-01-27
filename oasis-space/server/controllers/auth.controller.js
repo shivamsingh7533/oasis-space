@@ -4,70 +4,23 @@ import jwt from 'jsonwebtoken';
 import { errorHandler } from '../utils/error.js';
 import nodemailer from 'nodemailer'; 
 
-// 🔥 HTML EMAIL TEMPLATES (DESIGN)
-const getWelcomeTemplate = (username) => `
-<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f4; padding: 20px; border-radius: 10px;">
-  <div style="background-color: #10b981; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
-    <h1 style="color: white; margin: 0;">Welcome to OasisSpace! 🌴</h1>
-  </div>
-  <div style="background-color: white; padding: 30px; border-radius: 0 0 10px 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-    <h2 style="color: #333;">Hello ${username},</h2>
-    <p style="color: #666; font-size: 16px; line-height: 1.6;">
-      We are thrilled to have you on board! Your account has been successfully verified.
-    </p>
-    <p style="color: #666; font-size: 16px; line-height: 1.6;">
-      Start exploring the best properties or list your own space today. We are here to help you find your perfect oasis.
-    </p>
-    <div style="text-align: center; margin-top: 30px;">
-      <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Go to Dashboard</a>
-    </div>
-    <p style="margin-top: 30px; font-size: 12px; color: #999; text-align: center;">
-      If you did not create this account, please ignore this email.
-    </p>
-  </div>
-</div>
-`;
+// 🔥 EMAIL SENDER CONFIGURATION
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER, // Company Email
+    pass: process.env.EMAIL_PASS, 
+  },
+});
 
-const getOtpTemplate = (otp) => `
-<div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden;">
-  <div style="background-color: #334155; padding: 20px; text-align: center;">
-    <h2 style="color: #ffffff; margin: 0;">Password Reset Request</h2>
-  </div>
-  <div style="padding: 30px; background-color: #ffffff; text-align: center;">
-    <p style="color: #555; font-size: 16px;">Use the code below to reset your password. This code expires in 15 minutes.</p>
-    <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
-      <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e293b;">${otp}</span>
-    </div>
-    <p style="color: #999; font-size: 14px;">Do not share this code with anyone.</p>
-  </div>
-</div>
-`;
-
-const getSuccessTemplate = (username) => `
-<div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #d1fae5; background-color: #ecfdf5; border-radius: 8px;">
-  <h2 style="color: #047857; text-align: center;">Password Changed Successfully</h2>
-  <p style="color: #065f46; text-align: center;">Hello ${username}, your password has been updated. You can now login with your new credentials.</p>
-</div>
-`;
-
-// 🔥 Helper Function: Updated for HTML Support
 const sendEmail = async (to, subject, htmlContent) => {
   try {
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS, 
-      },
-    });
-
     const mailOptions = {
       from: `"OasisSpace Security" <${process.env.EMAIL_USER}>`,
       to,
       subject,
-      html: htmlContent, // Changed from text to html
+      html: htmlContent, 
     };
-
     await transporter.sendMail(mailOptions);
     console.log(`✅ Email sent to ${to}`);
   } catch (error) {
@@ -75,7 +28,99 @@ const sendEmail = async (to, subject, htmlContent) => {
   }
 };
 
-// ✅ 1. SIGN UP (Sends OTP)
+// 💎 ADMIN NOTIFICATION CARD (Styled HTML)
+const notifyAdmin = async (user, method) => {
+    const adminEmail = process.env.EMAIL_USER; // Admin receives notification
+    const profilePic = user.avatar || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
+    
+    const htmlCard = `
+    <div style="background-color: #f3f4f6; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+      <div style="max-width: 450px; margin: 0 auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+        
+        <div style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); padding: 20px; text-align: center;">
+          <h2 style="color: white; margin: 0; font-size: 20px;">🚀 New User Registered</h2>
+          <span style="background: rgba(255,255,255,0.2); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; margin-top: 8px; display: inline-block;">${method}</span>
+        </div>
+
+        <div style="text-align: center; margin-top: -35px;">
+           <img src="${profilePic}" alt="Profile" style="width: 80px; height: 80px; border-radius: 50%; border: 4px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); object-fit: cover;">
+        </div>
+
+        <div style="padding: 24px;">
+           <h3 style="text-align: center; color: #1f2937; margin: 0 0 5px 0;">${user.username}</h3>
+           <p style="text-align: center; color: #6b7280; font-size: 14px; margin: 0 0 20px 0;">${user.email}</p>
+
+           <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+             <tr style="border-bottom: 1px solid #e5e7eb;">
+               <td style="padding: 12px 0; color: #6b7280; font-size: 14px;">Mobile</td>
+               <td style="padding: 12px 0; color: #111827; font-weight: 600; text-align: right;">${user.mobile || 'N/A'}</td>
+             </tr>
+             <tr style="border-bottom: 1px solid #e5e7eb;">
+               <td style="padding: 12px 0; color: #6b7280; font-size: 14px;">Role</td>
+               <td style="padding: 12px 0; color: #111827; font-weight: 600; text-align: right; text-transform: capitalize;">${user.role || 'User'}</td>
+             </tr>
+             <tr style="border-bottom: 1px solid #e5e7eb;">
+               <td style="padding: 12px 0; color: #6b7280; font-size: 14px;">Status</td>
+               <td style="padding: 12px 0; color: #10b981; font-weight: 600; text-align: right;">Active</td>
+             </tr>
+              <tr>
+               <td style="padding: 12px 0; color: #6b7280; font-size: 14px;">Date</td>
+               <td style="padding: 12px 0; color: #111827; font-weight: 600; text-align: right;">${new Date().toLocaleDateString()}</td>
+             </tr>
+           </table>
+
+           <div style="text-align: center; margin-top: 25px;">
+             <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}/dashboard" style="background-color: #4f46e5; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: block; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);">Open Admin Dashboard</a>
+           </div>
+        </div>
+
+      </div>
+      <p style="text-align: center; color: #9ca3af; font-size: 12px; margin-top: 20px;">OasisSpace Automated System</p>
+    </div>
+    `;
+
+    await sendEmail(adminEmail, `🔔 New Signup: ${user.username}`, htmlCard);
+};
+
+// 🎨 USER EMAIL TEMPLATES
+const getWelcomeTemplate = (username) => `
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f4f4f4; padding: 20px; border-radius: 10px;">
+  <div style="background-color: #10b981; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0;">Welcome to OasisSpace! 🌴</h1>
+  </div>
+  <div style="background-color: white; padding: 30px; border-radius: 0 0 10px 10px;">
+    <h2 style="color: #333;">Hello ${username},</h2>
+    <p style="color: #666;">We are thrilled to have you on board! Your account is ready.</p>
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Go to Dashboard</a>
+    </div>
+  </div>
+</div>
+`;
+
+const getOtpTemplate = (otp) => `
+<div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 8px;">
+  <div style="background-color: #334155; padding: 20px; text-align: center;">
+    <h2 style="color: #ffffff; margin: 0;">Verification Code</h2>
+  </div>
+  <div style="padding: 30px; background-color: #ffffff; text-align: center;">
+    <div style="background-color: #f3f4f6; padding: 15px; border-radius: 5px; margin: 20px 0;">
+      <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e293b;">${otp}</span>
+    </div>
+    <p style="color: #999; font-size: 14px;">Valid for 10 minutes.</p>
+  </div>
+</div>
+`;
+
+const getSuccessTemplate = (username) => `
+<div style="padding: 20px; border: 1px solid #d1fae5; background-color: #ecfdf5; border-radius: 8px;">
+  <h2 style="color: #047857; text-align: center;">Password Updated</h2>
+  <p style="text-align: center;">Hello ${username}, you can now login with your new password.</p>
+</div>
+`;
+
+
+// ✅ 1. SIGN UP (Sends OTP + Notifies Admin)
 export const signup = async (req, res, next) => {
   const { username, email, password, mobile } = req.body;
 
@@ -95,12 +140,8 @@ export const signup = async (req, res, next) => {
 
   try {
     const hashedPassword = bcryptjs.hashSync(cleanPassword, 10);
-    
-    // 🔥 Generate 6-digit OTP
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = Date.now() + 10 * 60 * 1000; // 10 Minutes expiry
-
-    console.log(`🔒 GENERATED OTP for ${cleanEmail}: ${otp}`);
+    const otpExpires = Date.now() + 10 * 60 * 1000; 
 
     const newUser = new User({ 
       username: cleanUsername, 
@@ -114,12 +155,15 @@ export const signup = async (req, res, next) => {
     
     await newUser.save();
 
-    // 🔥 Send Signup OTP (Simple HTML)
+    // 📧 User OTP
     await sendEmail(
       cleanEmail,
       'Verify your Account - OasisSpace',
-      `<h3>Your Verification OTP is: <span style="color:blue">${otp}</span></h3><p>It is valid for 10 minutes.</p>`
+      getOtpTemplate(otp)
     );
+
+    // 🔔 ADMIN NOTIFICATION
+    await notifyAdmin(newUser, 'Manual Signup');
 
     res.status(201).json({ success: true, message: "User created! Please verify your OTP sent to email." });
 
@@ -133,7 +177,7 @@ export const signup = async (req, res, next) => {
   }
 };
 
-// ✅ 1.5 VERIFY EMAIL (UPDATED: Sends Welcome Email)
+// ✅ 1.5 VERIFY EMAIL
 export const verifyEmail = async (req, res, next) => {
   const { email, otp } = req.body;
 
@@ -142,33 +186,19 @@ export const verifyEmail = async (req, res, next) => {
     const user = await User.findOne({ email: cleanEmail });
     
     if (!user) return next(errorHandler(404, 'User not found'));
-
-    if (user.isVerified) {
-      return res.status(200).json({ message: 'User is already verified' });
-    }
-
-    if (user.otp.toString() !== otp.toString()) {
-      return next(errorHandler(400, 'Invalid OTP'));
-    }
-
-    if (user.otpExpires < Date.now()) {
-      return next(errorHandler(400, 'OTP has expired. Please request a new one.'));
-    }
+    if (user.isVerified) return res.status(200).json({ message: 'User is already verified' });
+    if (user.otp.toString() !== otp.toString()) return next(errorHandler(400, 'Invalid OTP'));
+    if (user.otpExpires < Date.now()) return next(errorHandler(400, 'OTP has expired.'));
 
     user.isVerified = true;
     user.otp = null;
     user.otpExpires = null;
     await user.save();
 
-    // 🚀 NEW: Send Welcome Email after successful verification
-    sendEmail(
-      user.email,
-      'Welcome to OasisSpace! 🌴',
-      getWelcomeTemplate(user.username)
-    );
+    // 🚀 Welcome Email sent AFTER verification (Manual Signup)
+    await sendEmail(user.email, 'Welcome to OasisSpace! 🌴', getWelcomeTemplate(user.username));
 
     res.status(200).json({ success: true, message: 'Email verified successfully! You can now login.' });
-
   } catch (error) {
     next(error);
   }
@@ -189,19 +219,11 @@ export const signin = async (req, res, next) => {
     const validPassword = bcryptjs.compareSync(password, validUser.password);
     if (!validPassword) return next(errorHandler(401, 'Wrong credentials!'));
 
-    if (validUser.isVerified === false) {
-       return next(errorHandler(401, 'Please verify your email first!'));
-    }
-
     const token = jwt.sign({ id: validUser._id }, process.env.JWT_SECRET);
     const { password: pass, ...rest } = validUser._doc;
 
-    // Login Alert
-    sendEmail(
-      validUser.email,
-      'New Login Detected - OasisSpace',
-      `<p>Hello ${validUser.username}, a new login was detected on your account.</p>`
-    );
+    // Login Alert to User
+    sendEmail(validUser.email, 'New Login Detected', `<p>Hello ${validUser.username}, new login detected.</p>`);
 
     res
       .cookie('access_token', token, { 
@@ -218,29 +240,22 @@ export const signin = async (req, res, next) => {
   }
 };
 
-// ✅ 3. GOOGLE AUTH (UPDATED: Sends Welcome Email to New Users)
+// ✅ 3. GOOGLE AUTH (Updated Logic for Welcome Email)
 export const google = async (req, res, next) => {
   try {
     const user = await User.findOne({ email: req.body.email });
     
-    const sendResponse = (userData, statusCode, isNewUser = false) => {
+    const sendResponse = async (userData, statusCode, isNewUser = false) => {
       const token = jwt.sign({ id: userData._id }, process.env.JWT_SECRET);
       const { password: pass, ...rest } = userData._doc;
 
       if (isNewUser) {
-        // 🚀 NEW: Send Welcome Email for Google Signups
-        sendEmail(
-            userData.email,
-            'Welcome to OasisSpace! 🌴',
-            getWelcomeTemplate(userData.username)
-        );
+        // 🚀 Welcome Email for Google Users (Immediate)
+        await sendEmail(userData.email, 'Welcome to OasisSpace! 🌴', getWelcomeTemplate(userData.username));
+        // 🔔 Admin Notification
+        await notifyAdmin(userData, 'Google OAuth');
       } else {
-        // Login Alert for existing users
-        sendEmail(
-            userData.email,
-            'New Google Login - OasisSpace',
-            `<p>Hello ${userData.username}, logged in via Google.</p>`
-        );
+        await sendEmail(userData.email, 'New Google Login', `<p>Hello ${userData.username}, logged in via Google.</p>`);
       }
       
       res
@@ -255,7 +270,7 @@ export const google = async (req, res, next) => {
     };
 
     if (user) {
-      sendResponse(user, 200, false); // Existing user
+      await sendResponse(user, 200, false); 
     } else {
       const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
       const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
@@ -268,7 +283,7 @@ export const google = async (req, res, next) => {
         isVerified: true 
       });
       await newUser.save();
-      sendResponse(newUser, 200, true); // New user
+      await sendResponse(newUser, 200, true); // true = isNewUser
     }
   } catch (error) {
     next(error);
@@ -285,54 +300,38 @@ export const signout = async (req, res, next) => {
   }
 };
 
-// --- 5. FORGOT PASSWORD (UPDATED: Sends OTP instead of Link) ---
+// --- 5. FORGOT PASSWORD ---
 export const forgotPassword = async (req, res, next) => {
   const { email } = req.body;
   try {
     const user = await User.findOne({ email });
     if (!user) return next(errorHandler(404, 'User not found!'));
 
-    // 🚀 Generate OTP instead of Token
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = Date.now() + 15 * 60 * 1000; // 15 mins
+    const otpExpires = Date.now() + 15 * 60 * 1000; 
 
     user.otp = otp;
     user.otpExpires = otpExpires;
     await user.save();
 
-    // 🔥 Send OTP Email
-    await sendEmail(
-      user.email,
-      'Reset Password OTP - OasisSpace',
-      getOtpTemplate(otp)
-    );
+    await sendEmail(user.email, 'Reset Password OTP', getOtpTemplate(otp));
 
     res.status(200).json({ success: true, message: 'OTP sent to your email!' });
-
   } catch (error) {
     next(error);
   }
 };
 
-// --- 6. RESET PASSWORD (UPDATED: Verifies OTP) ---
+// --- 6. RESET PASSWORD ---
 export const resetPassword = async (req, res, next) => {
-  // 🛑 Note: Frontend must now send { email, otp, password } in body
-  // instead of using params for token
   const { email, otp, password } = req.body;
 
   try {
     const user = await User.findOne({ email });
     if (!user) return next(errorHandler(404, 'User not found'));
+    if (!user.otp || user.otp.toString() !== otp.toString()) return next(errorHandler(400, 'Invalid OTP'));
+    if (user.otpExpires < Date.now()) return next(errorHandler(400, 'OTP Expired'));
 
-    if (!user.otp || user.otp.toString() !== otp.toString()) {
-        return next(errorHandler(400, 'Invalid OTP'));
-    }
-
-    if (user.otpExpires < Date.now()) {
-        return next(errorHandler(400, 'OTP Expired'));
-    }
-
-    // Hash New Password
     const hashedPassword = bcryptjs.hashSync(password, 10);
     
     user.password = hashedPassword;
@@ -340,12 +339,7 @@ export const resetPassword = async (req, res, next) => {
     user.otpExpires = null;
     await user.save();
 
-    // 🚀 NEW: Send Password Changed Confirmation
-    sendEmail(
-        user.email,
-        'Password Changed Successfully',
-        getSuccessTemplate(user.username)
-    );
+    sendEmail(user.email, 'Password Changed Successfully', getSuccessTemplate(user.username));
 
     res.status(200).json({ success: true, message: 'Password updated successfully! Please login.' });
   } catch (error) {
