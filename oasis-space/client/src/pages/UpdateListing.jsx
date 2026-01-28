@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../supabase';
+import { supabase } from '../supabase'; 
 import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaCloudUploadAlt, FaTrashAlt } from 'react-icons/fa';
@@ -79,18 +79,15 @@ export default function UpdateListing() {
     }
   };
 
-  // ✅ FIX: Removed 'new Promise' wrapper. Async function automatically returns a Promise.
   const storeImage = async (file) => {
       const fileName = new Date().getTime() + file.name;
       
-      // Upload to Supabase
       const { error: uploadError } = await supabase.storage
         .from('images')
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
-      // Get Public URL
       const { data } = supabase.storage
         .from('images')
         .getPublicUrl(fileName);

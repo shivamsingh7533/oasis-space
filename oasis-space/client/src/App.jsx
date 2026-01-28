@@ -19,55 +19,46 @@ import Footer from './components/Footer';
 import Dashboard from './pages/Dashboard';
 import AdminRoute from './components/AdminRoute';
 
-// --- 👇 NEW IMPORTS FOR PASSWORD RESET 👇 ---
+// --- NEW IMPORTS FOR SELLER DASHBOARD ---
+import SellerDashboard from './pages/SellerDashboard'; // ✅ Added for Seller Panel
+
+// --- 👇 PASSWORD RESET IMPORTS 👇 ---
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
-// --- ✅ NEW IMPORT FOR OTP VERIFICATION ---
+// --- ✅ OTP VERIFICATION IMPORT ---
 import VerifyEmail from './pages/VerifyEmail';
 
 export default function App() {
-  // State to track if we are loading
   const [loading, setLoading] = useState(true);
 
-  // Use Effect to wait for 3 seconds, then stop loading
   useEffect(() => {
     const timer = setTimeout(() => {
       setLoading(false);
-    }, 3000); // 3000 milliseconds = 3 seconds
+    }, 3000); 
 
     return () => clearTimeout(timer);
   }, []);
 
-  // If loading is true, ONLY show the Preloader
   if (loading) {
     return <Preloader />;
   }
 
-  // Otherwise, show the full app
   return (
     <BrowserRouter>
-      {/* 1. LAYOUT WRAPPER: Ensures footer stays at bottom */}
       <div className="flex flex-col min-h-screen">
-        
         <Header />
         
-        {/* 2. MAIN CONTENT: flex-grow pushes the footer down */}
         <main className="flex-grow">
           <Routes>
             {/* Public Routes */}
             <Route path='/' element={<Home />} />
             <Route path='/sign-in' element={<SignIn />} />
             <Route path='/sign-up' element={<SignUp />} />
-            
-            {/* ✅ NEW ROUTE: Verify Email Page */}
             <Route path='/verify-email' element={<VerifyEmail />} />
-
             <Route path='/about' element={<About />} />
             <Route path='/search' element={<Search />} />
             <Route path='/listing/:listingId' element={<Listing />} />
-
-            {/* 👇 PASSWORD RESET ROUTES 👇 */}
             <Route path='/forgot-password' element={<ForgotPassword />} />
             <Route path='/reset-password/:id/:token' element={<ResetPassword />} />
 
@@ -76,19 +67,20 @@ export default function App() {
               <Route path='/dashboard' element={<Dashboard />} />
             </Route>
 
-            {/* User Private Routes */}
+            {/* --- USER & SELLER PRIVATE ROUTES --- */}
             <Route element={<PrivateRoute />}>
               <Route path='/saved-listings' element={<SavedListings />} />
               <Route path='/profile' element={<Profile />} />
               <Route path='/create-listing' element={<CreateListing />} />
               <Route path='/update-listing/:listingId' element={<UpdateListing />} />
+              
+              {/* 🔥 NEW ROUTE: Real-time Seller Dashboard 🔥 */}
+              <Route path='/seller-dashboard' element={<SellerDashboard />} />
             </Route>
           </Routes>
         </main>
 
-        {/* 3. FOOTER COMPONENT */}
         <Footer />
-        
       </div>
     </BrowserRouter>
   );

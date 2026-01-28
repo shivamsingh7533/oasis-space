@@ -46,7 +46,6 @@ const listingSchema = new mongoose.Schema(
       type: Boolean,
       required: true,
     },
-    // --- FEATURED FIELD (For Home Page Slider) ---
     featured: {
       type: Boolean,
       default: false, 
@@ -59,11 +58,19 @@ const listingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    
+    // 👇✅ NEW: STATUS FIELD FOR ANALYTICS 👇
+    // Isse hum track karenge ki property available hai, sold hai, ya rented hai
+    status: {
+        type: String,
+        enum: ['available', 'sold', 'rented'],
+        default: 'available',
+    },
   },
   { timestamps: true }
 );
 
-// 👇👇👇 CRASH FIX YAHAN HAI 👇👇👇
+// 👇👇👇 CRASH FIX MAINTAINED 👇👇👇
 const Listing = mongoose.models.Listing || mongoose.model('Listing', listingSchema);
 
 export default Listing;

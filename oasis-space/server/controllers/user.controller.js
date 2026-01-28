@@ -3,13 +3,15 @@ import User from '../models/user.model.js';
 import Listing from '../models/listing.model.js';
 import { errorHandler } from '../utils/error.js';
 import nodemailer from 'nodemailer'; 
-import jwt from 'jsonwebtoken'; // ✅ Added for Magic Links
+import jwt from 'jsonwebtoken'; 
 
-// 🔥 EMAIL HELPER FUNCTION
+// EMAIL HELPER FUNCTION
 const sendEmail = async (to, subject, htmlContent) => {
   try {
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com', 
+      port: 465,
+      secure: true,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS, 
@@ -30,12 +32,12 @@ const sendEmail = async (to, subject, htmlContent) => {
   }
 };
 
-// --- TEST ROUTE ---
+// TEST ROUTE
 export const test = (req, res) => {
   res.json({ message: 'Api route is working!' });
 };
 
-// --- UPDATE USER ---
+// UPDATE USER
 export const updateUser = async (req, res, next) => {
   if (req.user.id !== req.params.id)
     return next(errorHandler(401, 'You can only update your own account!'));
@@ -63,7 +65,7 @@ export const updateUser = async (req, res, next) => {
   }
 };
 
-// --- DELETE USER ---
+// DELETE USER
 export const deleteUser = async (req, res, next) => {
   try {
     const requestingUser = await User.findById(req.user.id);
@@ -84,7 +86,7 @@ export const deleteUser = async (req, res, next) => {
   }
 };
 
-// --- GET USER LISTINGS ---
+// GET USER LISTINGS
 export const getUserListings = async (req, res, next) => {
   if (req.user.id === req.params.id) {
     try {
@@ -98,7 +100,7 @@ export const getUserListings = async (req, res, next) => {
   }
 };
 
-// --- GET PUBLIC USER INFO ---
+// GET PUBLIC USER INFO
 export const getUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
@@ -110,7 +112,7 @@ export const getUser = async (req, res, next) => {
   }
 };
 
-// --- WISHLIST ---
+// WISHLIST LOGIC
 export const saveListing = async (req, res, next) => {
   try {
     const listingId = req.params.id; 
@@ -133,7 +135,7 @@ export const saveListing = async (req, res, next) => {
   }
 };
 
-// --- GET SAVED LISTINGS ---
+// GET SAVED LISTINGS
 export const getSavedListings = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
@@ -147,7 +149,7 @@ export const getSavedListings = async (req, res, next) => {
   }
 };
 
-// 👇👇👇 CRASH PROOF: GET ALL USERS 👇👇👇
+// ADMIN: GET ALL USERS
 export const getUsers = async (req, res, next) => {
   try {
     if (!req.user || !req.user.id) {
@@ -169,9 +171,9 @@ export const getUsers = async (req, res, next) => {
   }
 };
 
-// --- SELLER FEATURES (WITH MAGIC LINKS 🪄) ---
+// SELLER FEATURES (WITH MAGIC LINKS)
 
-// 1. Request Seller -> Notifies Admin with Magic Buttons
+// Request Seller Status
 export const requestSeller = async (req, res, next) => {
     try {
       const user = await User.findById(req.user.id);
@@ -181,14 +183,12 @@ export const requestSeller = async (req, res, next) => {
       user.sellerStatus = 'pending';
       await user.save();
 
-      // 🪄 GENERATE MAGIC TOKENS
       const approveToken = jwt.sign({ id: user._id, action: 'approved' }, process.env.JWT_SECRET, { expiresIn: '7d' });
       const rejectToken = jwt.sign({ id: user._id, action: 'rejected' }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-      // Determine Server URL (Localhost or Production)
-      const serverUrl = 'http://localhost:3000'; // ⚠️ IMPORTANT: Change this to your backend URL in production
+      // ✅ DYNAMIC SERVER URL for Email Links (Production Ready)
+      const serverUrl = process.env.SERVER_URL || 'http://localhost:3000'; 
 
-      // 🔔 EMAIL TO ADMIN
       const adminEmail = process.env.EMAIL_USER;
       await sendEmail(
         adminEmail,
@@ -224,16 +224,13 @@ export const requestSeller = async (req, res, next) => {
     }
 };
 
-// 2. 🔥 NEW: Respond via Email Link (Magic Link Handler)
+// Respond via Email Link
 export const respondSellerViaEmail = async (req, res, next) => {
     try {
         const { token } = req.params;
-        
-        // Verify Token
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const { id, action } = decoded;
 
-        // Update User
         const user = await User.findByIdAndUpdate(
             id,
             { $set: { sellerStatus: action } },
@@ -242,7 +239,6 @@ export const respondSellerViaEmail = async (req, res, next) => {
 
         if (!user) return res.send("<h1>User not found or deleted.</h1>");
 
-        // 🔔 Notify User about the decision
         const color = action === 'approved' ? '#10b981' : '#ef4444';
         await sendEmail(
             user.email,
@@ -253,7 +249,6 @@ export const respondSellerViaEmail = async (req, res, next) => {
              </div>`
         );
 
-        // Return Beautiful HTML Success Page to Admin
         res.send(`
             <div style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f3f4f6;">
                 <div style="background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;">
@@ -269,20 +264,19 @@ export const respondSellerViaEmail = async (req, res, next) => {
     }
 };
   
-// 3. Verify Seller (Dashboard Button Logic - Keeps Working)
+// Verify Seller via Admin Dashboard
 export const verifySeller = async (req, res, next) => {
     try {
         const adminUser = await User.findById(req.user.id);
         if (!adminUser || adminUser.role !== 'admin') return next(errorHandler(403, 'Admins Only!'));
 
-        const { status } = req.body; // 'approved' or 'rejected'
+        const { status } = req.body;
         const updatedUser = await User.findByIdAndUpdate(
             req.params.id,
             { $set: { sellerStatus: status } },
             { new: true }
         );
 
-        // 🔔 NOTIFY USER STATUS
         const color = status === 'approved' ? '#10b981' : '#ef4444';
         await sendEmail(
             updatedUser.email,
@@ -299,5 +293,67 @@ export const verifySeller = async (req, res, next) => {
         res.status(200).json(rest);
     } catch (error) {
         next(error);
+    }
+};
+
+// 🔥 PRODUCTION LEVEL SELLER DASHBOARD (ANALYTICS & FINANCE) 📊
+export const getSellerDashboard = async (req, res, next) => {
+    if (req.user.id === req.params.id) {
+        try {
+            // 1. Fetch all listings by this seller
+            const listings = await Listing.find({ userRef: req.params.id }).sort({ createdAt: -1 });
+
+            // 2. Basic Stats
+            const totalListings = listings.length;
+            const rentListings = listings.filter(l => l.type === 'rent').length;
+            const saleListings = listings.filter(l => l.type === 'sale').length;
+            const offerListings = listings.filter(l => l.offer).length;
+            
+            // 3. 💰 FINANCE & STATUS CALCULATION
+            let totalRevenue = 0;
+            let soldCount = 0;
+            let rentedCount = 0;
+            let availableCount = 0;
+
+            listings.forEach((listing) => {
+                if (listing.status === 'sold') {
+                    soldCount++;
+                    // Revenue is the price it was sold at (discountPrice if exists, else regularPrice)
+                    totalRevenue += (listing.discountPrice || listing.regularPrice);
+                } else if (listing.status === 'rented') {
+                    rentedCount++;
+                    // For rent, we assume the price listed is the revenue
+                    totalRevenue += (listing.discountPrice || listing.regularPrice);
+                } else {
+                    if (!listing.status || listing.status === 'available') {
+                        availableCount++;
+                    }
+                }
+            });
+
+            // 4. Mock Views (Can be upgraded later)
+            const totalViews = listings.reduce((acc, curr) => acc + (curr.views || Math.floor(Math.random() * 50) + 5), 0); 
+
+            res.status(200).json({
+                success: true,
+                stats: {
+                    totalListings,
+                    rentListings,
+                    saleListings,
+                    offerListings,
+                    totalViews,
+                    // Finance Data
+                    soldCount,
+                    rentedCount,
+                    availableCount,
+                    totalRevenue
+                },
+                listings // Full listings list for the table
+            });
+        } catch (error) {
+            next(error);
+        }
+    } else {
+        return next(errorHandler(401, 'You can only view your own dashboard!'));
     }
 };

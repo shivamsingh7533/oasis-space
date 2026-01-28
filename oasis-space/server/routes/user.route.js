@@ -10,7 +10,8 @@ import {
   getUsers,        
   requestSeller,   
   verifySeller,
-  respondSellerViaEmail // ✅ NEW: Controller import kiya
+  respondSellerViaEmail,
+  getSellerDashboard
 } from '../controllers/user.controller.js';
 import { verifyToken } from '../utils/verifyUser.js';
 
@@ -23,23 +24,28 @@ router.get('/test', test);
 router.post('/update/:id', verifyToken, updateUser);
 router.delete('/delete/:id', verifyToken, deleteUser);
 
-// 3. User Specific Routes (Listings & Wishlist)
+// 3. User Specific Routes
 router.get('/listings/:id', verifyToken, getUserListings);
+
+// ✅ FIX: /saved route MUST come BEFORE /:id dynamic route
 router.get('/saved', verifyToken, getSavedListings); 
+
 router.post('/save/:id', verifyToken, saveListing);
 
-// 4. ADMIN DASHBOARD ROUTE (Users List)
+// 🔥 Seller Dashboard Route
+router.get('/dashboard/:id', verifyToken, getSellerDashboard);
+
+// 4. ADMIN DASHBOARD ROUTE
 router.get('/getusers', verifyToken, getUsers);
 
 // 5. SELLER VERIFICATION ROUTES
-router.post('/request-seller/:id', verifyToken, requestSeller); // User request karega
-router.post('/verify-seller/:id', verifyToken, verifySeller);   // Admin dashboard se approve karega
+router.post('/request-seller/:id', verifyToken, requestSeller); 
+router.post('/verify-seller/:id', verifyToken, verifySeller);   
 
-// 🔥 NEW: Magic Link Route (Email se Approve/Reject) 🪄
-// Note: Yahan verifyToken mat lagana kyunki ye Gmail se direct click hoga
+// 6. Magic Link Route
 router.get('/respond-seller/:token', respondSellerViaEmail);
 
-// 6. Public/Dynamic Route (Sabse last mein rakhein)
+// 7. Public/Dynamic Route (Keep this at the VERY END)
 router.get('/:id', verifyToken, getUser);
 
 export default router;

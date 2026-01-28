@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { FaMoneyBillWave, FaChartLine, FaUsers, FaHome, FaTrash, FaEdit, FaUserShield, FaUserTag, FaUser } from 'react-icons/fa';
+import { FaMoneyBillWave, FaChartLine, FaUsers, FaHome, FaTrash, FaEdit, FaUserShield, FaUserTag, FaUser, FaStar, FaRegStar } from 'react-icons/fa'; // Added FaStar and FaRegStar
 
 export default function Dashboard() {
   const { currentUser } = useSelector((state) => state.user);
@@ -46,6 +46,31 @@ export default function Dashboard() {
                 setListings((prev) => prev.filter((item) => item._id !== listingId));
             }
         } catch (error) { console.log(error); }
+    }
+  };
+
+  // --- ⭐ HANDLE FEATURED TOGGLE (NEW) ---
+  const handleFeaturedToggle = async (listingId, currentStatus) => {
+    try {
+        const res = await fetch(`/api/listing/update/${listingId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                featured: !currentStatus,
+                userRef: currentUser._id 
+            }),
+        });
+        const data = await res.json();
+        if (data.success === false) {
+            console.log(data.message);
+            return;
+        }
+        // Update UI locally
+        setListings((prev) => prev.map((item) => 
+            item._id === listingId ? { ...item, featured: !currentStatus } : item
+        ));
+    } catch (error) {
+        console.log(error);
     }
   };
 
@@ -155,6 +180,7 @@ export default function Dashboard() {
                     <table className='w-full text-left text-sm text-gray-400'>
                         <thead className='bg-slate-900 uppercase text-xs'>
                             <tr>
+                                <th className='p-4 text-center'>Featured</th> {/* New Column Header */}
                                 <th className='p-4'>Property</th>
                                 <th className='p-4'>Type</th>
                                 <th className='p-4'>Price</th>
@@ -164,6 +190,16 @@ export default function Dashboard() {
                         <tbody className='divide-y divide-slate-700'>
                             {listings.map((listing) => (
                                 <tr key={listing._id} className='hover:bg-slate-700/50'>
+                                    {/* ⭐ Featured Toggle Button */}
+                                    <td className='p-4 text-center'>
+                                        <button 
+                                            onClick={() => handleFeaturedToggle(listing._id, listing.featured)}
+                                            className={`text-xl transition-transform hover:scale-110 ${listing.featured ? 'text-yellow-400' : 'text-slate-600 hover:text-yellow-200'}`}
+                                            title='Toggle Featured'
+                                        >
+                                            {listing.featured ? <FaStar /> : <FaRegStar />}
+                                        </button>
+                                    </td>
                                     <td className='p-4 flex gap-3 items-center'>
                                         <img src={listing.imageUrls[0]} className='w-12 h-12 rounded object-cover' alt=""/>
                                         <div><p className='text-white font-bold truncate w-40'>{listing.name}</p><p className='text-xs'>{listing.address}</p></div>

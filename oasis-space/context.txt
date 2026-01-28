@@ -37,6 +37,7 @@ oasis-space
 │   │   │   ├── ResetPassword.jsx
 │   │   │   ├── SavedListings.jsx
 │   │   │   ├── Search.jsx
+│   │   │   ├── SellerDashboard.jsx
 │   │   │   ├── SignIn.jsx
 │   │   │   ├── SignUp.jsx
 │   │   │   ├── UpdateListing.jsx

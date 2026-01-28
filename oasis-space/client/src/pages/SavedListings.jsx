@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux'; // Added useDispatch
+import { useSelector, useDispatch } from 'react-redux'; 
 import { Link } from 'react-router-dom';
 import { FaTrashAlt, FaMapMarkerAlt, FaBed, FaBath } from 'react-icons/fa';
-import { updateUserSuccess } from '../redux/user/userSlice'; // Action to sync Redux
+import { updateUserSuccess } from '../redux/user/userSlice'; 
 
 export default function SavedListings() {
   const { currentUser } = useSelector((state) => state.user);
@@ -17,9 +17,8 @@ export default function SavedListings() {
         setLoading(true);
         setError(false);
         
-        if (!currentUser?._id) return;
-
-        const res = await fetch(`/api/user/saved/${currentUser._id}`);
+        // ✅ FIX: URL se ID hata di hai. Backend cookie se ID lega.
+        const res = await fetch(`/api/user/saved`);
         const data = await res.json();
         
         if (data.success === false) {
@@ -38,9 +37,9 @@ export default function SavedListings() {
     };
 
     fetchSavedListings();
-  }, [currentUser?._id]);
+  }, []); // Dependency array se currentUser._id hata diya kyunki URL static hai
 
-  // --- UPDATED REMOVE HANDLER (With Redux Sync) ---
+  // --- REMOVE HANDLER (With Redux Sync) ---
   const handleRemoveListing = async (listingId) => {
     try {
       const res = await fetch(`/api/user/save/${listingId}`, {
@@ -57,7 +56,6 @@ export default function SavedListings() {
       }
 
       // 1. SYNC REDUX: Remove ID from currentUser's savedListings
-      // This ensures the Heart icon on the Listing page becomes white automatically
       const updatedList = currentUser.savedListings.filter((id) => id !== listingId);
       dispatch(
         updateUserSuccess({

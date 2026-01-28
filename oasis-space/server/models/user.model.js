@@ -12,11 +12,12 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    // Mobile unique hona chahiye
+    // ✅ FIX: Mobile se 'unique: true' hata diya gaya hai
+    // Taaki Google Auth users same dummy number (0000000000) share kar sakein bina crash hue.
     mobile: {
       type: String,
       required: true,
-      unique: true,
+      unique: false, 
     },
     password: {
       type: String,
@@ -26,43 +27,42 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
     },
-    // --- ROLE FIELD (Admin Control) ---
+    // --- ROLE FIELD ---
     role: {
       type: String,
       enum: ['user', 'admin'],
       default: 'user',
     },
-    // --- SELLER STATUS (Verification Logic) ---
+    // --- SELLER STATUS ---
     sellerStatus: {
         type: String,
         enum: ['regular', 'pending', 'approved', 'rejected'],
         default: 'regular',
     },
-    // --- WISHLIST (Advanced Reference) ---
+    // --- WISHLIST ---
     savedListings: {
       type: [mongoose.Schema.Types.ObjectId], 
       ref: 'Listing', 
       default: [],
     },
     
-    // 👇✅ NEW: OTP & VERIFICATION FIELDS ADDED 👇
+    // 👇✅ OTP & VERIFICATION FIELDS 👇
     isVerified: {
       type: Boolean,
-      default: false, // Default false rahega jab tak OTP verify na ho
+      default: false, 
     },
     otp: {
-      type: String, // OTP store karne ke liye
+      type: String, 
       default: null,
     },
     otpExpires: {
-      type: Date, // OTP expiry time ke liye (e.g. 10 mins)
+      type: Date, 
       default: null,
     }
   },
   { timestamps: true }
 );
 
-// Agar model pehle se bana hai to wahi use karega, warna naya banayega
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 export default User;

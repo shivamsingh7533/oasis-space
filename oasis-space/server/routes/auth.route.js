@@ -2,23 +2,24 @@ import express from 'express';
 import { 
   signup, 
   signin, 
-  signout, 
   google, 
+  signout, 
+  verifyEmail, 
   forgotPassword, 
-  resetPassword,
-  verifyEmail // ✅ NEW: Added verifyEmail import
+  resetPassword 
 } from '../controllers/auth.controller.js';
 
 const router = express.Router();
 
+// Auth Routes
 router.post('/signup', signup);
-router.post('/verify-email', verifyEmail); // ✅ NEW: Route for OTP Verification
 router.post('/signin', signin);
 router.post('/google', google);
 router.get('/signout', signout);
 
-// 👇 Routes for Password Reset 👇
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password/:id/:token', resetPassword);
+// Verification & Password Reset Routes
+router.post('/verify-email', verifyEmail);       // ✅ Email Verification
+router.post('/forgot-password', forgotPassword); // ✅ OTP Request
+router.post('/reset-password', resetPassword);   // ✅ Final Password Reset
 
 export default router;

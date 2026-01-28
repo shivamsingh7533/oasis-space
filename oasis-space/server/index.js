@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-import cors from 'cors'; // ✅ IMP: Import CORS
+import cors from 'cors';
 
 // Import Routes
 import userRouter from './routes/user.route.js';
@@ -11,9 +11,9 @@ import listingRouter from './routes/listing.route.js';
 
 dotenv.config();
 
-// --- DATABASE CONNECTION ---
+// Connect to MongoDB
 mongoose
-  .connect(process.env.MONGO, { family: 4 }) // IPv4 Force for stability
+  .connect(process.env.MONGO)
   .then(() => {
     console.log('✅ Connected to MongoDB!');
   })
@@ -23,39 +23,35 @@ mongoose
 
 const app = express();
 
-// --- ✅ CORS CONFIGURATION (MOST IMPORTANT) ---
-// Isse Vercel wala frontend Render wale backend se baat kar payega
+// ✅ PRODUCTION READY CORS SETUP
+// Ye automatically detect karega ki aap localhost par hain ya live domain par
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173', // Live URL ya Localhost
-  credentials: true, // Cookies (Token) allow karne ke liye zaroori hai
+  origin: process.env.CLIENT_URL || 'http://localhost:5173', 
+  credentials: true,
 }));
 
-// --- MIDDLEWARES ---
 app.use(express.json());
-app.use(cookieParser()); // Auth check ke liye zaroori
+app.use(cookieParser());
 
 // --- ROUTES ---
 app.use('/api/user', userRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/listing', listingRouter);
 
-// 👇 NEW PING ROUTE (For Cron Job) ⚡
-// Cron-job.org is route ko hit karega server ko jagaye rakhne ke liye
+// Health Check
 app.get('/ping', (req, res) => {
   res.status(200).json({ message: 'pong' });
 });
 
-// 👇 ROOT ROUTE (API Health Check for Humans)
-// Jab aap https://oasis-space.onrender.com kholenge, to ye dikhega
 app.get('/', (req, res) => {
   res.status(200).json({ 
-    message: '🚀 OasisSpace API is working successfully on Render!',
+    message: '🚀 OasisSpace API is working!',
     status: 'Active',
-    client: process.env.CLIENT_URL || 'Localhost'
+    env: process.env.NODE_ENV || 'development'
   });
 });
 
-// --- GLOBAL ERROR HANDLER ---
+// Error Middleware
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
@@ -66,7 +62,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// --- SERVER LISTEN ---
 app.listen(3000, () => {
   console.log('🚀 Server running on port: 3000');
 });
