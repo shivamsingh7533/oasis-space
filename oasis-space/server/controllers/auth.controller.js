@@ -134,7 +134,7 @@ export const signin = async (req, res, next) => {
   }
 };
 
-// ✅ 4. GOOGLE AUTH (FIXED: Added Mobile Field)
+// ✅ 4. GOOGLE AUTH (FIXED: Non-blocking emails + Mobile Field)
 export const google = async (req, res, next) => {
   const { name, email, photo } = req.body;
   try {
@@ -143,10 +143,13 @@ export const google = async (req, res, next) => {
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
       const { password: pass, ...rest } = user._doc;
       
-      // Welcome back email
-      await sendEmail(user.email, 'Welcome Back to OasisSpace! 🌴', getWelcomeTemplate(user.username));
-      
+      // 🔧 FIX: Send response FIRST, then send email in background (non-blocking)
       res.cookie('access_token', token, { httpOnly: true }).status(200).json(rest);
+      
+      // Welcome back email (fire-and-forget, won't block response)
+      sendEmail(user.email, 'Welcome Back to OasisSpace! 🌴', getWelcomeTemplate(user.username))
+        .catch(err => console.log("Email send failed (non-critical):", err.message));
+      
     } else {
       const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
       const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
@@ -162,12 +165,17 @@ export const google = async (req, res, next) => {
       });
       
       await newUser.save();
-      await sendEmail(newUser.email, 'Welcome to OasisSpace! 🌴', getWelcomeTemplate(newUser.username));
-      await notifyAdmin(newUser, 'Google OAuth');
       
+      // 🔧 FIX: Send response FIRST, then send emails in background (non-blocking)
       const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
       const { password: p, ...rest2 } = newUser._doc;
       res.cookie('access_token', token, { httpOnly: true }).status(200).json(rest2);
+      
+      // Emails fire-and-forget (won't block response)
+      sendEmail(newUser.email, 'Welcome to OasisSpace! 🌴', getWelcomeTemplate(newUser.username))
+        .catch(err => console.log("Email send failed (non-critical):", err.message));
+      notifyAdmin(newUser, 'Google OAuth')
+        .catch(err => console.log("Admin notify failed (non-critical):", err.message));
     }
   } catch (error) { 
     console.log("Google Auth Error:", error); 
