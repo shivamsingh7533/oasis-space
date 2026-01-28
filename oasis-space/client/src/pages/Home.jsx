@@ -7,7 +7,7 @@ import 'swiper/css/bundle';
 import ListingItem from '../components/ListingItem';
 import { FaSearch } from 'react-icons/fa';
 
-// 🔥 FORCE FIX: ESLint ko ignore karne ke liye ye comment joda hai
+// 🔥 ANIMATION LIBRARY
 // eslint-disable-next-line
 import { motion } from 'framer-motion'; 
 
@@ -24,18 +24,20 @@ export default function Home() {
   SwiperCore.use([Navigation, Autoplay, Pagination]);
 
   useEffect(() => {
+    // 1. Fetch FEATURED (VIP) First
     const fetchFeaturedListings = async () => {
         try {
             const res = await fetch('/api/listing/get?featured=true&limit=4');
             const data = await res.json();
             setFeaturedListings(data);
-            fetchOfferListings();
+            fetchOfferListings(); // Chain next fetch
         } catch (error) {
             console.log(error);
             fetchOfferListings();
         }
     };
 
+    // 2. Fetch OFFERS
     const fetchOfferListings = async () => {
       try {
         const res = await fetch('/api/listing/get?offer=true&limit=4');
@@ -46,6 +48,8 @@ export default function Home() {
         console.log(error);
       }
     };
+
+    // 3. Fetch RENT
     const fetchRentListings = async () => {
       try {
         const res = await fetch('/api/listing/get?type=rent&limit=4');
@@ -56,6 +60,8 @@ export default function Home() {
         console.log(error);
       }
     };
+
+    // 4. Fetch SALE
     const fetchSaleListings = async () => {
       try {
         const res = await fetch('/api/listing/get?type=sale&limit=4');
@@ -177,6 +183,7 @@ export default function Home() {
       {/* --- LISTINGS SECTIONS --- */}
       <div className='max-w-6xl mx-auto p-4 flex flex-col gap-10 py-10'>
         
+        {/* RECENT OFFERS */}
         {offerListings && offerListings.length > 0 && (
           <motion.div 
             initial="hidden"
@@ -196,6 +203,7 @@ export default function Home() {
           </motion.div>
         )}
 
+        {/* RENT LISTINGS */}
         {rentListings && rentListings.length > 0 && (
             <motion.div 
               initial="hidden"
@@ -215,6 +223,7 @@ export default function Home() {
             </motion.div>
         )}
 
+        {/* SALE LISTINGS */}
         {saleListings && saleListings.length > 0 && (
             <motion.div 
               initial="hidden"
