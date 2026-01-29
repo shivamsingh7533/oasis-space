@@ -120,7 +120,7 @@ export default function UpdateListing() {
     }
   };
 
-  // 🤖 AI GENERATE FUNCTION (Matches CreateListing Logic)
+  // 🤖 AI GENERATE FUNCTION (FIXED ✅)
   const handleAIGenerate = async (e) => {
     e.preventDefault(); 
     if (!formData.name || !formData.address) { 
@@ -153,6 +153,7 @@ export default function UpdateListing() {
         if (data.success === false) {
             setError(data.message); 
         } else {
+            // ✅ FIX: data.description use kiya hai
             setFormData({ ...formData, description: data.description });
         }
         

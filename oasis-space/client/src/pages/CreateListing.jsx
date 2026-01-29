@@ -95,7 +95,7 @@ export default function CreateListing() {
     }
   };
 
-  // 🤖 AI GENERATE FUNCTION
+  // 🤖 AI GENERATE FUNCTION (FIXED ✅)
   const handleAIGenerate = async (e) => {
     e.preventDefault(); 
     if (!formData.name || !formData.address) { 
@@ -127,6 +127,7 @@ export default function CreateListing() {
         if (data.success === false) {
             setError(data.message); 
         } else {
+            // ✅ FIX: data.description use kiya hai
             setFormData({ ...formData, description: data.description });
         }
         
