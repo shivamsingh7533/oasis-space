@@ -18,8 +18,8 @@ router.post('/google', google);
 router.get('/signout', signout);
 
 // Verification & Password Reset Routes
-router.post('/verify-email', verifyEmail);       // ✅ Email Verification
-router.post('/forgot-password', forgotPassword); // ✅ OTP Request
-router.post('/reset-password', resetPassword);   // ✅ Final Password Reset
+router.post('/verify-email', verifyEmail);       // ✅ OTP Verification
+router.post('/forgot-password', forgotPassword); // ✅ Forgot Password Request
+router.post('/reset-password', resetPassword);   // ✅ Reset Password
 
 export default router;

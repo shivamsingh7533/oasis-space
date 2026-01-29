@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { FaMoneyBillWave, FaChartLine, FaUsers, FaHome, FaTrash, FaEdit, FaUserShield, FaUserTag, FaUser, FaStar, FaRegStar } from 'react-icons/fa'; // Added FaStar and FaRegStar
+import { FaMoneyBillWave, FaChartLine, FaUsers, FaHome, FaTrash, FaEdit, FaUserShield, FaUserTag, FaUser, FaStar, FaRegStar, FaCheckCircle, FaTag } from 'react-icons/fa'; 
 
 export default function Dashboard() {
   const { currentUser } = useSelector((state) => state.user);
@@ -39,7 +39,7 @@ export default function Dashboard() {
   };
 
   const handleDeleteListing = async (listingId) => {
-    if (window.confirm("Are you sure?")) {
+    if (window.confirm("Are you sure you want to delete this property?")) {
         try {
             const res = await fetch(`/api/listing/delete/${listingId}`, { method: 'DELETE' });
             if (res.ok) {
@@ -49,29 +49,48 @@ export default function Dashboard() {
     }
   };
 
-  // --- ⭐ HANDLE FEATURED TOGGLE (NEW) ---
+  // --- ⭐ HANDLE FEATURED TOGGLE ---
   const handleFeaturedToggle = async (listingId, currentStatus) => {
     try {
-        const res = await fetch(`/api/listing/update/${listingId}`, {
+        const res = await fetch(`/api/listing/feature/${listingId}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                featured: !currentStatus,
-                userRef: currentUser._id 
-            }),
         });
         const data = await res.json();
         if (data.success === false) {
             console.log(data.message);
             return;
         }
-        // Update UI locally
         setListings((prev) => prev.map((item) => 
             item._id === listingId ? { ...item, featured: !currentStatus } : item
         ));
     } catch (error) {
         console.log(error);
     }
+  };
+
+  // --- 🏷️ HANDLE STATUS CHANGE (SOLD/RENTED) ---
+  const handleStatusChange = async (listingId, newStatus) => {
+      try {
+          const res = await fetch(`/api/listing/status/${listingId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: newStatus })
+          });
+          
+          const data = await res.json();
+          if (data.success === false) {
+              alert(data.message);
+              return;
+          }
+
+          // Update UI
+          setListings((prev) => prev.map((item) => 
+              item._id === listingId ? { ...item, status: newStatus } : item
+          ));
+      } catch (error) {
+          console.log(error);
+      }
   };
 
   const handleDeleteUser = async (userId) => {
@@ -107,12 +126,18 @@ export default function Dashboard() {
   };
 
   const calculateFinancials = () => {
+      // Calculate revenue based on actual status if marked sold/rented
+      const soldItems = listings.filter(l => l.status === 'sold');
+      const rentedItems = listings.filter(l => l.status === 'rented');
+      
       const totalSaleValue = listings.filter(l => l.type === 'sale').reduce((acc, curr) => acc + (+curr.regularPrice || 0), 0);
       const totalRentVolume = listings.filter(l => l.type === 'rent').reduce((acc, curr) => acc + (+curr.regularPrice || 0), 0);
+      
+      // Rough estimate revenue calculation
       const estimatedRevenue = (totalSaleValue * 0.02) + (totalRentVolume * 0.10);
-      return { totalSaleValue, totalRentVolume, estimatedRevenue };
+      return { totalSaleValue, totalRentVolume, estimatedRevenue, soldCount: soldItems.length, rentedCount: rentedItems.length };
   };
-  const { totalSaleValue, totalRentVolume, estimatedRevenue } = calculateFinancials();
+  const { totalSaleValue, totalRentVolume, estimatedRevenue, soldCount, rentedCount } = calculateFinancials();
 
   if (!currentUser || currentUser.role !== 'admin') return <div className='p-10 text-center text-white'>Access Denied</div>;
 
@@ -140,29 +165,34 @@ export default function Dashboard() {
       {loading ? <div className='text-center mt-20'>Loading...</div> : (
         <div className='max-w-7xl mx-auto'>
             
-            {/* --- TAB 1: OVERVIEW --- */}
+            {/* --- TAB 1: OVERVIEW (FIXED: Now shows ALL cards) --- */}
             {activeTab === 'overview' && (
                 <div className='flex flex-col gap-6'>
+                    {/* Financial Stats Row */}
                     <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
                         <div className='bg-green-900/40 p-6 rounded-2xl border border-green-700/50 shadow-xl'>
                              <h3 className='text-green-400 text-sm font-bold uppercase'>Est. Net Revenue</h3>
                              <p className='text-4xl font-bold text-white mt-2'>₹ {estimatedRevenue.toLocaleString('en-IN')}</p>
                         </div>
+                        {/* ✅ RESTORED CARD: Inventory Value */}
                         <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl'>
                              <h3 className='text-slate-400 text-sm font-bold uppercase'>Inventory Value</h3>
                              <p className='text-3xl font-bold text-white mt-2'>₹ {totalSaleValue.toLocaleString('en-IN')}</p>
                         </div>
+                        {/* ✅ RESTORED CARD: Rent Volume */}
                         <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl'>
                              <h3 className='text-slate-400 text-sm font-bold uppercase'>Rent Volume/Mo</h3>
                              <p className='text-3xl font-bold text-white mt-2'>₹ {totalRentVolume.toLocaleString('en-IN')}</p>
                         </div>
                     </div>
+
+                    {/* Status Stats Row (NEW) */}
                     <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
                         <div className='bg-slate-800 p-4 rounded-xl border border-slate-700 text-center'>
-                            <p className='text-2xl font-bold'>{users.length}</p><span className='text-xs uppercase text-slate-500'>Total Users</span>
+                            <p className='text-2xl font-bold text-red-400'>{soldCount}</p><span className='text-xs uppercase text-red-400'>Sold</span>
                         </div>
                         <div className='bg-slate-800 p-4 rounded-xl border border-slate-700 text-center'>
-                            <p className='text-2xl font-bold'>{listings.length}</p><span className='text-xs uppercase text-slate-500'>Properties</span>
+                            <p className='text-2xl font-bold text-orange-400'>{rentedCount}</p><span className='text-xs uppercase text-orange-400'>Rented</span>
                         </div>
                         <div className='bg-slate-800 p-4 rounded-xl border border-slate-700 text-center'>
                             <p className='text-2xl font-bold text-yellow-400'>{users.filter(u => u.sellerStatus === 'pending').length}</p><span className='text-xs uppercase text-yellow-400'>Pending Sellers</span>
@@ -180,11 +210,12 @@ export default function Dashboard() {
                     <table className='w-full text-left text-sm text-gray-400'>
                         <thead className='bg-slate-900 uppercase text-xs'>
                             <tr>
-                                <th className='p-4 text-center'>Featured</th> {/* New Column Header */}
+                                <th className='p-4 text-center'>Feat.</th>
                                 <th className='p-4'>Property</th>
                                 <th className='p-4'>Type</th>
                                 <th className='p-4'>Price</th>
-                                <th className='p-4 text-right'>Admin Actions</th>
+                                <th className='p-4'>Status</th> {/* New Status Header */}
+                                <th className='p-4 text-right'>Actions</th>
                             </tr>
                         </thead>
                         <tbody className='divide-y divide-slate-700'>
@@ -206,6 +237,22 @@ export default function Dashboard() {
                                     </td>
                                     <td className='p-4'><span className={`px-2 py-1 rounded text-xs font-bold uppercase ${listing.type==='rent'?'bg-blue-500/20 text-blue-400':'bg-green-500/20 text-green-400'}`}>{listing.type}</span></td>
                                     <td className='p-4 text-white'>₹ {listing.regularPrice.toLocaleString('en-IN')}</td>
+                                    
+                                    {/* 🏷️ STATUS DROPDOWN */}
+                                    <td className='p-4'>
+                                        <select 
+                                            value={listing.status || 'available'} 
+                                            onChange={(e) => handleStatusChange(listing._id, e.target.value)}
+                                            className={`bg-slate-900 border border-slate-600 text-xs rounded p-1 font-bold uppercase cursor-pointer focus:outline-none focus:border-indigo-500
+                                                ${listing.status === 'sold' ? 'text-red-400 border-red-900' : 
+                                                  listing.status === 'rented' ? 'text-orange-400 border-orange-900' : 'text-green-400'}`}
+                                        >
+                                            <option value="available">Available</option>
+                                            <option value="sold">Sold</option>
+                                            <option value="rented">Rented</option>
+                                        </select>
+                                    </td>
+
                                     <td className='p-4 text-right'>
                                         <div className='flex justify-end gap-3'>
                                             <Link to={`/update-listing/${listing._id}`} className='text-blue-400 hover:text-white'><FaEdit size={16}/></Link>

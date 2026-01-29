@@ -32,7 +32,7 @@ export default function UpdateListing() {
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
 
-  // --- 1. FETCH DATA ---
+  // --- 1. FETCH DATA (Existing Feature) ---
   useEffect(() => {
     const fetchListing = async () => {
       try {
@@ -51,7 +51,7 @@ export default function UpdateListing() {
     fetchListing();
   }, [params.listingId]);
 
-  // --- 2. IMAGE UPLOAD LOGIC ---
+  // --- 2. IMAGE UPLOAD LOGIC (Existing Feature) ---
   const handleImageSubmit = (files) => {
     if (files.length > 0 && files.length + formData.imageUrls.length < 7) {
       setUploading(true);
@@ -59,6 +59,11 @@ export default function UpdateListing() {
       const promises = [];
 
       for (let i = 0; i < files.length; i++) {
+        if (files[i].size > 20 * 1024 * 1024) {
+           setUploading(false);
+           setImageUploadError('File too large! Max 20MB per image.');
+           return;
+        }
         promises.push(storeImage(files[i]));
       }
 
@@ -69,7 +74,7 @@ export default function UpdateListing() {
           setUploading(false);
         })
         .catch((err) => {
-          setImageUploadError('Image upload failed (2 MB max per image)');
+          setImageUploadError('Image upload failed');
           setUploading(false);
           console.log(err);
         });
@@ -80,18 +85,10 @@ export default function UpdateListing() {
   };
 
   const storeImage = async (file) => {
-      const fileName = new Date().getTime() + file.name;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('images')
-        .upload(fileName, file);
-
+      const fileName = new Date().getTime() + '_' + file.name;
+      const { error: uploadError } = await supabase.storage.from('images').upload(fileName, file, { cacheControl: '3600', upsert: false });
       if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('images')
-        .getPublicUrl(fileName);
-
+      const { data } = supabase.storage.from('images').getPublicUrl(fileName);
       return data.publicUrl;
   };
 
@@ -104,8 +101,10 @@ export default function UpdateListing() {
 
   const handleAddImageUrl = () => {
     if (!imageUrlInput.trim()) return setImageUploadError('Please enter a valid URL');
+    if (formData.imageUrls.length >= 6) return setImageUploadError('Maximum 6 images allowed.');
     setFormData({ ...formData, imageUrls: [...formData.imageUrls, imageUrlInput] });
     setImageUrlInput('');
+    setImageUploadError(false);
   };
 
   // --- 3. FORM HANDLERS ---
@@ -121,19 +120,48 @@ export default function UpdateListing() {
     }
   };
 
+  // 🤖 AI GENERATE FUNCTION (Matches CreateListing Logic)
   const handleAIGenerate = async (e) => {
     e.preventDefault(); 
-    if (!formData.name || !formData.address) { setError('Name and Address required for AI.'); return; }
+    if (!formData.name || !formData.address) { 
+        setError('Please fill "Name" and "Address" first so AI knows what to write about!'); 
+        return; 
+    }
+    
     try { 
-        setAiLoading(true); setError(false);
-        const promptText = `Name: ${formData.name}, Address: ${formData.address}, Type: ${formData.type}, Beds: ${formData.bedrooms}.`;
+        setAiLoading(true); 
+        setError(false);
+        
+        // Sending structured data to match Backend Controller
         const res = await fetch('/api/listing/generate-ai', { 
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: promptText }) 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ 
+                name: formData.name,
+                address: formData.address,
+                type: formData.type,
+                bedrooms: formData.bedrooms,
+                bathrooms: formData.bathrooms,
+                parking: formData.parking,
+                furnished: formData.furnished,
+                offer: formData.offer
+            }) 
         });
+        
         const data = await res.json();
-        if (data.success === false) setError(data.message); else setFormData({ ...formData, description: data });
+        
+        if (data.success === false) {
+            setError(data.message); 
+        } else {
+            setFormData({ ...formData, description: data.description });
+        }
+        
         setAiLoading(false);
-    } catch (err) { console.log(err); setError('AI Failed.'); setAiLoading(false); }
+    } catch (err) { 
+        console.log(err); 
+        setError('AI Failed to generate. Try again.'); 
+        setAiLoading(false); 
+    }
   };
 
   // --- 4. SUBMIT LOGIC ---
@@ -174,7 +202,7 @@ export default function UpdateListing() {
   return (
     <div className='min-h-screen bg-slate-900 flex items-center justify-center p-4 py-10'>
       <div className='max-w-4xl w-full bg-slate-800 rounded-lg shadow-2xl p-8 border border-slate-700'>
-        <h1 className='text-3xl font-bold text-center text-white mb-8'>Update Listing <span className='text-sm font-normal text-slate-500'>(Admin Mode)</span></h1>
+        <h1 className='text-3xl font-bold text-center text-white mb-8'>Update Listing</h1>
         
         <form onSubmit={handleSubmit} className='flex flex-col sm:flex-row gap-6'>
             
@@ -188,8 +216,15 @@ export default function UpdateListing() {
             <div className='relative'>
                 <label className={labelClass}>Description</label>
                 <textarea id='description' placeholder='Description' className={`${inputClass} h-32 resize-none`} onChange={handleChange} value={formData.description} required />
-                <button type='button' onClick={handleAIGenerate} disabled={aiLoading} className='absolute bottom-3 right-3 text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-500 transition'>
-                    {aiLoading ? 'Magic...' : 'AI Generate'}
+                
+                {/* 🤖 AI BUTTON */}
+                <button 
+                    type='button' 
+                    onClick={handleAIGenerate} 
+                    disabled={aiLoading} 
+                    className='absolute bottom-3 right-3 text-xs bg-indigo-600 text-white px-3 py-1 rounded shadow-lg hover:bg-indigo-500 transition disabled:opacity-50'
+                >
+                    {aiLoading ? '✨ Generating...' : '✨ AI Generate'}
                 </button>
             </div>
 

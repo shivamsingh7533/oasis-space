@@ -24,7 +24,6 @@ mongoose
 const app = express();
 
 // ✅ PRODUCTION READY CORS SETUP
-// Ye automatically detect karega ki aap localhost par hain ya live domain par
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173', 
   credentials: true,
@@ -38,7 +37,7 @@ app.use('/api/user', userRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/listing', listingRouter);
 
-// Health Check
+// Health Check (Render keeps server awake using this)
 app.get('/ping', (req, res) => {
   res.status(200).json({ message: 'pong' });
 });
@@ -62,6 +61,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(3000, () => {
-  console.log('🚀 Server running on port: 3000');
+// ✅ Dynamic Port for Render
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port: ${PORT}`);
 });

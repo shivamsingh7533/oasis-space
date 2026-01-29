@@ -1,8 +1,9 @@
 import Listing from '../models/listing.model.js';
 import User from '../models/user.model.js'; 
 import { errorHandler } from '../utils/error.js';
+import { GoogleGenerativeAI } from "@google/generative-ai"; // ✅ AI Import
 
-// 1. Create Listing (With Seller Permission Check) 💼
+// 1. Create Listing
 export const createListing = async (req, res, next) => {
   try {
     if (req.body.type === 'sale') {
@@ -11,14 +12,18 @@ export const createListing = async (req, res, next) => {
             return next(errorHandler(403, 'Permission Denied! Only Approved Sellers can list properties for SALE.'));
         }
     }
-    const listing = await Listing.create(req.body);
+    const newListingData = {
+        ...req.body,
+        status: req.body.status || 'available' 
+    };
+    const listing = await Listing.create(newListingData);
     return res.status(201).json(listing);
   } catch (error) {
     next(error);
   }
 };
 
-// 2. Delete Listing (Owner OR Admin) 🛡️
+// 2. Delete Listing
 export const deleteListing = async (req, res, next) => {
   const listing = await Listing.findById(req.params.id);
   if (!listing) return next(errorHandler(404, 'Listing not found!'));
@@ -35,7 +40,7 @@ export const deleteListing = async (req, res, next) => {
   }
 };
 
-// 3. Update Listing (SAFE MODE) 🛡️✏️
+// 3. Update Listing
 export const updateListing = async (req, res, next) => {
   const listing = await Listing.findById(req.params.id);
   if (!listing) return next(errorHandler(404, 'Listing not found!'));
@@ -68,7 +73,7 @@ export const getListing = async (req, res, next) => {
   }
 };
 
-// 5. Get All Listings (Search & Filters) 🌟
+// 5. Get All Listings (Frontend Search)
 export const getListings = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 9;
@@ -106,7 +111,8 @@ export const getListings = async (req, res, next) => {
       furnished,
       parking,
       type,
-      featured, 
+      featured,
+      status: { $nin: ['sold', 'rented'] } 
     })
       .sort({ [sort]: order })
       .limit(limit)
@@ -118,37 +124,26 @@ export const getListings = async (req, res, next) => {
   }
 };
 
-// 👇👇👇 6. Admin Get All Listings (CRASH PROOF VERSION) 🛡️ 👇👇👇
+// 6. Admin Get All Listings
 export const getAdminListings = async (req, res, next) => {
   try {
-    // 🛡️ Safety Check 1: Kya User Login hai?
     if (!req.user || !req.user.id) {
-        console.log("Admin Listing Error: User not authenticated (req.user missing)");
-        // 401 Error return karega, Server Crash nahi hoga
-        return next(errorHandler(401, 'User not authenticated! Please login again.'));
+        return next(errorHandler(401, 'User not authenticated!'));
     }
 
-    // 🛡️ Safety Check 2: Database Check
     const user = await User.findById(req.user.id);
-    if (!user) {
-         return next(errorHandler(404, 'User not found in database!'));
-    }
-
-    // 🛡️ Safety Check 3: Admin Role Check
-    if (user.role !== 'admin') {
-         console.log(`Access Denied: User ${user.username} is not admin.`);
-         return next(errorHandler(403, 'Access Denied! Admins only.'));
+    if (!user || user.role !== 'admin') {
+         return next(errorHandler(403, 'Admins only.'));
     }
 
     const listings = await Listing.find().sort({ createdAt: -1 });
     res.status(200).json(listings);
   } catch (error) {
-    console.log("CRASH PREVENTED IN ADMIN LISTINGS:", error.message); 
     next(error);
   }
 };
 
-// 7. Toggle Featured Status 🌟
+// 7. Toggle Featured
 export const featureListing = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
@@ -162,5 +157,69 @@ export const featureListing = async (req, res, next) => {
     res.status(200).json(listing);
   } catch (error) {
     next(error);
+  }
+};
+
+// 8. UPDATE STATUS (Sold/Rented)
+export const updateListingStatus = async (req, res, next) => {
+  try {
+    const listing = await Listing.findById(req.params.id);
+    if (!listing) return next(errorHandler(404, 'Listing not found!'));
+
+    const user = await User.findById(req.user.id);
+    if (req.user.id !== listing.userRef && user.role !== 'admin') {
+      return next(errorHandler(401, 'Permission denied!'));
+    }
+
+    const updatedListing = await Listing.findByIdAndUpdate(
+      req.params.id,
+      { status: req.body.status },
+      { new: true }
+    );
+    res.status(200).json(updatedListing);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 👇👇👇 9. NEW AI FEATURE: GENERATE DESCRIPTION 🤖 👇👇👇
+export const generateDescription = async (req, res, next) => {
+  const { name, address, type, bedrooms, bathrooms, parking, furnished, offer } = req.body;
+
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      return next(errorHandler(500, 'Gemini API Key is missing!'));
+    }
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    
+    // ✅ Using the model confirmed by your check-models.js
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const prompt = `
+      Write a professional, attractive, and SEO-friendly real estate description for a property with these details:
+      - Title/Name: ${name}
+      - Location: ${address}
+      - Type: ${type} (Rent or Sale)
+      - Bedrooms: ${bedrooms}
+      - Bathrooms: ${bathrooms}
+      - Parking: ${parking ? 'Available' : 'Not Available'}
+      - Furnished: ${furnished ? 'Yes' : 'No'}
+      - Special Offer: ${offer ? 'Yes' : 'No'}
+
+      Tone: Inviting and Luxury. 
+      Length: Under 150 words. 
+      Format: Plain text (no markdown like ** or ##), ready to paste.
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+
+    res.status(200).json({ description: text });
+
+  } catch (error) {
+    console.log("AI Generation Error:", error);
+    next(errorHandler(500, 'Failed to generate description. Try again.'));
   }
 };

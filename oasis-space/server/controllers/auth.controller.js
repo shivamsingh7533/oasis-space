@@ -2,73 +2,77 @@ import User from '../models/user.model.js';
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { errorHandler } from '../utils/error.js';
-import nodemailer from 'nodemailer';
+import sendEmail from '../utils/sendEmail.js'; // ✅ Brevo API
 
-// --- 📧 DYNAMIC EMAIL SENDER ---
-const sendEmail = async (to, subject, htmlContent) => {
-  try {
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.log("❌ Missing Email Credentials in .env");
-      return;
-    }
+// --- 💎 1. PREMIUM EMAIL TEMPLATES (HTML/CSS) ---
 
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
-      port: 465,
-      secure: true, 
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    const mailOptions = {
-      from: `"OasisSpace Security" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      html: htmlContent,
-    };
-
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Email successfully sent to ${to}`);
-  } catch (error) {
-    console.log("❌ Nodemailer Error:", error.message);
-  }
-};
-
-// --- 💎 ADMIN NOTIFICATION ---
-const notifyAdmin = async (user, method) => {
-  const adminEmail = process.env.EMAIL_USER;
-  const profilePic = user.avatar || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png";
-  const htmlCard = `
-    <div style="background-color: #f3f4f6; padding: 20px; font-family: sans-serif; text-align: center;">
-      <div style="max-width: 450px; margin: 0 auto; background: white; border-radius: 16px; padding: 20px;">
-        <h2 style="color: #4f46e5;">New User: ${user.username}</h2>
-        <p>Method: <b>${method}</b></p>
-        <img src="${profilePic}" style="width: 80px; border-radius: 50%; border: 2px solid #ddd;">
-      </div>
-    </div>`;
-  await sendEmail(adminEmail, `🔔 New Signup: ${user.username}`, htmlCard);
-};
-
-// --- 🎨 TEMPLATES ---
+// 🔥 SUPER ATTRACTIVE WELCOME CARD
 const getWelcomeTemplate = (username) => `
-  <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
-    <h1 style="color: #10b981;">Welcome to OasisSpace, ${username}! 🌴</h1>
-    <p>We're glad to have you with us. Your perfect oasis is just a click away.</p>
-  </div>`;
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    .button:hover { background-color: #047857 !important; }
+  </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  <div style="max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+    
+    <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 20px; text-align: center;">
+      <h1 style="margin: 0; color: #ffffff; font-size: 32px; letter-spacing: 1px;">Welcome to OasisSpace! 🌴</h1>
+      <p style="margin: 10px 0 0; color: #d1fae5; font-size: 16px;">Your journey to a dream home begins here.</p>
+    </div>
 
+    <div style="padding: 40px 30px; text-align: center;">
+      <h2 style="color: #1f2937; margin-top: 0;">Hello, ${username}! 👋</h2>
+      <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+        We are absolutely thrilled to have you on board. At OasisSpace, we don't just sell properties; we help you find your sanctuary.
+      </p>
+
+      <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; margin-bottom: 30px; text-align: left;">
+        <p style="margin: 5px 0; color: #166534;">✅ <b>Explore:</b> Browse thousands of exclusive listings.</p>
+        <p style="margin: 5px 0; color: #166534;">✅ <b>Connect:</b> Chat directly with top-rated sellers.</p>
+        <p style="margin: 5px 0; color: #166534;">✅ <b>List:</b> Sell your property with ease.</p>
+      </div>
+
+      <a href="${process.env.CLIENT_URL || 'https://oasis-space.vercel.app'}" 
+         style="display: inline-block; background-color: #10b981; color: white; padding: 16px 32px; font-size: 18px; font-weight: bold; text-decoration: none; border-radius: 50px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3); transition: background 0.3s;">
+         Start Exploring Now 🚀
+      </a>
+      
+      <p style="margin-top: 30px; font-size: 14px; color: #9ca3af;">
+        (If the button doesn't work, verify via your profile settings)
+      </p>
+    </div>
+
+    <div style="background-color: #1f2937; padding: 20px; text-align: center; color: #9ca3af; font-size: 12px;">
+      <p style="margin: 0;">&copy; 2026 OasisSpace Inc. All rights reserved.</p>
+      <p style="margin: 5px 0;">Made with ❤️ for your dream home.</p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+// 🔐 CLEAN OTP TEMPLATE
 const getOtpTemplate = (otp) => `
-  <div style="font-family: sans-serif; text-align: center; border: 1px solid #ddd; padding: 20px;">
-    <h2>Your Verification Code</h2>
-    <h1 style="letter-spacing: 5px; color: #3b82f6;">${otp}</h1>
-    <p>This code is valid for 10 minutes.</p>
-  </div>`;
+  <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 12px; padding: 30px; text-align: center;">
+    <h2 style="color: #374151;">Verify Your Email 🔐</h2>
+    <p style="color: #6b7280; font-size: 16px;">Use the code below to complete your sign up.</p>
+    <div style="background-color: #eff6ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
+      <span style="font-size: 36px; font-weight: bold; color: #2563eb; letter-spacing: 8px;">${otp}</span>
+    </div>
+    <p style="color: #9ca3af; font-size: 12px;">This code expires in 10 minutes.</p>
+  </div>
+`;
 
-// ✅ 1. SIGN UP
+// --- 🚀 2. CONTROLLER LOGIC ---
+
+// ✅ 1. SIGN UP (Sends OTP)
 export const signup = async (req, res, next) => {
   const { username, email, password, mobile } = req.body;
   if (!username || !email || !password || !mobile) return next(errorHandler(400, 'All fields are required'));
+  
   try {
     const hashedPassword = bcryptjs.hashSync(password.trim(), 10);
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -85,37 +89,93 @@ export const signup = async (req, res, next) => {
     });
     
     await newUser.save();
-    await sendEmail(newUser.email, 'Verify Account', getOtpTemplate(otp));
-    await notifyAdmin(newUser, 'Manual Signup');
     
-    res.status(201).json({ success: true, message: "OTP sent to your email!" });
+    // Send OTP
+    await sendEmail(newUser.email, 'Verify Your Account 🔐', getOtpTemplate(otp));
+    
+    res.status(201).json({ success: true, message: "OTP sent! Please check your email." });
   } catch (error) { 
-    console.log("Signup Error:", error); 
     next(error); 
   }
 };
 
-// ✅ 2. VERIFY EMAIL
+// ✅ 2. VERIFY EMAIL (Forces Premium Welcome Card)
 export const verifyEmail = async (req, res, next) => {
   const { email, otp } = req.body;
   try {
     const user = await User.findOne({ email: email.trim().toLowerCase() });
+    
     if (!user) return next(errorHandler(404, 'User not found'));
     if (user.otp !== otp) return next(errorHandler(400, 'Invalid OTP'));
     
+    // Update User
     user.isVerified = true;
     user.otp = undefined;
     await user.save();
     
-    await sendEmail(user.email, 'Welcome!', getWelcomeTemplate(user.username));
-    res.status(200).json({ success: true, message: 'Verified!' });
+    // 🔥 FORCE SEND WELCOME EMAIL (With Await)
+    console.log(`⏳ Preparing to send PREMIUM Welcome Card to: ${user.email}`);
+    
+    try {
+        await sendEmail(
+            user.email, 
+            'Welcome to the Family! 🌴', // Subject Line
+            getWelcomeTemplate(user.username) // The Premium HTML Card
+        );
+        console.log("✅ Premium Welcome Card SENT!");
+    } catch (emailError) {
+        console.error("❌ Email Failed but User Verified:", emailError);
+        // We don't stop the response, but we log the error
+    }
+    
+    res.status(200).json({ success: true, message: 'Verified & Welcome Email Sent!' });
   } catch (error) { 
-    console.log("Verification Error:", error); 
     next(error); 
   }
 };
 
-// ✅ 3. SIGN IN
+// ✅ 3. GOOGLE AUTH (Sends Premium Welcome Card to New Users)
+export const google = async (req, res, next) => {
+  const { name, email, photo } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    
+    if (user) {
+      // Login Existing
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+      const { password: pass, ...rest } = user._doc;
+      res.cookie('access_token', token, { httpOnly: true }).status(200).json(rest);
+    } else {
+      // Signup New
+      const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+      const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
+      
+      const newUser = new User({ 
+        username: name.toLowerCase().split(' ').join('') + Math.random().toString(36).slice(-4), 
+        email, 
+        password: hashedPassword, 
+        avatar: photo, 
+        mobile: "0000000000", 
+        isVerified: true 
+      });
+      
+      await newUser.save();
+      
+      // 🔥 Send Premium Welcome Email
+      sendEmail(newUser.email, 'Welcome to OasisSpace! 🌴', getWelcomeTemplate(newUser.username))
+        .catch(err => console.log("Google Signup Email Error:", err));
+
+      const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
+      const { password: p, ...rest2 } = newUser._doc;
+      
+      res.cookie('access_token', token, { httpOnly: true }).status(200).json(rest2);
+    }
+  } catch (error) { 
+    next(error); 
+  }
+};
+
+// ✅ 4. SIGN IN
 export const signin = async (req, res, next) => {
   const { email, password } = req.body;
   try {
@@ -129,56 +189,6 @@ export const signin = async (req, res, next) => {
     const { password: pass, ...rest } = user._doc;
     res.cookie('access_token', token, { httpOnly: true }).status(200).json(rest);
   } catch (error) { 
-    console.log("Signin Error:", error); 
-    next(error); 
-  }
-};
-
-// ✅ 4. GOOGLE AUTH (FIXED: Non-blocking emails + Mobile Field)
-export const google = async (req, res, next) => {
-  const { name, email, photo } = req.body;
-  try {
-    const user = await User.findOne({ email });
-    if (user) {
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-      const { password: pass, ...rest } = user._doc;
-      
-      // 🔧 FIX: Send response FIRST, then send email in background (non-blocking)
-      res.cookie('access_token', token, { httpOnly: true }).status(200).json(rest);
-      
-      // Welcome back email (fire-and-forget, won't block response)
-      sendEmail(user.email, 'Welcome Back to OasisSpace! 🌴', getWelcomeTemplate(user.username))
-        .catch(err => console.log("Email send failed (non-critical):", err.message));
-      
-    } else {
-      const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
-      const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
-      
-      const newUser = new User({ 
-        username: name.toLowerCase().split(' ').join('') + Math.random().toString(36).slice(-4), 
-        email, 
-        password: hashedPassword, 
-        avatar: photo, 
-        // 👇👇 IMPORTANT FIX: Dummy mobile added to satisfy 'required: true'
-        mobile: "0000000000", 
-        isVerified: true 
-      });
-      
-      await newUser.save();
-      
-      // 🔧 FIX: Send response FIRST, then send emails in background (non-blocking)
-      const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
-      const { password: p, ...rest2 } = newUser._doc;
-      res.cookie('access_token', token, { httpOnly: true }).status(200).json(rest2);
-      
-      // Emails fire-and-forget (won't block response)
-      sendEmail(newUser.email, 'Welcome to OasisSpace! 🌴', getWelcomeTemplate(newUser.username))
-        .catch(err => console.log("Email send failed (non-critical):", err.message));
-      notifyAdmin(newUser, 'Google OAuth')
-        .catch(err => console.log("Admin notify failed (non-critical):", err.message));
-    }
-  } catch (error) { 
-    console.log("Google Auth Error:", error); 
     next(error); 
   }
 };
@@ -196,9 +206,9 @@ export const forgotPassword = async (req, res, next) => {
     
     await user.save();
     await sendEmail(user.email, 'Reset Password OTP', getOtpTemplate(otp));
-    res.status(200).json({ success: true, message: 'OTP sent!' });
+    
+    res.status(200).json({ success: true, message: 'OTP sent to your email!' });
   } catch (error) { 
-    console.log("Forgot Pass Error:", error); 
     next(error); 
   }
 };
@@ -213,9 +223,9 @@ export const resetPassword = async (req, res, next) => {
     user.password = bcryptjs.hashSync(password, 10);
     user.otp = undefined;
     await user.save();
-    res.status(200).json({ success: true, message: 'Password reset!' });
+    
+    res.status(200).json({ success: true, message: 'Password reset successful!' });
   } catch (error) { 
-    console.log("Reset Pass Error:", error); 
     next(error); 
   }
 };
@@ -225,7 +235,6 @@ export const signout = async (req, res, next) => {
   try {
     res.clearCookie('access_token').status(200).json('Signed out!');
   } catch (error) {
-    console.log("Signout Error:", error);
     next(error);
   }
 };

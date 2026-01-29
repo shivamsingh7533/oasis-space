@@ -2,35 +2,8 @@ import bcryptjs from 'bcryptjs';
 import User from '../models/user.model.js';
 import Listing from '../models/listing.model.js';
 import { errorHandler } from '../utils/error.js';
-import nodemailer from 'nodemailer'; 
 import jwt from 'jsonwebtoken'; 
-
-// EMAIL HELPER FUNCTION
-const sendEmail = async (to, subject, htmlContent) => {
-  try {
-    const transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com', 
-      port: 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS, 
-      },
-    });
-
-    const mailOptions = {
-      from: `"OasisSpace Admin" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      html: htmlContent, 
-    };
-
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ Email notification sent to ${to}`);
-  } catch (error) {
-    console.log("❌ Email sending failed:", error.message);
-  }
-};
+import sendEmail from '../utils/sendEmail.js'; // ✅ Using Brevo API
 
 // TEST ROUTE
 export const test = (req, res) => {
@@ -171,7 +144,7 @@ export const getUsers = async (req, res, next) => {
   }
 };
 
-// SELLER FEATURES (WITH MAGIC LINKS)
+// --- 🔥 SELLER FEATURES (Using Brevo) ---
 
 // Request Seller Status
 export const requestSeller = async (req, res, next) => {
@@ -186,33 +159,28 @@ export const requestSeller = async (req, res, next) => {
       const approveToken = jwt.sign({ id: user._id, action: 'approved' }, process.env.JWT_SECRET, { expiresIn: '7d' });
       const rejectToken = jwt.sign({ id: user._id, action: 'rejected' }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
-      // ✅ DYNAMIC SERVER URL for Email Links (Production Ready)
-      const serverUrl = process.env.SERVER_URL || 'http://localhost:3000'; 
+      // Dynamic Server URL (Render compatible)
+      const serverUrl = process.env.SERVER_URL || 'https://oasis-space.onrender.com'; 
+      const adminEmail = process.env.SENDER_EMAIL; // Admin email
 
-      const adminEmail = process.env.EMAIL_USER;
       await sendEmail(
         adminEmail,
         `📢 Seller Request: ${user.username}`,
         `
         <div style="font-family: Arial; padding: 20px; border: 1px solid #ddd; max-width: 500px; margin: 0 auto;">
            <h2 style="color: #d97706; text-align: center;">New Seller Request</h2>
-           <p>User <strong>${user.username}</strong> (${user.email}) wants to become a seller.</p>
+           <p>User <strong>${user.username}</strong> wants to become a seller.</p>
            
            <div style="margin: 30px 0; text-align: center;">
-             <p style="margin-bottom: 15px;">One-click Action:</p>
-             
              <a href="${serverUrl}/api/user/respond-seller/${approveToken}" 
-                style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-right: 10px;">
+                style="background-color: #10b981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin-right: 10px;">
                 ✅ Approve
              </a>
-
              <a href="${serverUrl}/api/user/respond-seller/${rejectToken}" 
-                style="background-color: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                style="background-color: #ef4444; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px;">
                 ❌ Reject
              </a>
            </div>
-
-           <p style="font-size: 12px; color: gray; text-align: center;">These links are valid for 7 days.</p>
          </div>
         `
       );
@@ -237,9 +205,11 @@ export const respondSellerViaEmail = async (req, res, next) => {
             { new: true }
         );
 
-        if (!user) return res.send("<h1>User not found or deleted.</h1>");
+        if (!user) return res.send("<h1>User not found.</h1>");
 
         const color = action === 'approved' ? '#10b981' : '#ef4444';
+        
+        // Notify User
         await sendEmail(
             user.email,
             `Seller Request: ${action.toUpperCase()}`,
@@ -251,20 +221,17 @@ export const respondSellerViaEmail = async (req, res, next) => {
 
         res.send(`
             <div style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f3f4f6;">
-                <div style="background: white; padding: 40px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center;">
-                    <h1 style="color: ${color}; margin: 0;">Success! 🎉</h1>
-                    <p style="font-size: 18px; margin-top: 10px;">User <strong>${user.username}</strong> has been <strong>${action.toUpperCase()}</strong>.</p>
-                    <p style="color: gray;">You can close this window now.</p>
-                </div>
+                <h1 style="color: ${color};">Success! 🎉</h1>
+                <p>User <strong>${user.username}</strong> has been <strong>${action.toUpperCase()}</strong>.</p>
             </div>
         `);
 
     } catch (error) {
-        res.send(`<h1 style="color: red; text-align: center; margin-top: 50px;">Error: Invalid or Expired Link</h1>`);
+        res.send(`<h1 style="color: red;">Error: Invalid or Expired Link</h1>`);
     }
 };
   
-// Verify Seller via Admin Dashboard
+// Verify Seller via Dashboard
 export const verifySeller = async (req, res, next) => {
     try {
         const adminUser = await User.findById(req.user.id);
@@ -281,11 +248,9 @@ export const verifySeller = async (req, res, next) => {
         await sendEmail(
             updatedUser.email,
             `Seller Request Update: ${status.toUpperCase()}`,
-            `<div style="font-family: Arial; padding: 20px; border: 1px solid #ddd;">
+            `<div style="font-family: Arial; padding: 20px;">
                <h2 style="color: ${color};">Application ${status.charAt(0).toUpperCase() + status.slice(1)}</h2>
-               <p>Hello ${updatedUser.username},</p>
-               <p>Your request to become a seller on OasisSpace has been <strong>${status}</strong>.</p>
-               ${status === 'approved' ? '<p>You can now list properties for SALE! 🎉</p>' : '<p>Please contact support if you have questions.</p>'}
+               <p>Hello ${updatedUser.username}, your request has been <strong>${status}</strong>.</p>
              </div>`
         );
 
@@ -296,20 +261,17 @@ export const verifySeller = async (req, res, next) => {
     }
 };
 
-// 🔥 PRODUCTION LEVEL SELLER DASHBOARD (ANALYTICS & FINANCE) 📊
+// SELLER DASHBOARD (ANALYTICS)
 export const getSellerDashboard = async (req, res, next) => {
     if (req.user.id === req.params.id) {
         try {
-            // 1. Fetch all listings by this seller
             const listings = await Listing.find({ userRef: req.params.id }).sort({ createdAt: -1 });
 
-            // 2. Basic Stats
             const totalListings = listings.length;
             const rentListings = listings.filter(l => l.type === 'rent').length;
             const saleListings = listings.filter(l => l.type === 'sale').length;
             const offerListings = listings.filter(l => l.offer).length;
             
-            // 3. 💰 FINANCE & STATUS CALCULATION
             let totalRevenue = 0;
             let soldCount = 0;
             let rentedCount = 0;
@@ -318,11 +280,9 @@ export const getSellerDashboard = async (req, res, next) => {
             listings.forEach((listing) => {
                 if (listing.status === 'sold') {
                     soldCount++;
-                    // Revenue is the price it was sold at (discountPrice if exists, else regularPrice)
                     totalRevenue += (listing.discountPrice || listing.regularPrice);
                 } else if (listing.status === 'rented') {
                     rentedCount++;
-                    // For rent, we assume the price listed is the revenue
                     totalRevenue += (listing.discountPrice || listing.regularPrice);
                 } else {
                     if (!listing.status || listing.status === 'available') {
@@ -331,7 +291,6 @@ export const getSellerDashboard = async (req, res, next) => {
                 }
             });
 
-            // 4. Mock Views (Can be upgraded later)
             const totalViews = listings.reduce((acc, curr) => acc + (curr.views || Math.floor(Math.random() * 50) + 5), 0); 
 
             res.status(200).json({
@@ -342,13 +301,12 @@ export const getSellerDashboard = async (req, res, next) => {
                     saleListings,
                     offerListings,
                     totalViews,
-                    // Finance Data
                     soldCount,
                     rentedCount,
                     availableCount,
                     totalRevenue
                 },
-                listings // Full listings list for the table
+                listings
             });
         } catch (error) {
             next(error);

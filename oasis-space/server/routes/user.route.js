@@ -20,32 +20,32 @@ const router = express.Router();
 // 1. Test Route
 router.get('/test', test);
 
-// 2. Auth Required Routes (Update/Delete)
+// 2. Auth Required Routes
 router.post('/update/:id', verifyToken, updateUser);
 router.delete('/delete/:id', verifyToken, deleteUser);
 
 // 3. User Specific Routes
 router.get('/listings/:id', verifyToken, getUserListings);
 
-// ✅ FIX: /saved route MUST come BEFORE /:id dynamic route
+// ✅ Saved Listings (Must be before /:id)
 router.get('/saved', verifyToken, getSavedListings); 
-
 router.post('/save/:id', verifyToken, saveListing);
 
-// 🔥 Seller Dashboard Route
+// 🔥 Seller Dashboard
 router.get('/dashboard/:id', verifyToken, getSellerDashboard);
 
-// 4. ADMIN DASHBOARD ROUTE
+// 4. ADMIN DASHBOARD
 router.get('/getusers', verifyToken, getUsers);
 
 // 5. SELLER VERIFICATION ROUTES
+// ✅ FIX: Added '/:id' to match frontend request
 router.post('/request-seller/:id', verifyToken, requestSeller); 
 router.post('/verify-seller/:id', verifyToken, verifySeller);   
 
 // 6. Magic Link Route
 router.get('/respond-seller/:token', respondSellerViaEmail);
 
-// 7. Public/Dynamic Route (Keep this at the VERY END)
+// 7. Public Route
 router.get('/:id', verifyToken, getUser);
 
 export default router;

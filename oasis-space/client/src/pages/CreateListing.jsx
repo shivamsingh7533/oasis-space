@@ -61,9 +61,7 @@ export default function CreateListing() {
   // --- PASTE URL HANDLER ---
   const handleAddImageUrl = () => {
     if (!imageUrlInput.trim()) return setImageUploadError('Please enter an image URL.');
-    
     if (formData.imageUrls.length >= 6) return setImageUploadError('Maximum 6 images allowed.');
-    
     setFormData({ ...formData, imageUrls: [...formData.imageUrls, imageUrlInput] });
     setImageUrlInput('');
     setImageUploadError(false);
@@ -79,7 +77,7 @@ export default function CreateListing() {
     if (e.target.id === 'sale') {
         if (currentUser.sellerStatus !== 'approved' && currentUser.role !== 'admin') {
             alert("Permission Denied! You must be an Approved Seller to post 'Sale' listings.");
-            return; // Stop here, do not update state
+            return; 
         }
     }
 
@@ -97,16 +95,47 @@ export default function CreateListing() {
     }
   };
 
+  // 🤖 AI GENERATE FUNCTION
   const handleAIGenerate = async (e) => {
     e.preventDefault(); 
-    if (!formData.name || !formData.address) { setError('Name and Address required for AI.'); return; }
-    try { setAiLoading(true); setError(false);
-        const promptText = `Name: ${formData.name}, Address: ${formData.address}, Type: ${formData.type}, Beds: ${formData.bedrooms}.`;
-        const res = await fetch('/api/listing/generate-ai', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: promptText }) });
+    if (!formData.name || !formData.address) { 
+        alert('Please fill "Name" and "Address" first so AI knows what to write about!'); 
+        return; 
+    }
+    
+    try { 
+        setAiLoading(true); 
+        setError(false);
+        
+        const res = await fetch('/api/listing/generate-ai', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' }, 
+            body: JSON.stringify({ 
+                name: formData.name,
+                address: formData.address,
+                type: formData.type,
+                bedrooms: formData.bedrooms,
+                bathrooms: formData.bathrooms,
+                parking: formData.parking,
+                furnished: formData.furnished,
+                offer: formData.offer
+            }) 
+        });
+        
         const data = await res.json();
-        if (data.success === false) setError(data.message); else setFormData({ ...formData, description: data });
+        
+        if (data.success === false) {
+            setError(data.message); 
+        } else {
+            setFormData({ ...formData, description: data.description });
+        }
+        
         setAiLoading(false);
-    } catch (err) { console.log(err); setError('AI Failed.'); setAiLoading(false); }
+    } catch (err) { 
+        console.log(err); 
+        setError('AI Failed to generate. Try again.'); 
+        setAiLoading(false); 
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -134,13 +163,11 @@ export default function CreateListing() {
     } catch (err) { console.log(err); setError('Failed to create listing'); setLoading(false); }
   };
 
-  // Styles matching Profile Page
   const inputClass = "bg-slate-700 text-white rounded-lg p-3 w-full border border-slate-600 focus:outline-none focus:border-indigo-500 placeholder-slate-400";
   const labelClass = "text-slate-300 font-semibold mb-2 block";
 
   return (
     <div className='min-h-screen bg-slate-900 flex items-center justify-center p-4 py-10'>
-      {/* Centered Card matching Profile Page Style */}
       <div className='max-w-4xl w-full bg-slate-800 rounded-lg shadow-2xl p-8 border border-slate-700'>
         
         <h1 className='text-3xl font-bold text-center text-white mb-8'>Create a Listing</h1>
@@ -158,8 +185,15 @@ export default function CreateListing() {
             <div className='relative'>
                 <label className={labelClass}>Description</label>
                 <textarea id='description' placeholder='Description' className={`${inputClass} h-32 resize-none`} onChange={handleChange} value={formData.description} required />
-                <button type='button' onClick={handleAIGenerate} disabled={aiLoading} className='absolute bottom-3 right-3 text-xs bg-indigo-600 text-white px-2 py-1 rounded hover:bg-indigo-500 transition'>
-                    {aiLoading ? 'Magic...' : 'AI Generate'}
+                
+                {/* 🤖 AI BUTTON */}
+                <button 
+                    type='button' 
+                    onClick={handleAIGenerate} 
+                    disabled={aiLoading} 
+                    className='absolute bottom-3 right-3 text-xs bg-indigo-600 text-white px-3 py-1 rounded shadow-lg hover:bg-indigo-500 transition disabled:opacity-50'
+                >
+                    {aiLoading ? '✨ Generating...' : '✨ AI Generate'}
                 </button>
             </div>
 
@@ -260,7 +294,7 @@ export default function CreateListing() {
               
               <p className='text-red-400 text-sm mt-2 text-center'>{imageUploadError && imageUploadError}</p>
               
-              {/* UPLOADED IMAGES LIST - With Better Error Handling */}
+              {/* UPLOADED IMAGES LIST */}
               {formData.imageUrls.length > 0 && (
                 <div className="flex flex-col gap-2 mt-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                   {formData.imageUrls.map((url, index) => (
@@ -271,7 +305,6 @@ export default function CreateListing() {
                           className='w-20 h-16 object-cover rounded-md bg-slate-600'
                           onError={(e) => {
                              e.target.onerror = null; 
-                             // Fallback to a reliable placeholder if link is broken
                              e.target.src = "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg";
                           }} 
                       />
