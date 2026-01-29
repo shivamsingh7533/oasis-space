@@ -66,18 +66,25 @@ const getOtpTemplate = (otp) => `
   </div>
 `;
 
-// --- 🛠️ HELPER: SECURE COOKIE OPTIONS ---
-// Ye zaroori hai taki Vercel (Frontend) aur Render (Backend) baat kar sakein
+// --- 🛠️ HELPER: COOKIE OPTIONS ---
+// 1. Setting Cookie (Login/Signup)
 const cookieOptions = {
     httpOnly: true,
-    secure: true, // ✅ HTTPS required (Render & Vercel use HTTPS)
-    sameSite: 'None', // ✅ Allows Cross-Site cookies
-    maxAge: 24 * 60 * 60 * 1000 // 1 Day expiration
+    secure: true,        // ✅ Render requires HTTPS cookies
+    sameSite: 'None',    // ✅ Crucial for Cross-Site (Vercel -> Render)
+    maxAge: 24 * 60 * 60 * 1000 // 1 Day
+};
+
+// 2. Clearing Cookie (Logout) - NO maxAge (Fixes Deprecation Warning)
+const clearCookieOptions = {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'None'
 };
 
 // --- 🚀 2. CONTROLLER LOGIC ---
 
-// ✅ 1. SIGN UP (Sends OTP)
+// ✅ 1. SIGN UP
 export const signup = async (req, res, next) => {
   const { username, email, password, mobile } = req.body;
   if (!username || !email || !password || !mobile) return next(errorHandler(400, 'All fields are required'));
@@ -108,7 +115,7 @@ export const signup = async (req, res, next) => {
   }
 };
 
-// ✅ 2. VERIFY EMAIL (Forces Premium Welcome Card)
+// ✅ 2. VERIFY EMAIL
 export const verifyEmail = async (req, res, next) => {
   const { email, otp } = req.body;
   try {
@@ -146,7 +153,7 @@ export const verifyEmail = async (req, res, next) => {
   }
 };
 
-// ✅ 3. GOOGLE AUTH (FIXED: Forces Welcome Email & Secure Cookies)
+// ✅ 3. GOOGLE AUTH (Fixed: Forced Welcome Email & Secure Cookies)
 export const google = async (req, res, next) => {
   const { name, email, photo } = req.body;
   try {
@@ -157,7 +164,6 @@ export const google = async (req, res, next) => {
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
       const { password: pass, ...rest } = user._doc;
       
-      // ✅ FIX: Use Secure Cookie Options
       res.cookie('access_token', token, cookieOptions).status(200).json(rest);
     } else {
       // --- SIGNUP NEW USER ---
@@ -176,6 +182,7 @@ export const google = async (req, res, next) => {
       await newUser.save();
       
       // 🔥 FORCE SEND WELCOME EMAIL (AWAIT ADDED)
+      // Hum yahan AWAIT laga rahe hain taki email bhejne ke baad hi response jaye
       console.log("⏳ Sending Google Welcome Email...");
       try {
           await sendEmail(
@@ -191,7 +198,6 @@ export const google = async (req, res, next) => {
       const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
       const { password: p, ...rest2 } = newUser._doc;
       
-      // ✅ FIX: Use Secure Cookie Options
       res.cookie('access_token', token, cookieOptions).status(200).json(rest2);
     }
   } catch (error) { 
@@ -199,7 +205,7 @@ export const google = async (req, res, next) => {
   }
 };
 
-// ✅ 4. SIGN IN (FIXED: Secure Cookies)
+// ✅ 4. SIGN IN
 export const signin = async (req, res, next) => {
   const { email, password } = req.body;
   try {
@@ -212,7 +218,6 @@ export const signin = async (req, res, next) => {
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
     const { password: pass, ...rest } = user._doc;
     
-    // ✅ FIX: Use Secure Cookie Options
     res.cookie('access_token', token, cookieOptions).status(200).json(rest);
   } catch (error) { 
     next(error); 
@@ -256,11 +261,11 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
-// ✅ 7. SIGN OUT (FIXED: Clear Cookie Properly)
+// ✅ 7. SIGN OUT (FIXED - Removed maxAge to fix deprecation warning)
 export const signout = async (req, res, next) => {
   try {
-    // Clear cookie with SAME options, otherwise it won't delete
-    res.clearCookie('access_token', cookieOptions).status(200).json('Signed out!');
+    // Clear cookie without maxAge
+    res.clearCookie('access_token', clearCookieOptions).status(200).json('Signed out!');
   } catch (error) {
     next(error);
   }
