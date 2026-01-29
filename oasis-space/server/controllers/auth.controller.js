@@ -2,7 +2,7 @@ import User from '../models/user.model.js';
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { errorHandler } from '../utils/error.js';
-import sendEmail from '../utils/sendEmail.js'; // ✅ Brevo API
+import sendEmail from '../utils/sendEmail.js'; 
 
 // --- 💎 1. PREMIUM EMAIL TEMPLATES (HTML/CSS) ---
 
@@ -66,6 +66,15 @@ const getOtpTemplate = (otp) => `
   </div>
 `;
 
+// --- 🛠️ HELPER: SECURE COOKIE OPTIONS ---
+// Ye zaroori hai taki Vercel (Frontend) aur Render (Backend) baat kar sakein
+const cookieOptions = {
+    httpOnly: true,
+    secure: true, // ✅ HTTPS required (Render & Vercel use HTTPS)
+    sameSite: 'None', // ✅ Allows Cross-Site cookies
+    maxAge: 24 * 60 * 60 * 1000 // 1 Day expiration
+};
+
 // --- 🚀 2. CONTROLLER LOGIC ---
 
 // ✅ 1. SIGN UP (Sends OTP)
@@ -113,40 +122,45 @@ export const verifyEmail = async (req, res, next) => {
     user.otp = undefined;
     await user.save();
     
-    // 🔥 FORCE SEND WELCOME EMAIL (With Await)
+    // 🔥 FORCE SEND WELCOME EMAIL
     console.log(`⏳ Preparing to send PREMIUM Welcome Card to: ${user.email}`);
-    
     try {
         await sendEmail(
             user.email, 
-            'Welcome to the Family! 🌴', // Subject Line
-            getWelcomeTemplate(user.username) // The Premium HTML Card
+            'Welcome to the Family! 🌴', 
+            getWelcomeTemplate(user.username) 
         );
         console.log("✅ Premium Welcome Card SENT!");
     } catch (emailError) {
         console.error("❌ Email Failed but User Verified:", emailError);
-        // We don't stop the response, but we log the error
     }
     
-    res.status(200).json({ success: true, message: 'Verified & Welcome Email Sent!' });
+    // ✅ Secure Cookie Set
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
+    const { password: pass, ...rest } = user._doc;
+    
+    res.cookie('access_token', token, cookieOptions).status(200).json(rest);
+
   } catch (error) { 
     next(error); 
   }
 };
 
-// ✅ 3. GOOGLE AUTH (Sends Premium Welcome Card to New Users)
+// ✅ 3. GOOGLE AUTH (FIXED: Forces Welcome Email & Secure Cookies)
 export const google = async (req, res, next) => {
   const { name, email, photo } = req.body;
   try {
     const user = await User.findOne({ email });
     
     if (user) {
-      // Login Existing
+      // --- LOGIN EXISTING USER ---
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
       const { password: pass, ...rest } = user._doc;
-      res.cookie('access_token', token, { httpOnly: true }).status(200).json(rest);
+      
+      // ✅ FIX: Use Secure Cookie Options
+      res.cookie('access_token', token, cookieOptions).status(200).json(rest);
     } else {
-      // Signup New
+      // --- SIGNUP NEW USER ---
       const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
       const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
       
@@ -161,21 +175,31 @@ export const google = async (req, res, next) => {
       
       await newUser.save();
       
-      // 🔥 Send Premium Welcome Email
-      sendEmail(newUser.email, 'Welcome to OasisSpace! 🌴', getWelcomeTemplate(newUser.username))
-        .catch(err => console.log("Google Signup Email Error:", err));
+      // 🔥 FORCE SEND WELCOME EMAIL (AWAIT ADDED)
+      console.log("⏳ Sending Google Welcome Email...");
+      try {
+          await sendEmail(
+            newUser.email, 
+            'Welcome to OasisSpace! 🌴', 
+            getWelcomeTemplate(newUser.username)
+          );
+          console.log("✅ Google Welcome Email Sent Successfully!");
+      } catch (err) {
+          console.error("❌ Google Email Failed:", err);
+      }
 
       const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
       const { password: p, ...rest2 } = newUser._doc;
       
-      res.cookie('access_token', token, { httpOnly: true }).status(200).json(rest2);
+      // ✅ FIX: Use Secure Cookie Options
+      res.cookie('access_token', token, cookieOptions).status(200).json(rest2);
     }
   } catch (error) { 
     next(error); 
   }
 };
 
-// ✅ 4. SIGN IN
+// ✅ 4. SIGN IN (FIXED: Secure Cookies)
 export const signin = async (req, res, next) => {
   const { email, password } = req.body;
   try {
@@ -187,7 +211,9 @@ export const signin = async (req, res, next) => {
     
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
     const { password: pass, ...rest } = user._doc;
-    res.cookie('access_token', token, { httpOnly: true }).status(200).json(rest);
+    
+    // ✅ FIX: Use Secure Cookie Options
+    res.cookie('access_token', token, cookieOptions).status(200).json(rest);
   } catch (error) { 
     next(error); 
   }
@@ -230,10 +256,11 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
-// ✅ 7. SIGN OUT
+// ✅ 7. SIGN OUT (FIXED: Clear Cookie Properly)
 export const signout = async (req, res, next) => {
   try {
-    res.clearCookie('access_token').status(200).json('Signed out!');
+    // Clear cookie with SAME options, otherwise it won't delete
+    res.clearCookie('access_token', cookieOptions).status(200).json('Signed out!');
   } catch (error) {
     next(error);
   }
