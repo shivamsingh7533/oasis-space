@@ -315,3 +315,40 @@ export const getSellerDashboard = async (req, res, next) => {
         return next(errorHandler(401, 'You can only view your own dashboard!'));
     }
 };
+
+// ✅ NEW FEATURE: CONTACT LANDLORD (DIRECT EMAIL)
+export const contactLandlord = async (req, res, next) => {
+  try {
+    const { landlordId, listingName, message, senderName, senderEmail } = req.body;
+
+    const landlord = await User.findById(landlordId);
+    if (!landlord) return next(errorHandler(404, 'Landlord not found!'));
+
+    // Send Direct Email to Landlord
+    await sendEmail(
+      landlord.email,
+      `New Lead for ${listingName} 🏠`,
+      `
+      <div style="font-family: Arial; padding: 20px; border: 1px solid #ddd; max-width: 600px; border-radius: 10px;">
+        <h2 style="color: #10b981;">New Inquiry Received! 📩</h2>
+        <p>You have a new potential buyer/renter for <strong>${listingName}</strong>.</p>
+        
+        <div style="background: #f9fafb; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p><strong>Name:</strong> ${senderName}</p>
+          <p><strong>Email:</strong> ${senderEmail}</p>
+          <p><strong>Message:</strong></p>
+          <p style="font-style: italic; color: #555;">"${message}"</p>
+        </div>
+
+        <p>Please reply to this lead directly via email.</p>
+        <br/>
+        <p style="font-size: 12px; color: #888;">Powered by OasisSpace</p>
+      </div>
+      `
+    );
+
+    res.status(200).json({ success: true, message: 'Email sent successfully to the owner!' });
+  } catch (error) {
+    next(error);
+  }
+};

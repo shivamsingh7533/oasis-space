@@ -76,6 +76,7 @@ oasis-space
 │   │   └── user.route.js
 │   ├── utils
 │   │   ├── error.js
+│   │   ├── sendEmail.js
 │   │   └── verifyUser.js
 │   ├── .env
 │   ├── index.js

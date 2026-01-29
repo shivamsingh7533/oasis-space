@@ -8,6 +8,7 @@ import cors from 'cors';
 import userRouter from './routes/user.route.js';
 import authRouter from './routes/auth.route.js';
 import listingRouter from './routes/listing.route.js';
+import chatRouter from './routes/chat.route.js'; // ✅ NEW CHAT IMPORT
 
 dotenv.config();
 
@@ -25,9 +26,18 @@ const app = express();
 
 // ✅ PRODUCTION READY CORS SETUP
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173', 
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
   credentials: true,
 }));
+
+// ✅ Fix for Cross-Origin-Opener-Policy (Google Auth Popup Fix)
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  next();
+});
+
+// ✅ Trust Proxy (Critical for Render/Vercel/Heroku cookies)
+app.set('trust proxy', 1);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -36,14 +46,15 @@ app.use(cookieParser());
 app.use('/api/user', userRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/listing', listingRouter);
+app.use('/api/chat', chatRouter); // ✅ NEW CHAT ROUTE ADDED
 
-// Health Check (Render keeps server awake using this)
+// Health Check
 app.get('/ping', (req, res) => {
   res.status(200).json({ message: 'pong' });
 });
 
 app.get('/', (req, res) => {
-  res.status(200).json({ 
+  res.status(200).json({
     message: '🚀 OasisSpace API is working!',
     status: 'Active',
     env: process.env.NODE_ENV || 'development'

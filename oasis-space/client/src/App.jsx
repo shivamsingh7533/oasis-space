@@ -14,20 +14,15 @@ import Search from './pages/Search';
 import Preloader from './components/Preloader';
 import SavedListings from './pages/SavedListings';
 import Footer from './components/Footer';
-
-// --- NEW IMPORTS FOR ADMIN PANEL ---
 import Dashboard from './pages/Dashboard';
 import AdminRoute from './components/AdminRoute';
-
-// --- NEW IMPORTS FOR SELLER DASHBOARD ---
-import SellerDashboard from './pages/SellerDashboard'; // ✅ Added for Seller Panel
-
-// --- 👇 PASSWORD RESET IMPORTS 👇 ---
+import SellerDashboard from './pages/SellerDashboard'; 
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-
-// --- ✅ OTP VERIFICATION IMPORT ---
 import VerifyEmail from './pages/VerifyEmail';
+
+// ✅ NEW CHAT WIDGET IMPORT
+import ChatWidget from './components/ChatWidget';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -46,7 +41,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen relative">
         <Header />
         
         <main className="flex-grow">
@@ -74,11 +69,14 @@ export default function App() {
               <Route path='/create-listing' element={<CreateListing />} />
               <Route path='/update-listing/:listingId' element={<UpdateListing />} />
               
-              {/* 🔥 NEW ROUTE: Real-time Seller Dashboard 🔥 */}
+              {/* Seller Dashboard */}
               <Route path='/seller-dashboard' element={<SellerDashboard />} />
             </Route>
           </Routes>
         </main>
+
+        {/* ✅ CHATBOT ADDED HERE (Visible on all pages) */}
+        <ChatWidget />
 
         <Footer />
       </div>

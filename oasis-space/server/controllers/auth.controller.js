@@ -2,7 +2,7 @@ import User from '../models/user.model.js';
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { errorHandler } from '../utils/error.js';
-import sendEmail from '../utils/sendEmail.js'; 
+import sendEmail from '../utils/sendEmail.js';
 
 // --- 💎 1. PREMIUM EMAIL TEMPLATES (HTML/CSS) ---
 
@@ -68,18 +68,20 @@ const getOtpTemplate = (otp) => `
 
 // --- 🛠️ HELPER: COOKIE OPTIONS ---
 // 1. Setting Cookie (Login/Signup)
+const isProduction = process.env.NODE_ENV === 'production';
+
 const cookieOptions = {
-    httpOnly: true,
-    secure: true,        // ✅ Render requires HTTPS cookies
-    sameSite: 'None',    // ✅ Crucial for Cross-Site (Vercel -> Render)
-    maxAge: 24 * 60 * 60 * 1000 // 1 Day
+  httpOnly: true,
+  secure: isProduction,         // ✅ True in Prod (HTTPS), False in Dev (HTTP)
+  sameSite: isProduction ? 'None' : 'Lax',  // ✅ 'None' for blocked 3rd party, 'Lax' for local
+  maxAge: 24 * 60 * 60 * 1000 // 1 Day
 };
 
-// 2. Clearing Cookie (Logout) - NO maxAge (Fixes Deprecation Warning)
+// 2. Clearing Cookie (Logout)
 const clearCookieOptions = {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'None'
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? 'None' : 'Lax',
 };
 
 // --- 🚀 2. CONTROLLER LOGIC ---
@@ -88,30 +90,30 @@ const clearCookieOptions = {
 export const signup = async (req, res, next) => {
   const { username, email, password, mobile } = req.body;
   if (!username || !email || !password || !mobile) return next(errorHandler(400, 'All fields are required'));
-  
+
   try {
     const hashedPassword = bcryptjs.hashSync(password.trim(), 10);
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const otpExpires = Date.now() + 10 * 60 * 1000;
-    
-    const newUser = new User({ 
-      username: username.trim(), 
-      email: email.trim().toLowerCase(), 
-      password: hashedPassword, 
-      mobile: mobile.trim(), 
-      otp, 
-      otpExpires, 
-      isVerified: false 
+
+    const newUser = new User({
+      username: username.trim(),
+      email: email.trim().toLowerCase(),
+      password: hashedPassword,
+      mobile: mobile.trim(),
+      otp,
+      otpExpires,
+      isVerified: false
     });
-    
+
     await newUser.save();
-    
+
     // Send OTP
     await sendEmail(newUser.email, 'Verify Your Account 🔐', getOtpTemplate(otp));
-    
+
     res.status(201).json({ success: true, message: "OTP sent! Please check your email." });
-  } catch (error) { 
-    next(error); 
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -120,36 +122,36 @@ export const verifyEmail = async (req, res, next) => {
   const { email, otp } = req.body;
   try {
     const user = await User.findOne({ email: email.trim().toLowerCase() });
-    
+
     if (!user) return next(errorHandler(404, 'User not found'));
     if (user.otp !== otp) return next(errorHandler(400, 'Invalid OTP'));
-    
+
     // Update User
     user.isVerified = true;
     user.otp = undefined;
     await user.save();
-    
+
     // 🔥 FORCE SEND WELCOME EMAIL
     console.log(`⏳ Preparing to send PREMIUM Welcome Card to: ${user.email}`);
     try {
-        await sendEmail(
-            user.email, 
-            'Welcome to the Family! 🌴', 
-            getWelcomeTemplate(user.username) 
-        );
-        console.log("✅ Premium Welcome Card SENT!");
+      await sendEmail(
+        user.email,
+        'Welcome to the Family! 🌴',
+        getWelcomeTemplate(user.username)
+      );
+      console.log("✅ Premium Welcome Card SENT!");
     } catch (emailError) {
-        console.error("❌ Email Failed but User Verified:", emailError);
+      console.error("❌ Email Failed but User Verified:", emailError);
     }
-    
+
     // ✅ Secure Cookie Set
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
     const { password: pass, ...rest } = user._doc;
-    
+
     res.cookie('access_token', token, cookieOptions).status(200).json(rest);
 
-  } catch (error) { 
-    next(error); 
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -158,50 +160,50 @@ export const google = async (req, res, next) => {
   const { name, email, photo } = req.body;
   try {
     const user = await User.findOne({ email });
-    
+
     if (user) {
       // --- LOGIN EXISTING USER ---
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
       const { password: pass, ...rest } = user._doc;
-      
+
       res.cookie('access_token', token, cookieOptions).status(200).json(rest);
     } else {
       // --- SIGNUP NEW USER ---
       const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
       const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
-      
-      const newUser = new User({ 
-        username: name.toLowerCase().split(' ').join('') + Math.random().toString(36).slice(-4), 
-        email, 
-        password: hashedPassword, 
-        avatar: photo, 
-        mobile: "0000000000", 
-        isVerified: true 
+
+      const newUser = new User({
+        username: name.toLowerCase().split(' ').join('') + Math.random().toString(36).slice(-4),
+        email,
+        password: hashedPassword,
+        avatar: photo,
+        mobile: "0000000000",
+        isVerified: true
       });
-      
+
       await newUser.save();
-      
+
       // 🔥 FORCE SEND WELCOME EMAIL (AWAIT ADDED)
       // Hum yahan AWAIT laga rahe hain taki email bhejne ke baad hi response jaye
       console.log("⏳ Sending Google Welcome Email...");
       try {
-          await sendEmail(
-            newUser.email, 
-            'Welcome to OasisSpace! 🌴', 
-            getWelcomeTemplate(newUser.username)
-          );
-          console.log("✅ Google Welcome Email Sent Successfully!");
+        await sendEmail(
+          newUser.email,
+          'Welcome to OasisSpace! 🌴',
+          getWelcomeTemplate(newUser.username)
+        );
+        console.log("✅ Google Welcome Email Sent Successfully!");
       } catch (err) {
-          console.error("❌ Google Email Failed:", err);
+        console.error("❌ Google Email Failed:", err);
       }
 
       const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
       const { password: p, ...rest2 } = newUser._doc;
-      
+
       res.cookie('access_token', token, cookieOptions).status(200).json(rest2);
     }
-  } catch (error) { 
-    next(error); 
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -211,16 +213,16 @@ export const signin = async (req, res, next) => {
   try {
     const user = await User.findOne({ email: email.trim().toLowerCase() });
     if (!user) return next(errorHandler(404, 'User not found'));
-    
+
     const validPassword = bcryptjs.compareSync(password, user.password);
     if (!validPassword) return next(errorHandler(401, 'Wrong credentials'));
-    
+
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
     const { password: pass, ...rest } = user._doc;
-    
+
     res.cookie('access_token', token, cookieOptions).status(200).json(rest);
-  } catch (error) { 
-    next(error); 
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -230,17 +232,17 @@ export const forgotPassword = async (req, res, next) => {
   try {
     const user = await User.findOne({ email });
     if (!user) return next(errorHandler(404, 'User not found'));
-    
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     user.otp = otp;
     user.otpExpires = Date.now() + 15 * 60 * 1000;
-    
+
     await user.save();
     await sendEmail(user.email, 'Reset Password OTP', getOtpTemplate(otp));
-    
+
     res.status(200).json({ success: true, message: 'OTP sent to your email!' });
-  } catch (error) { 
-    next(error); 
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -250,14 +252,14 @@ export const resetPassword = async (req, res, next) => {
   try {
     const user = await User.findOne({ email });
     if (!user || user.otp !== otp) return next(errorHandler(400, 'Invalid OTP'));
-    
+
     user.password = bcryptjs.hashSync(password, 10);
     user.otp = undefined;
     await user.save();
-    
+
     res.status(200).json({ success: true, message: 'Password reset successful!' });
-  } catch (error) { 
-    next(error); 
+  } catch (error) {
+    next(error);
   }
 };
 

@@ -11,7 +11,8 @@ import {
   requestSeller,   
   verifySeller,
   respondSellerViaEmail,
-  getSellerDashboard
+  getSellerDashboard,
+  contactLandlord // ✅ NEW IMPORT
 } from '../controllers/user.controller.js';
 import { verifyToken } from '../utils/verifyUser.js';
 
@@ -38,14 +39,16 @@ router.get('/dashboard/:id', verifyToken, getSellerDashboard);
 router.get('/getusers', verifyToken, getUsers);
 
 // 5. SELLER VERIFICATION ROUTES
-// ✅ FIX: Added '/:id' to match frontend request
 router.post('/request-seller/:id', verifyToken, requestSeller); 
 router.post('/verify-seller/:id', verifyToken, verifySeller);   
 
 // 6. Magic Link Route
 router.get('/respond-seller/:token', respondSellerViaEmail);
 
-// 7. Public Route
+// 7. ✅ NEW CONTACT ROUTE (For sending emails)
+router.post('/contact', verifyToken, contactLandlord);
+
+// 8. Public Route (Always keep at bottom)
 router.get('/:id', verifyToken, getUser);
 
 export default router;
