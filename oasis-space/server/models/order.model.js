@@ -3,25 +3,29 @@ import mongoose from 'mongoose';
 const orderSchema = new mongoose.Schema(
   {
     userRef: {
-      type: String, // Jo user payment kar raha hai
+      type: String,
       required: true,
     },
-    listingRef: {
-      type: mongoose.Schema.Types.ObjectId, // Jis property ke liye payment hui
-      ref: 'Listing', // Isse hum Listing ka photo/naam fetch kar payenge
+    listingRef: { // Kis property ke liye payment hua
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Listing',
       required: true,
     },
     amount: {
       type: Number,
       required: true,
     },
-    paymentId: {
-      type: String, // Razorpay Payment ID (future ke liye)
-      default: 'manual_entry',
+    paymentId: { // Razorpay Payment ID
+      type: String,
+      required: true,
+    },
+    orderId: { // Razorpay Order ID
+      type: String,
+      required: true,
     },
     status: {
       type: String,
-      default: 'success', // success, pending, failed
+      default: 'pending', // pending, success, failed
     },
   },
   { timestamps: true }

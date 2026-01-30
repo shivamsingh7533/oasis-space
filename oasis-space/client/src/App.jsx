@@ -21,9 +21,12 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import ChatWidget from './components/ChatWidget';
-
-// ✅ NEW IMPORT
 import OrderHistory from './pages/OrderHistory';
+
+// Footer Pages
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import FAQ from './pages/FAQ';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -42,12 +45,14 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="flex flex-col min-h-screen relative">
+      <div className="flex flex-col min-h-screen relative bg-slate-900"> {/* Added bg-slate-900 for safety */}
         <Header />
         
-        <main className="flex-grow">
+        {/* 👇👇👇 MAGIC FIX IS HERE 👇👇👇 */}
+        {/* 'min-h-[85vh]' ensure karega ki ye hissa hamesha bada rahe */}
+        <main className="flex-grow min-h-[85vh]">
           <Routes>
-            {/* Public Routes */}
+            {/* --- PUBLIC ROUTES --- */}
             <Route path='/' element={<Home />} />
             <Route path='/sign-in' element={<SignIn />} />
             <Route path='/sign-up' element={<SignUp />} />
@@ -57,6 +62,11 @@ export default function App() {
             <Route path='/listing/:listingId' element={<Listing />} />
             <Route path='/forgot-password' element={<ForgotPassword />} />
             <Route path='/reset-password/:id/:token' element={<ResetPassword />} />
+
+            {/* Footer Pages Routes */}
+            <Route path='/privacy' element={<Privacy />} />
+            <Route path='/terms' element={<Terms />} />
+            <Route path='/faq' element={<FAQ />} />
 
             {/* --- ADMIN PROTECTED ROUTES --- */}
             <Route element={<AdminRoute />}>
@@ -73,13 +83,13 @@ export default function App() {
               {/* Seller Dashboard */}
               <Route path='/seller-dashboard' element={<SellerDashboard />} />
 
-              {/* ✅ NEW ROUTE FOR ORDER HISTORY */}
+              {/* Order History */}
               <Route path='/order-history' element={<OrderHistory />} />
             </Route>
           </Routes>
         </main>
 
-        {/* ✅ CHATBOT ADDED HERE */}
+        {/* CHATBOT */}
         <ChatWidget />
 
         <Footer />

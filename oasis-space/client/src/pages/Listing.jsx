@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 import Contact from '../components/Contact';
 import EMICalculator from '../components/EMICalculator';
+import RazorpayBtn from '../components/RazorpayBtn'; // ✅ Payment Button Import
 
 // IMPORTS FOR SLIDER
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -100,7 +101,7 @@ export default function Listing() {
       {listing && !loading && !error && (
         <div className='max-w-6xl mx-auto px-4 pt-6'>
           
-          {/* ✅ SLIDER SECTION (Updated with Labels) */}
+          {/* SLIDER SECTION */}
           <div className='relative w-full h-[300px] sm:h-[450px] bg-slate-800 rounded-3xl overflow-hidden shadow-2xl border border-slate-700 group'>
             <Swiper
               modules={[Navigation, Pagination]}
@@ -121,8 +122,7 @@ export default function Listing() {
                       />
                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent pointer-events-none"></div>
                        
-                       {/* 👇✅ NEW: IMAGE LABEL DISPLAY */}
-                       {/* Sirf tab dikhega agar label exist karta hai aur empty nahi hai */}
+                       {/* IMAGE LABEL DISPLAY */}
                        {listing.imageLabels && listing.imageLabels[index] && (
                            <div className="absolute bottom-8 left-8 bg-black/50 backdrop-blur-md text-white px-5 py-2 rounded-xl border border-white/20 shadow-xl z-10 animate-fadeIn">
                                <p className="font-bold tracking-wider uppercase text-sm flex items-center gap-2">
@@ -192,8 +192,10 @@ export default function Listing() {
                     )}
                 </div>
 
-                {/* ACTION BUTTONS */}
+                {/* ✅ ACTION BUTTONS (Map, EMI, Payment) */}
                 <div className='flex flex-wrap gap-4 mb-6'>
+                    
+                    {/* 1. Map Button */}
                     <button 
                         onClick={() => setShowMap(!showMap)}
                         className='flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg'
@@ -202,7 +204,7 @@ export default function Listing() {
                         {showMap ? 'Hide Map' : 'View on Map'}
                     </button>
 
-                    {/* EMI Button only for Sale */}
+                    {/* 2. EMI Button (Only for Sale) */}
                     {listing.type === 'sale' && (
                         <button 
                             onClick={() => setShowEMI(!showEMI)}
@@ -212,6 +214,17 @@ export default function Listing() {
                             {showEMI ? 'Hide Calculator' : 'Calculate EMI'}
                         </button>
                     )}
+
+                    {/* 3. ✅ BOOK NOW BUTTON (Razorpay) */}
+                    {/* Sirf tab dikhega agar user Owner nahi hai */}
+                    {currentUser && listing.userRef !== currentUser._id && (
+                         <RazorpayBtn 
+                            listing={listing} 
+                            btnText="Book Now (₹500)"
+                            customStyle="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg"
+                         />
+                    )}
+
                 </div>
 
                 {/* EMI CALCULATOR */}
@@ -244,10 +257,7 @@ export default function Listing() {
                                     </Popup>
                                 </Marker>
                             )}
-
-                            {/* RECENTER BUTTON */}
                             <RecenterMapBtn lat={lat} lng={lng} />
-
                         </MapContainer>
                     </div>
                 )}

@@ -1,13 +1,19 @@
 import express from 'express';
-import { createOrder, getUserOrders } from '../controllers/order.controller.js';
-import { verifyToken } from '../utils/verifyUser.js';
+import { verifyToken } from '../utils/verifyUser.js'; 
+import { createOrder, verifyPayment, getOrderHistory, deleteOrder } from '../controllers/order.controller.js'; // ✅ Import deleteOrder
 
 const router = express.Router();
 
-// Order Create karne ka route
+// Route: /api/order/create
 router.post('/create', verifyToken, createOrder);
 
-// Order History dekhne ka route
-router.get('/history/:id', verifyToken, getUserOrders);
+// Route: /api/order/verify
+router.post('/verify', verifyToken, verifyPayment);
+
+// Route: GET ORDER HISTORY
+router.get('/history', verifyToken, getOrderHistory);
+
+// ✅ NEW ROUTE: DELETE ORDER
+router.delete('/delete/:id', verifyToken, deleteOrder);
 
 export default router;

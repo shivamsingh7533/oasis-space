@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { FaBoxOpen, FaRupeeSign, FaCalendarAlt, FaCheckCircle, FaExclamationCircle, FaArrowLeft, FaSearch } from 'react-icons/fa';
+import { 
+    FaBoxOpen, FaRupeeSign, FaCalendarAlt, FaCheckCircle, 
+    FaExclamationCircle, FaArrowLeft, FaSearch, FaTrash 
+} from 'react-icons/fa'; // ✅ Added FaTrash
 
 export default function OrderHistory() {
-  const { currentUser } = useSelector((state) => state.user);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -12,7 +13,7 @@ export default function OrderHistory() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await fetch(`/api/order/history/${currentUser._id}`);
+        const res = await fetch('/api/order/history');
         const data = await res.json();
         
         if (data.success === false) {
@@ -30,10 +31,32 @@ export default function OrderHistory() {
     };
 
     fetchOrders();
-  }, [currentUser._id]);
+  }, []);
+
+  // ✅ DELETE FUNCTION
+  const handleDeleteOrder = async (orderId) => {
+      if(!window.confirm("Are you sure you want to delete this record from history?")) return;
+
+      try {
+          const res = await fetch(`/api/order/delete/${orderId}`, {
+              method: 'DELETE',
+          });
+          const data = await res.json();
+
+          if (data.success === false) {
+              alert(data.message);
+              return;
+          }
+
+          // UI update (Remove deleted item instantly)
+          setOrders((prev) => prev.filter((order) => order._id !== orderId));
+
+      } catch (error) {
+          console.log(error);
+      }
+  };
 
   return (
-    // ✅ ADDED: 'bg-slate-900' to match full site theme
     <div className='min-h-screen bg-slate-900 text-slate-200 pb-20'>
       
       <div className='max-w-4xl mx-auto p-4 pt-24'>
@@ -66,7 +89,7 @@ export default function OrderHistory() {
             </div>
         )}
 
-        {/* EMPTY STATE (No Orders) - Styled for Dark Mode */}
+        {/* EMPTY STATE (No Orders) */}
         {!loading && orders.length === 0 && (
             <div className='flex flex-col items-center justify-center gap-6 mt-10 bg-slate-800 p-12 rounded-3xl border border-slate-700 shadow-2xl text-center'>
                  <div className="bg-slate-700/50 p-6 rounded-full shadow-inner">
@@ -87,8 +110,17 @@ export default function OrderHistory() {
         {/* ORDER LIST */}
         <div className='flex flex-col gap-5'>
             {!loading && orders.length > 0 && orders.map((order) => (
-            <div key={order._id} className='bg-slate-800 p-5 rounded-2xl flex flex-col sm:flex-row gap-5 border border-slate-700 shadow-lg hover:shadow-xl hover:border-slate-600 transition-all group'>
+            <div key={order._id} className='relative bg-slate-800 p-5 rounded-2xl flex flex-col sm:flex-row gap-5 border border-slate-700 shadow-lg hover:shadow-xl hover:border-slate-600 transition-all group'>
                 
+                {/* ✅ DELETE BUTTON (Top Right) */}
+                <button 
+                    onClick={() => handleDeleteOrder(order._id)}
+                    className='absolute top-4 right-4 text-slate-600 hover:text-red-500 transition-colors p-2 z-10'
+                    title="Delete Transaction"
+                >
+                    <FaTrash />
+                </button>
+
                 {/* 1. Property Image */}
                 <Link to={`/listing/${order.listingRef?._id}`} className='w-full sm:w-40 h-32 flex-shrink-0 bg-slate-900 rounded-xl overflow-hidden relative'>
                 {order.listingRef?.imageUrls?.[0] ? (
@@ -105,30 +137,30 @@ export default function OrderHistory() {
                 </Link>
 
                 {/* 2. Order Details */}
-                <div className='flex-1 flex flex-col justify-between py-1'>
+                <div className='flex-1 flex flex-col justify-between py-1 pr-10'> {/* Added pr-10 to avoid overlap with delete btn */}
                     <div>
-                        <div className='flex justify-between items-start'>
-                            <h3 className='text-xl font-bold text-white truncate pr-4'>
+                        <div className='flex flex-wrap items-center gap-3 mb-2'>
+                            <h3 className='text-xl font-bold text-white truncate max-w-[200px] sm:max-w-xs'>
                                 {order.listingRef?.name || 'Unknown Property'}
                             </h3>
                             {/* Status Badge */}
                             {order.status === 'success' ? (
-                                <span className='text-green-400 flex items-center gap-1.5 bg-green-500/10 px-3 py-1 rounded-full text-xs font-bold uppercase border border-green-500/20'>
+                                <span className='text-green-400 flex items-center gap-1.5 bg-green-500/10 px-3 py-1 rounded-full text-[10px] font-bold uppercase border border-green-500/20'>
                                     <FaCheckCircle /> Paid
                                 </span>
                             ) : (
-                                <span className='text-red-400 flex items-center gap-1.5 bg-red-500/10 px-3 py-1 rounded-full text-xs font-bold uppercase border border-red-500/20'>
+                                <span className='text-red-400 flex items-center gap-1.5 bg-red-500/10 px-3 py-1 rounded-full text-[10px] font-bold uppercase border border-red-500/20'>
                                     <FaExclamationCircle /> Failed
                                 </span>
                             )}
                         </div>
                         
-                        <p className='text-slate-400 text-xs mt-2 font-mono bg-slate-900/60 inline-block px-2 py-1 rounded border border-slate-700/50'>
-                            ID: <span className="select-all">{order._id}</span>
+                        <p className='text-slate-400 text-xs font-mono bg-slate-900/60 inline-block px-2 py-1 rounded border border-slate-700/50 mb-2'>
+                            ID: <span className="select-all">{order.orderId || order._id}</span>
                         </p>
                     </div>
                     
-                    <div className='flex items-center gap-6 mt-4 text-sm text-slate-300'>
+                    <div className='flex items-center gap-6 text-sm text-slate-300'>
                         <span className='flex items-center gap-2'>
                             <FaCalendarAlt className='text-indigo-400' />
                             {new Date(order.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -146,7 +178,7 @@ export default function OrderHistory() {
                         </p>
                     </div>
                     
-                    {/* View Property Button (Mobile: Hidden, Desktop: Visible) */}
+                    {/* View Property Button */}
                     <Link to={`/listing/${order.listingRef?._id}`} className='hidden sm:inline-block mt-3 text-xs text-blue-400 hover:text-blue-300 hover:underline'>
                         View Property Details
                     </Link>
