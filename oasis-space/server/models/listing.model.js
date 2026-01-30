@@ -50,17 +50,27 @@ const listingSchema = new mongoose.Schema(
       type: Boolean,
       default: false, 
     },
+    
+    // ✅ EXISTING: Sirf URLs store karega (Purana code break na ho isliye)
     imageUrls: {
       type: Array,
       required: true,
     },
+
+    // 👇✅ NEW: IMAGE LABELS (Living Room, Kitchen, etc.)
+    // Ye 'imageUrls' ke parallel chalega. 
+    // Example: Agar imageUrls[0] Kitchen ki photo hai, to imageLabels[0] "Kitchen" hoga.
+    imageLabels: {
+        type: Array, 
+        default: [], 
+    },
+
     userRef: {
       type: String,
       required: true,
     },
     
-    // 👇✅ NEW: STATUS FIELD FOR ANALYTICS 👇
-    // Isse hum track karenge ki property available hai, sold hai, ya rented hai
+    // 👇✅ EXISTING: STATUS FIELD FOR ANALYTICS
     status: {
         type: String,
         enum: ['available', 'sold', 'rented'],

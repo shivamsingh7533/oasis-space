@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 import { 
     FaTimes, FaCamera, FaUserEdit, FaSignOutAlt, FaList, 
     FaHeart, FaUserShield, FaUserTag, FaPhone, FaEnvelope, FaLock,
-    FaBoxOpen // ✅ NEW ICON IMPORT
+    FaBoxOpen 
 } from 'react-icons/fa';
 
 export default function Profile({ onClose }) {
@@ -19,11 +19,10 @@ export default function Profile({ onClose }) {
   const [file, setFile] = useState(undefined);
   const [uploading, setUploading] = useState(false);
   
-  // ✅ Initialize FormData with current values
   const [formData, setFormData] = useState({
       username: currentUser.username,
       email: currentUser.email,
-      mobile: currentUser.mobile === '0000000000' ? '' : currentUser.mobile, // Hide dummy mobile
+      mobile: currentUser.mobile === '0000000000' ? '' : currentUser.mobile, 
       password: '',
       avatar: currentUser.avatar
   });
@@ -38,11 +37,9 @@ export default function Profile({ onClose }) {
   
   const dispatch = useDispatch();
 
-  // 🔍 Detect Google User (Heuristic based on Avatar URL or lack of password change capability)
-  // Google avatars usually come from googleusercontent.com
   const isGoogleUser = currentUser.avatar?.includes('googleusercontent.com');
 
-  // 1. 🔥 Live Sync & Auto Logout on 401 Token Expiry
+  // 1. Live Sync & Auto Logout Logic
   useEffect(() => {
       const syncUserData = async () => {
           try {
@@ -50,17 +47,16 @@ export default function Profile({ onClose }) {
               const res = await fetch(`/api/user/${currentUser._id}`);
               
               if (res.status === 401 || res.status === 403) {
-                  console.log("Session expired. Logging out...");
                   dispatch(signOutUserStart());
                   await fetch('/api/auth/signout');
                   dispatch(deleteUserSuccess({})); 
                   if(onClose) onClose(); 
+                  window.location.href = '/'; // Force Refresh
                   return;
               }
 
               const data = await res.json();
               if (res.ok) {
-                  // Update Redux if data changed
                   if(data.sellerStatus !== currentUser.sellerStatus || data.avatar !== currentUser.avatar) {
                       dispatch(updateUserSuccess(data));
                   }
@@ -113,7 +109,7 @@ export default function Profile({ onClose }) {
           }
           dispatch(updateUserSuccess(data));
           setUpdateSuccess(true);
-          setIsEditing(false); // Close edit mode on success
+          setIsEditing(false); 
           setTimeout(() => setUpdateSuccess(false), 3000);
       } catch (err) {
           dispatch(updateUserFailure(err.message));
@@ -131,18 +127,30 @@ export default function Profile({ onClose }) {
         const res = await fetch(`/api/user/request-seller/${currentUser._id}`, { method: 'POST' });
         const data = await res.json();
         if (data.success === false) return;
-        dispatch(updateUserSuccess(data)); // Update Redux with 'pending' status
+        dispatch(updateUserSuccess(data)); 
         alert("Request Sent Successfully!");
     } catch (error) { 
         console.log(error);
     }
   };
 
+  // ✅ FIXED: FAST SIGN OUT LOGIC
   const handleSignOut = async () => {
     try {
       dispatch(signOutUserStart());
+      
+      // 1. Call API
       await fetch('/api/auth/signout');
+      
+      // 2. Clear Redux State Immediately
+      dispatch(deleteUserSuccess({})); 
+
+      // 3. Close Modal
       if(onClose) onClose();
+
+      // 4. 🚀 FORCE REFRESH TO HOME (Fix for lag)
+      window.location.href = '/'; 
+
     } catch (error) { 
         console.log(error);
     }
@@ -160,6 +168,7 @@ export default function Profile({ onClose }) {
       }
       dispatch(deleteUserSuccess(data));
       if(onClose) onClose();
+      window.location.href = '/'; // Redirect after delete
     } catch (error) { 
         dispatch(deleteUserFailure(error.message));
     }
@@ -202,7 +211,7 @@ export default function Profile({ onClose }) {
     }
   };
 
-  // Helper for Seller Button Text/Color
+  // Helper for Seller Button
   const getSellerStatusUI = () => {
       switch(currentUser.sellerStatus) {
           case 'approved': return { text: 'Verified Seller', color: 'text-green-400', icon: '✅' };
@@ -256,7 +265,6 @@ export default function Profile({ onClose }) {
                 </button>
             ) : (
                 <form onSubmit={handleSubmit} className='bg-slate-800/80 p-4 rounded-xl border border-slate-700 space-y-3'>
-                    {/* Username */}
                     <div className='relative'>
                         <span className='absolute left-3 top-2.5 text-slate-500'><FaUserEdit /></span>
                         <input 
@@ -268,7 +276,6 @@ export default function Profile({ onClose }) {
                         />
                     </div>
                     
-                    {/* Mobile Number (Updated) */}
                     <div className='relative'>
                         <span className='absolute left-3 top-2.5 text-slate-500'><FaPhone /></span>
                         <input 
@@ -280,7 +287,6 @@ export default function Profile({ onClose }) {
                         />
                     </div>
 
-                    {/* Password (Disabled for Google Users) */}
                     <div className='relative'>
                         <span className='absolute left-3 top-2.5 text-slate-500'><FaLock /></span>
                         <input 
@@ -316,7 +322,7 @@ export default function Profile({ onClose }) {
                     <span className='text-green-400'>🏠</span> <span className='text-sm font-medium'>List a Property</span>
                 </Link>
 
-                {/* ✅ ORDER HISTORY BUTTON (Added Here) */}
+                {/* ✅ ORDER HISTORY BUTTON */}
                 <Link to="/order-history" onClick={onClose} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
                     <span className='text-yellow-400'><FaBoxOpen /></span> <span className='text-sm font-medium'>Order History</span>
                 </Link>
@@ -334,7 +340,7 @@ export default function Profile({ onClose }) {
                     </div>
                 )}
                 
-                {/* If Approved, Show Seller Dashboard Link */}
+                {/* Seller Dashboard Link */}
                 {currentUser.sellerStatus === 'approved' && (
                     <Link to="/seller-dashboard" onClick={onClose} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
                          <span className='text-blue-400'><FaUserTag /></span> <span className='text-sm font-medium'>Seller Dashboard</span>

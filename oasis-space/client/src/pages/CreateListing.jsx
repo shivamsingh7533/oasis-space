@@ -9,6 +9,7 @@ export default function CreateListing() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     imageUrls: [],
+    imageLabels: [], // ✅ NEW: Labels state
     name: '',
     description: '',
     address: '',
@@ -44,7 +45,12 @@ export default function CreateListing() {
         promises.push(storeImage(files[i]));
       }
       Promise.all(promises).then((urls) => {
-          setFormData({ ...formData, imageUrls: formData.imageUrls.concat(urls) });
+          // ✅ SYNC LABELS: Add empty labels for new images
+          setFormData({ 
+              ...formData, 
+              imageUrls: formData.imageUrls.concat(urls),
+              imageLabels: formData.imageLabels.concat(Array(urls.length).fill('')) 
+          });
           setUploading(false);
         }).catch((err) => { console.log(err); setImageUploadError('Image upload failed'); setUploading(false); });
     } else { setImageUploadError('Maximum 6 images allowed.'); setUploading(false); }
@@ -62,13 +68,30 @@ export default function CreateListing() {
   const handleAddImageUrl = () => {
     if (!imageUrlInput.trim()) return setImageUploadError('Please enter an image URL.');
     if (formData.imageUrls.length >= 6) return setImageUploadError('Maximum 6 images allowed.');
-    setFormData({ ...formData, imageUrls: [...formData.imageUrls, imageUrlInput] });
+    
+    // ✅ SYNC LABELS
+    setFormData({ 
+        ...formData, 
+        imageUrls: [...formData.imageUrls, imageUrlInput],
+        imageLabels: [...formData.imageLabels, ''] 
+    });
     setImageUrlInput('');
     setImageUploadError(false);
   };
 
   const handleRemoveImage = (index) => { 
-    setFormData({ ...formData, imageUrls: formData.imageUrls.filter((_, i) => i !== index) }); 
+    setFormData({ 
+        ...formData, 
+        imageUrls: formData.imageUrls.filter((_, i) => i !== index),
+        imageLabels: formData.imageLabels.filter((_, i) => i !== index) // ✅ Remove label too
+    }); 
+  };
+
+  // ✅ NEW: HANDLE LABEL CHANGE
+  const handleLabelChange = (index, value) => {
+      const newLabels = [...formData.imageLabels];
+      newLabels[index] = value;
+      setFormData({ ...formData, imageLabels: newLabels });
   };
 
   // --- MODIFIED HANDLE CHANGE (SELLER CHECK) 🛡️ ---
@@ -95,7 +118,7 @@ export default function CreateListing() {
     }
   };
 
-  // 🤖 AI GENERATE FUNCTION (FIXED ✅)
+  // 🤖 AI GENERATE FUNCTION
   const handleAIGenerate = async (e) => {
     e.preventDefault(); 
     if (!formData.name || !formData.address) { 
@@ -127,7 +150,6 @@ export default function CreateListing() {
         if (data.success === false) {
             setError(data.message); 
         } else {
-            // ✅ FIX: data.description use kiya hai
             setFormData({ ...formData, description: data.description });
         }
         
@@ -187,7 +209,6 @@ export default function CreateListing() {
                 <label className={labelClass}>Description</label>
                 <textarea id='description' placeholder='Description' className={`${inputClass} h-32 resize-none`} onChange={handleChange} value={formData.description} required />
                 
-                {/* 🤖 AI BUTTON */}
                 <button 
                     type='button' 
                     onClick={handleAIGenerate} 
@@ -295,20 +316,32 @@ export default function CreateListing() {
               
               <p className='text-red-400 text-sm mt-2 text-center'>{imageUploadError && imageUploadError}</p>
               
-              {/* UPLOADED IMAGES LIST */}
+              {/* UPLOADED IMAGES LIST WITH LABELS */}
               {formData.imageUrls.length > 0 && (
-                <div className="flex flex-col gap-2 mt-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="flex flex-col gap-3 mt-4 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
                   {formData.imageUrls.map((url, index) => (
-                    <div key={index} className='flex justify-between items-center bg-slate-700 p-2 rounded-lg border border-slate-600'>
+                    <div key={index} className='flex items-center gap-3 bg-slate-700 p-2 rounded-lg border border-slate-600'>
                       <img 
                           src={url} 
                           alt='listing' 
-                          className='w-20 h-16 object-cover rounded-md bg-slate-600'
+                          className='w-20 h-16 object-cover rounded-md bg-slate-600 flex-shrink-0'
                           onError={(e) => {
                              e.target.onerror = null; 
                              e.target.src = "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg";
                           }} 
                       />
+                      
+                      {/* ✅ IMAGE LABEL INPUT */}
+                      <div className="flex-1">
+                          <input 
+                             type="text"
+                             placeholder="Label (e.g. Kitchen, Hall)"
+                             className="bg-slate-800 text-white text-sm p-2 rounded border border-slate-500 w-full focus:outline-none focus:border-blue-500"
+                             value={formData.imageLabels[index] || ''}
+                             onChange={(e) => handleLabelChange(index, e.target.value)}
+                          />
+                      </div>
+
                       <button type='button' onClick={() => handleRemoveImage(index)} className='p-2 text-red-400 hover:text-red-300 uppercase font-semibold text-sm'>
                         <FaTrashAlt />
                       </button>

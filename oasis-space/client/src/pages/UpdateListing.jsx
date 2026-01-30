@@ -11,6 +11,7 @@ export default function UpdateListing() {
   
   const [formData, setFormData] = useState({
     imageUrls: [],
+    imageLabels: [], // ✅ NEW: Labels state
     name: '',
     description: '',
     address: '',
@@ -43,6 +44,10 @@ export default function UpdateListing() {
           console.log(data.message);
           return;
         }
+        // ✅ Ensure imageLabels exist for old listings
+        if (!data.imageLabels || data.imageLabels.length !== data.imageUrls.length) {
+            data.imageLabels = new Array(data.imageUrls.length).fill('');
+        }
         setFormData(data); 
       } catch (error) {
         console.log(error);
@@ -51,7 +56,7 @@ export default function UpdateListing() {
     fetchListing();
   }, [params.listingId]);
 
-  // --- 2. IMAGE UPLOAD LOGIC (Existing Feature) ---
+  // --- 2. IMAGE UPLOAD LOGIC ---
   const handleImageSubmit = (files) => {
     if (files.length > 0 && files.length + formData.imageUrls.length < 7) {
       setUploading(true);
@@ -69,7 +74,12 @@ export default function UpdateListing() {
 
       Promise.all(promises)
         .then((urls) => {
-          setFormData({ ...formData, imageUrls: formData.imageUrls.concat(urls) });
+          // ✅ SYNC LABELS
+          setFormData({ 
+              ...formData, 
+              imageUrls: formData.imageUrls.concat(urls),
+              imageLabels: formData.imageLabels.concat(Array(urls.length).fill(''))
+          });
           setImageUploadError(false);
           setUploading(false);
         })
@@ -96,15 +106,29 @@ export default function UpdateListing() {
     setFormData({
       ...formData,
       imageUrls: formData.imageUrls.filter((_, i) => i !== index),
+      imageLabels: formData.imageLabels.filter((_, i) => i !== index), // ✅ Remove label
     });
   };
 
   const handleAddImageUrl = () => {
     if (!imageUrlInput.trim()) return setImageUploadError('Please enter a valid URL');
     if (formData.imageUrls.length >= 6) return setImageUploadError('Maximum 6 images allowed.');
-    setFormData({ ...formData, imageUrls: [...formData.imageUrls, imageUrlInput] });
+    
+    // ✅ SYNC LABELS
+    setFormData({ 
+        ...formData, 
+        imageUrls: [...formData.imageUrls, imageUrlInput],
+        imageLabels: [...formData.imageLabels, '']
+    });
     setImageUrlInput('');
     setImageUploadError(false);
+  };
+
+  // ✅ NEW: HANDLE LABEL CHANGE
+  const handleLabelChange = (index, value) => {
+      const newLabels = [...formData.imageLabels];
+      newLabels[index] = value;
+      setFormData({ ...formData, imageLabels: newLabels });
   };
 
   // --- 3. FORM HANDLERS ---
@@ -120,7 +144,7 @@ export default function UpdateListing() {
     }
   };
 
-  // 🤖 AI GENERATE FUNCTION (FIXED ✅)
+  // 🤖 AI GENERATE FUNCTION
   const handleAIGenerate = async (e) => {
     e.preventDefault(); 
     if (!formData.name || !formData.address) { 
@@ -132,7 +156,6 @@ export default function UpdateListing() {
         setAiLoading(true); 
         setError(false);
         
-        // Sending structured data to match Backend Controller
         const res = await fetch('/api/listing/generate-ai', { 
             method: 'POST', 
             headers: { 'Content-Type': 'application/json' }, 
@@ -153,7 +176,6 @@ export default function UpdateListing() {
         if (data.success === false) {
             setError(data.message); 
         } else {
-            // ✅ FIX: data.description use kiya hai
             setFormData({ ...formData, description: data.description });
         }
         
@@ -218,7 +240,6 @@ export default function UpdateListing() {
                 <label className={labelClass}>Description</label>
                 <textarea id='description' placeholder='Description' className={`${inputClass} h-32 resize-none`} onChange={handleChange} value={formData.description} required />
                 
-                {/* 🤖 AI BUTTON */}
                 <button 
                     type='button' 
                     onClick={handleAIGenerate} 
@@ -326,20 +347,32 @@ export default function UpdateListing() {
               
               <p className='text-red-400 text-sm mt-2 text-center'>{imageUploadError && imageUploadError}</p>
               
-              {/* UPLOADED IMAGES LIST */}
+              {/* UPLOADED IMAGES LIST WITH LABELS */}
               {formData.imageUrls.length > 0 && (
-                <div className="flex flex-col gap-2 mt-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="flex flex-col gap-3 mt-4 max-h-80 overflow-y-auto pr-2 custom-scrollbar">
                   {formData.imageUrls.map((url, index) => (
-                    <div key={index} className='flex justify-between items-center bg-slate-700 p-2 rounded-lg border border-slate-600'>
+                    <div key={index} className='flex items-center gap-3 bg-slate-700 p-2 rounded-lg border border-slate-600'>
                       <img 
                           src={url} 
                           alt='listing' 
-                          className='w-20 h-16 object-cover rounded-md bg-slate-600'
+                          className='w-20 h-16 object-cover rounded-md bg-slate-600 flex-shrink-0'
                           onError={(e) => {
                              e.target.onerror = null; 
                              e.target.src = "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg";
                           }} 
                       />
+                      
+                      {/* ✅ IMAGE LABEL INPUT */}
+                      <div className="flex-1">
+                          <input 
+                             type="text"
+                             placeholder="Label (e.g. Kitchen, Hall)"
+                             className="bg-slate-800 text-white text-sm p-2 rounded border border-slate-500 w-full focus:outline-none focus:border-blue-500"
+                             value={formData.imageLabels[index] || ''}
+                             onChange={(e) => handleLabelChange(index, e.target.value)}
+                          />
+                      </div>
+
                       <button type='button' onClick={() => handleRemoveImage(index)} className='p-2 text-red-400 hover:text-red-300 uppercase font-semibold text-sm'>
                         <FaTrashAlt />
                       </button>
