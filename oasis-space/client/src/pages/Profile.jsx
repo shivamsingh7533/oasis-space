@@ -9,7 +9,8 @@ import {
 import { Link } from 'react-router-dom';
 import { 
     FaTimes, FaCamera, FaUserEdit, FaSignOutAlt, FaList, 
-    FaHeart, FaUserShield, FaUserTag, FaPhone, FaEnvelope, FaLock 
+    FaHeart, FaUserShield, FaUserTag, FaPhone, FaEnvelope, FaLock,
+    FaBoxOpen // ✅ NEW ICON IMPORT
 } from 'react-icons/fa';
 
 export default function Profile({ onClose }) {
@@ -313,6 +314,11 @@ export default function Profile({ onClose }) {
                 
                 <Link to="/create-listing" onClick={onClose} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
                     <span className='text-green-400'>🏠</span> <span className='text-sm font-medium'>List a Property</span>
+                </Link>
+
+                {/* ✅ ORDER HISTORY BUTTON (Added Here) */}
+                <Link to="/order-history" onClick={onClose} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
+                    <span className='text-yellow-400'><FaBoxOpen /></span> <span className='text-sm font-medium'>Order History</span>
                 </Link>
                 
                 {/* Seller Request Logic */}

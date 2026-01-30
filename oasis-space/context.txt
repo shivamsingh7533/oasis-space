@@ -17,6 +17,7 @@ oasis-space
 │   │   ├── components
 │   │   │   ├── AdminRoute.jsx
 │   │   │   ├── AuthModal.jsx
+│   │   │   ├── ChatWidget.jsx
 │   │   │   ├── Contact.jsx
 │   │   │   ├── DashUsers.jsx
 │   │   │   ├── EMICalculator.jsx
@@ -65,6 +66,7 @@ oasis-space
 ├── server
 │   ├── controllers
 │   │   ├── auth.controller.js
+│   │   ├── chat.controller.js
 │   │   ├── listing.controller.js
 │   │   └── user.controller.js
 │   ├── models
@@ -72,6 +74,7 @@ oasis-space
 │   │   └── user.model.js
 │   ├── routes
 │   │   ├── auth.route.js
+│   │   ├── chat.route.js
 │   │   ├── listing.route.js
 │   │   └── user.route.js
 │   ├── utils

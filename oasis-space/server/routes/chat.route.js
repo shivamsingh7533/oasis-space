@@ -1,10 +1,10 @@
 import express from 'express';
 // ✅ Import updated function name
-import { chatWithGemini } from '../controllers/chat.controller.js'; 
+import { chatWithGroq } from '../controllers/chat.controller.js'; 
 
 const router = express.Router();
 
-// Route wahi rahega, bas function badal gaya
-router.post('/ask', chatWithGemini);
+// ✅ Route /ask par ab Groq wala function chalega
+router.post('/ask', chatWithGroq);
 
 export default router;

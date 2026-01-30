@@ -20,9 +20,10 @@ import SellerDashboard from './pages/SellerDashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
-
-// ✅ NEW CHAT WIDGET IMPORT
 import ChatWidget from './components/ChatWidget';
+
+// ✅ NEW IMPORT
+import OrderHistory from './pages/OrderHistory';
 
 export default function App() {
   const [loading, setLoading] = useState(true);
@@ -71,11 +72,14 @@ export default function App() {
               
               {/* Seller Dashboard */}
               <Route path='/seller-dashboard' element={<SellerDashboard />} />
+
+              {/* ✅ NEW ROUTE FOR ORDER HISTORY */}
+              <Route path='/order-history' element={<OrderHistory />} />
             </Route>
           </Routes>
         </main>
 
-        {/* ✅ CHATBOT ADDED HERE (Visible on all pages) */}
+        {/* ✅ CHATBOT ADDED HERE */}
         <ChatWidget />
 
         <Footer />
