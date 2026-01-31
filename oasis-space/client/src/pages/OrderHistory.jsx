@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { 
     FaBoxOpen, FaRupeeSign, FaCalendarAlt, FaCheckCircle, 
-    FaExclamationCircle, FaArrowLeft, FaSearch, FaTrash 
-} from 'react-icons/fa'; // ✅ Added FaTrash
+    FaExclamationCircle, FaArrowLeft, FaSearch, FaTrash, FaBan 
+} from 'react-icons/fa'; 
 
 export default function OrderHistory() {
   const [orders, setOrders] = useState([]);
@@ -33,7 +33,7 @@ export default function OrderHistory() {
     fetchOrders();
   }, []);
 
-  // ✅ DELETE FUNCTION
+  // DELETE FUNCTION
   const handleDeleteOrder = async (orderId) => {
       if(!window.confirm("Are you sure you want to delete this record from history?")) return;
 
@@ -48,11 +48,40 @@ export default function OrderHistory() {
               return;
           }
 
-          // UI update (Remove deleted item instantly)
           setOrders((prev) => prev.filter((order) => order._id !== orderId));
 
       } catch (error) {
           console.log(error);
+      }
+  };
+
+  // ✅ CANCEL FUNCTION (Fixed: Using 'data' variable)
+  const handleCancelOrder = async (orderId) => {
+      if(!window.confirm("Are you sure you want to cancel this booking? The owner will be notified.")) return;
+
+      try {
+          const res = await fetch(`/api/order/cancel/${orderId}`, {
+              method: 'POST',
+          });
+          const data = await res.json(); // Ab hum is 'data' ka use karenge
+
+          if (res.ok === false) {
+              // Agar koi error aayi (jaise backend se message), to use alert karein
+              alert(data.message || "Could not cancel order.");
+              return;
+          }
+
+          // UI update (Change status to 'cancelled' locally)
+          setOrders((prev) => prev.map((order) => 
+            order._id === orderId ? { ...order, status: 'cancelled' } : order
+          ));
+          
+          // Success message jo backend ne bheja hai (ya fallback text)
+          alert(typeof data === 'string' ? data : "Booking cancelled successfully!");
+
+      } catch (error) {
+          console.log(error);
+          alert("Something went wrong!");
       }
   };
 
@@ -112,11 +141,11 @@ export default function OrderHistory() {
             {!loading && orders.length > 0 && orders.map((order) => (
             <div key={order._id} className='relative bg-slate-800 p-5 rounded-2xl flex flex-col sm:flex-row gap-5 border border-slate-700 shadow-lg hover:shadow-xl hover:border-slate-600 transition-all group'>
                 
-                {/* ✅ DELETE BUTTON (Top Right) */}
+                {/* DELETE BUTTON (Top Right) */}
                 <button 
                     onClick={() => handleDeleteOrder(order._id)}
                     className='absolute top-4 right-4 text-slate-600 hover:text-red-500 transition-colors p-2 z-10'
-                    title="Delete Transaction"
+                    title="Delete Transaction History"
                 >
                     <FaTrash />
                 </button>
@@ -137,16 +166,21 @@ export default function OrderHistory() {
                 </Link>
 
                 {/* 2. Order Details */}
-                <div className='flex-1 flex flex-col justify-between py-1 pr-10'> {/* Added pr-10 to avoid overlap with delete btn */}
+                <div className='flex-1 flex flex-col justify-between py-1 pr-10'>
                     <div>
                         <div className='flex flex-wrap items-center gap-3 mb-2'>
                             <h3 className='text-xl font-bold text-white truncate max-w-[200px] sm:max-w-xs'>
                                 {order.listingRef?.name || 'Unknown Property'}
                             </h3>
-                            {/* Status Badge */}
+                            
+                            {/* STATUS BADGES */}
                             {order.status === 'success' ? (
                                 <span className='text-green-400 flex items-center gap-1.5 bg-green-500/10 px-3 py-1 rounded-full text-[10px] font-bold uppercase border border-green-500/20'>
                                     <FaCheckCircle /> Paid
+                                </span>
+                            ) : order.status === 'cancelled' ? (
+                                <span className='text-orange-400 flex items-center gap-1.5 bg-orange-500/10 px-3 py-1 rounded-full text-[10px] font-bold uppercase border border-orange-500/20'>
+                                    <FaBan /> Cancelled
                                 </span>
                             ) : (
                                 <span className='text-red-400 flex items-center gap-1.5 bg-red-500/10 px-3 py-1 rounded-full text-[10px] font-bold uppercase border border-red-500/20'>
@@ -178,10 +212,30 @@ export default function OrderHistory() {
                         </p>
                     </div>
                     
+                    {/* CANCEL BUTTON (Only if status is success) */}
+                    {order.status === 'success' && (
+                        <button 
+                            onClick={() => handleCancelOrder(order._id)}
+                            className='hidden sm:inline-block mt-2 text-xs text-red-400 hover:text-red-300 border border-red-500/30 px-3 py-1 rounded hover:bg-red-500/10 transition'
+                        >
+                            Cancel Booking
+                        </button>
+                    )}
+
                     {/* View Property Button */}
-                    <Link to={`/listing/${order.listingRef?._id}`} className='hidden sm:inline-block mt-3 text-xs text-blue-400 hover:text-blue-300 hover:underline'>
-                        View Property Details
+                    <Link to={`/listing/${order.listingRef?._id}`} className='hidden sm:inline-block mt-2 text-xs text-blue-400 hover:text-blue-300 hover:underline'>
+                        View Details
                     </Link>
+
+                    {/* Mobile Cancel Button */}
+                    {order.status === 'success' && (
+                         <button 
+                            onClick={() => handleCancelOrder(order._id)}
+                            className='sm:hidden text-xs text-red-400 hover:text-red-300 font-bold'
+                         >
+                            Cancel
+                         </button>
+                    )}
                 </div>
 
             </div>

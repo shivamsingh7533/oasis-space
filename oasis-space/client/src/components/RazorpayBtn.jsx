@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom'; // ✅ Added useNavigate
 import PaymentLoading from './PaymentLoading';
 import { FaCreditCard } from 'react-icons/fa';
 
 export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle = "" }) {
   const { currentUser } = useSelector((state) => state.user);
   const [paymentStatus, setPaymentStatus] = useState(null); // null | 'processing' | 'success' | 'failed'
+  const navigate = useNavigate(); // ✅ Initialize hook
 
   // 1. Script Load Function
   const loadRazorpayScript = () => {
@@ -35,7 +37,7 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
 
     try {
       // B. Create Order (Backend Call)
-      const amount = 500; // Example: ₹500 (Isse dynamic karenge baad mein)
+      const amount = 500; // Example: ₹500
       
       const orderRes = await fetch('/api/order/create', {
         method: 'POST',
@@ -48,7 +50,7 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
 
       // C. Open Razorpay Options
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Frontend Key (Not Secret!)
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Frontend Key
         amount: orderData.order.amount,
         currency: orderData.order.currency,
         name: "OasisSpace",
@@ -76,7 +78,8 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
                 setPaymentStatus('success');
                 setTimeout(() => {
                     setPaymentStatus(null);
-                    window.location.reload(); // Ya Order History page par bhejein
+                    // ✅ REDIRECT instead of RELOAD
+                    navigate('/order-history'); 
                 }, 3000);
              } else {
                 setPaymentStatus('failed');
@@ -95,7 +98,7 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
           contact: currentUser.mobile || "9999999999"
         },
         theme: {
-          color: "#2563eb" // Blue Theme matching your site
+          color: "#2563eb" // Blue Theme
         },
         // Handle Modal Close by User
         modal: {

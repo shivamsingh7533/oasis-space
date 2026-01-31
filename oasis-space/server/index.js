@@ -9,7 +9,8 @@ import userRouter from './routes/user.route.js';
 import authRouter from './routes/auth.route.js';
 import listingRouter from './routes/listing.route.js';
 import chatRouter from './routes/chat.route.js'; 
-import orderRouter from './routes/order.route.js'; // ✅ NEW ORDER IMPORT
+import orderRouter from './routes/order.route.js';
+import notificationRouter from './routes/notification.route.js'; // ✅ NEW NOTIFICATION IMPORT
 
 dotenv.config();
 
@@ -48,7 +49,8 @@ app.use('/api/user', userRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/listing', listingRouter);
 app.use('/api/chat', chatRouter); 
-app.use('/api/order', orderRouter); // ✅ NEW ORDER ROUTE ADDED
+app.use('/api/order', orderRouter);
+app.use('/api/notification', notificationRouter); // ✅ NEW NOTIFICATION ROUTE ADDED
 
 // Health Check
 app.get('/ping', (req, res) => {

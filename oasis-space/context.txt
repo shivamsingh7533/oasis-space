@@ -25,15 +25,20 @@ oasis-space
 │   │   │   ├── Header.jsx
 │   │   │   ├── ListingItem.jsx
 │   │   │   ├── OAuth.jsx
+│   │   │   ├── PaymentLoading.jsx
 │   │   │   ├── Preloader.jsx
-│   │   │   └── PrivateRoute.jsx
+│   │   │   ├── PrivateRoute.jsx
+│   │   │   └── RazorpayBtn.jsx
 │   │   ├── pages
 │   │   │   ├── About.jsx
 │   │   │   ├── CreateListing.jsx
 │   │   │   ├── Dashboard.jsx
+│   │   │   ├── FAQ.jsx
 │   │   │   ├── ForgotPassword.jsx
 │   │   │   ├── Home.jsx
 │   │   │   ├── Listing.jsx
+│   │   │   ├── OrderHistory.jsx
+│   │   │   ├── Privacy.jsx
 │   │   │   ├── Profile.jsx
 │   │   │   ├── ResetPassword.jsx
 │   │   │   ├── SavedListings.jsx
@@ -41,6 +46,7 @@ oasis-space
 │   │   │   ├── SellerDashboard.jsx
 │   │   │   ├── SignIn.jsx
 │   │   │   ├── SignUp.jsx
+│   │   │   ├── Terms.jsx
 │   │   │   ├── UpdateListing.jsx
 │   │   │   └── VerifyEmail.jsx
 │   │   ├── redux
@@ -68,14 +74,20 @@ oasis-space
 │   │   ├── auth.controller.js
 │   │   ├── chat.controller.js
 │   │   ├── listing.controller.js
+│   │   ├── notification.controller.js
+│   │   ├── order.controller.js
 │   │   └── user.controller.js
 │   ├── models
 │   │   ├── listing.model.js
+│   │   ├── notification.model.js
+│   │   ├── order.model.js
 │   │   └── user.model.js
 │   ├── routes
 │   │   ├── auth.route.js
 │   │   ├── chat.route.js
 │   │   ├── listing.route.js
+│   │   ├── notification.route.js
+│   │   ├── order.route.js
 │   │   └── user.route.js
 │   ├── utils
 │   │   ├── error.js
