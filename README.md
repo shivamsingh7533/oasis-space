@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./oasis-space/client/public/logo.png" alt="OasisSpace Logo" width="280"/>
+  <img src="./oasis-space/client/public/icon-192.png" alt="OasisSpace Logo" width="120"/>
 </p>
 
 <h1 align="center">🏡 OasisSpace — Premium Real Estate Platform</h1>
