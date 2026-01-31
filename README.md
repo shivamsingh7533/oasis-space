@@ -429,7 +429,7 @@ This project is open source and available under the [MIT License](LICENSE).
 ## 👨‍💻 Author
 
 <p align="center">
-  <strong>Shivam Singh</strong><br/><br/>
+  <strong>Shivam Kumar</strong><br/><br/>
   <a href="https://github.com/shivamsingh7533">
     <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
   </a>
