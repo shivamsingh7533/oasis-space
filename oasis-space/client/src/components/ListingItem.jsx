@@ -1,12 +1,17 @@
 import { Link } from 'react-router-dom';
 import { MdLocationOn } from 'react-icons/md';
-import { FaBed, FaBath, FaHeart, FaRegHeart } from 'react-icons/fa';
+import { FaBed, FaBath, FaHeart, FaRegHeart, FaImage } from 'react-icons/fa'; 
 import { useSelector, useDispatch } from 'react-redux';
 import { updateUserSuccess } from '../redux/user/userSlice';
+import { useState } from 'react'; 
 
 export default function ListingItem({ listing }) {
   const { currentUser } = useSelector((state) => state.user);
   const dispatch = useDispatch();
+  
+  // IMAGE ENHANCER STATES
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Redux se check karein ki property saved hai ya nahi
   const isSaved = currentUser?.savedListings?.includes(listing._id);
@@ -21,8 +26,6 @@ export default function ListingItem({ listing }) {
             headers: {'Content-Type': 'application/json'}
         });
         
-        // ✅ FIX: 'const data =' hata diya.
-        // Hum bas wait kar rahe hain request poori hone ka.
         await res.json(); 
         
         if(res.ok) {
@@ -49,30 +52,44 @@ export default function ListingItem({ listing }) {
     <div className='bg-slate-800 border border-slate-700 shadow-md hover:shadow-2xl transition-all overflow-hidden rounded-2xl w-full sm:w-[300px] group relative'>
       <Link to={`/listing/${listing._id}`}>
         
-        {/* IMAGE SECTION */}
-        <div className='relative overflow-hidden h-[180px]'>
+        {/* IMAGE SECTION (Enhanced) */}
+        <div className='relative overflow-hidden h-[180px] bg-slate-700'>
+          
+          {/* 1. BLUR SKELETON (Jab tak image load na ho) */}
+          {!imageLoaded && (
+             <div className="absolute inset-0 flex items-center justify-center bg-slate-700 animate-pulse z-0">
+                 <FaImage className="text-slate-600 text-4xl" />
+             </div>
+          )}
+
+          {/* 2. MAIN IMAGE (Using .hd-image class) */}
           <img
-            src={listing.imageUrls[0] || 'https://via.placeholder.com/500'}
+            src={imageError ? 'https://cdn.pixabay.com/photo/2016/11/18/17/46/house-1836070_1280.jpg' : (listing.imageUrls[0] || 'https://via.placeholder.com/500')}
             alt='listing cover'
-            className='h-full w-full object-cover group-hover:scale-110 transition-transform duration-500'
+            onLoad={() => setImageLoaded(true)}
+            onError={() => { setImageError(true); setImageLoaded(true); }}
+            // ✅ CHANGE: Added 'hd-image' class here
+            className={`h-full w-full object-cover transition-all duration-700 
+                ${imageLoaded ? 'opacity-100 group-hover:scale-110 hd-image' : 'opacity-0'}
+            `}
           />
           
-          <div className='absolute top-3 left-3 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider border border-slate-600 shadow-sm'>
-             {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
+          <div className='absolute top-3 left-3 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider border border-slate-600 shadow-sm z-10'>
+              {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
           </div>
 
           {listing.offer && (
-            <div className='absolute top-3 left-20 bg-green-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-sm'>
+            <div className='absolute top-3 left-20 bg-green-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-sm z-10'>
                Offer
             </div>
           )}
 
           {/* ❤️ WISHLIST BUTTON */}
           <div 
-             onClick={handleWishlist}
-             className='absolute top-3 right-3 bg-white/90 p-1.5 rounded-full shadow-lg cursor-pointer hover:bg-white transition z-10'
+              onClick={handleWishlist}
+              className='absolute top-3 right-3 bg-white/90 p-1.5 rounded-full shadow-lg cursor-pointer hover:bg-white transition z-10'
           >
-             {isSaved ? <FaHeart className='text-red-500 text-sm' /> : <FaRegHeart className='text-gray-500 text-sm' />}
+              {isSaved ? <FaHeart className='text-red-500 text-sm' /> : <FaRegHeart className='text-gray-500 text-sm' />}
           </div>
         </div>
 

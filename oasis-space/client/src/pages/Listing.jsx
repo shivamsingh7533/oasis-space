@@ -3,11 +3,11 @@ import { useParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import {
   FaBath, FaBed, FaChair, FaMapMarkerAlt, FaParking, FaShare, 
-  FaCalculator, FaMapMarkedAlt, FaCrosshairs
+  FaCalculator, FaMapMarkedAlt, FaCrosshairs, FaImage
 } from 'react-icons/fa';
 import Contact from '../components/Contact';
 import EMICalculator from '../components/EMICalculator';
-import RazorpayBtn from '../components/RazorpayBtn'; // ✅ Payment Button Import
+import RazorpayBtn from '../components/RazorpayBtn'; 
 
 // IMPORTS FOR SLIDER
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -50,6 +50,45 @@ function RecenterMapBtn({ lat, lng }) {
         </button>
     );
 }
+
+// ✅ INTERNAL COMPONENT: Enhanced Image for Slider (Smart Loading + HD Filter)
+const EnhancedSwiperImage = ({ url, index, label }) => {
+    const [loaded, setLoaded] = useState(false);
+    const [error, setError] = useState(false);
+
+    return (
+        <div className="relative h-full w-full font-sans bg-slate-800">
+             {/* Loader Skeleton */}
+             {!loaded && (
+                <div className="absolute inset-0 flex items-center justify-center bg-slate-800 animate-pulse z-0">
+                    <FaImage className="text-slate-600 text-5xl opacity-50" />
+                </div>
+             )}
+
+             <img 
+                src={error ? 'https://cdn.pixabay.com/photo/2016/11/18/17/46/house-1836070_1280.jpg' : url} 
+                alt={`property-${index}`} 
+                onLoad={() => setLoaded(true)}
+                onError={() => { setError(true); setLoaded(true); }}
+                // ✅ CHANGE: Added 'hd-image' class here
+                className={`w-full h-full object-cover select-none transition-opacity duration-700 ease-in-out ${loaded ? 'opacity-100 hd-image' : 'opacity-0'}`}
+             />
+             
+             {/* Gradient Overlay */}
+             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent pointer-events-none"></div>
+             
+             {/* Image Label */}
+             {label && (
+                <div className="absolute bottom-8 left-8 bg-black/50 backdrop-blur-md text-white px-5 py-2 rounded-xl border border-white/20 shadow-xl z-10 animate-fadeIn">
+                    <p className="font-bold tracking-wider uppercase text-sm flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-green-400"></span>
+                        {label}
+                    </p>
+                </div>
+             )}
+        </div>
+    );
+};
 
 export default function Listing() {
   const { listingId } = useParams();
@@ -114,25 +153,12 @@ export default function Listing() {
             >
               {listing.imageUrls.map((url, index) => (
                 <SwiperSlide key={index}>
-                   <div className="relative h-full w-full font-sans">
-                      <img 
-                          src={url} 
-                          alt={`property-${index}`} 
-                          className='w-full h-full object-cover select-none'
-                      />
-                       <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent pointer-events-none"></div>
-                       
-                       {/* IMAGE LABEL DISPLAY */}
-                       {listing.imageLabels && listing.imageLabels[index] && (
-                           <div className="absolute bottom-8 left-8 bg-black/50 backdrop-blur-md text-white px-5 py-2 rounded-xl border border-white/20 shadow-xl z-10 animate-fadeIn">
-                               <p className="font-bold tracking-wider uppercase text-sm flex items-center gap-2">
-                                  <span className="w-2 h-2 rounded-full bg-green-400"></span>
-                                  {listing.imageLabels[index]}
-                               </p>
-                           </div>
-                       )}
-
-                   </div>
+                    {/* ✅ Using the new Enhanced Component */}
+                    <EnhancedSwiperImage 
+                        url={url} 
+                        index={index} 
+                        label={listing.imageLabels ? listing.imageLabels[index] : null} 
+                    />
                 </SwiperSlide>
               ))}
             </Swiper>
@@ -218,11 +244,11 @@ export default function Listing() {
                     {/* 3. ✅ BOOK NOW BUTTON (Razorpay) */}
                     {/* Sirf tab dikhega agar user Owner nahi hai */}
                     {currentUser && listing.userRef !== currentUser._id && (
-                         <RazorpayBtn 
+                          <RazorpayBtn 
                             listing={listing} 
                             btnText="Book Now (₹500)"
                             customStyle="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg"
-                         />
+                          />
                     )}
 
                 </div>
@@ -306,9 +332,9 @@ export default function Listing() {
                     {contact && <Contact listing={listing} />}
                     
                     {!currentUser && (
-                         <p className='text-sm text-red-400 mt-2 text-center bg-red-500/10 p-2 rounded-lg'>
-                            Please Login to contact the owner.
-                         </p>
+                          <p className='text-sm text-red-400 mt-2 text-center bg-red-500/10 p-2 rounded-lg'>
+                             Please Login to contact the owner.
+                          </p>
                     )}
 
                     {listing.userRef === currentUser?._id && (

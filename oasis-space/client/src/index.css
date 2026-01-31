@@ -1,1 +1,22 @@
 @import "tailwindcss";
+
+/* --- 🖼️ SMART IMAGE ENHANCER DRIVER --- */
+/* Is class ko hum ListingItem aur Listing page ki images par lagayenge */
+.hd-image {
+  /* 1. SVG Filter (Sharpening Logic from index.html) + Contrast/Saturation Boost */
+  filter: url('#smart-sharpen') contrast(1.05) saturate(1.05);
+
+  /* 2. Hardware Acceleration (Taaki scroll karte waqt lag na ho) */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: filter;
+
+  /* 3. Rendering Optimization for Chrome/Edge */
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Hover karne par thoda aur Crystal Clear effect */
+.hd-image:hover {
+  filter: url('#smart-sharpen') contrast(1.08) saturate(1.1);
+  transition: filter 0.3s ease-in-out;
+}

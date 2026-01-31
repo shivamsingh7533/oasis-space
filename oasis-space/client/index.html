@@ -24,6 +24,15 @@
     <title>OasisSpace</title>
   </head>
   <body>
+    
+    <svg width="0" height="0" style="position: absolute; display: block; height: 0; width: 0; overflow: hidden;">
+      <defs>
+        <filter id="smart-sharpen" x="-20%" y="-20%" width="140%" height="140%">
+          <feConvolveMatrix order="3,3" kernelMatrix="0 -1 0   -1 5 -1   0 -1 0"/>
+        </filter>
+      </defs>
+    </svg>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
