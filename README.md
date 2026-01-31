@@ -436,9 +436,6 @@ This project is open source and available under the [MIT License](LICENSE).
   <a href="https://www.linkedin.com/in/shivam-kumar-b61784293/">
     <img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
   </a>
-  <a href="https://oasis-space.vercel.app/">
-    <img src="https://img.shields.io/badge/Portfolio-00C7B7?style=for-the-badge&logo=vercel&logoColor=white" alt="Portfolio"/>
-  </a>
 </p>
 
 ---
