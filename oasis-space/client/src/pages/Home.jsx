@@ -27,7 +27,8 @@ export default function Home() {
     // 1. Fetch FEATURED (VIP) First
     const fetchFeaturedListings = async () => {
         try {
-            const res = await fetch('/api/listing/get?featured=true&limit=4');
+            // ✅ Limit increased to 9
+            const res = await fetch('/api/listing/get?featured=true&limit=9');
             const data = await res.json();
             setFeaturedListings(data);
             fetchOfferListings(); // Chain next fetch
@@ -40,7 +41,8 @@ export default function Home() {
     // 2. Fetch OFFERS
     const fetchOfferListings = async () => {
       try {
-        const res = await fetch('/api/listing/get?offer=true&limit=4');
+        // ✅ Limit increased to 9
+        const res = await fetch('/api/listing/get?offer=true&limit=9');
         const data = await res.json();
         setOfferListings(data);
         fetchRentListings();
@@ -52,7 +54,8 @@ export default function Home() {
     // 3. Fetch RENT
     const fetchRentListings = async () => {
       try {
-        const res = await fetch('/api/listing/get?type=rent&limit=4');
+        // ✅ Limit increased to 9
+        const res = await fetch('/api/listing/get?type=rent&limit=9');
         const data = await res.json();
         setRentListings(data);
         fetchSaleListings();
@@ -64,7 +67,8 @@ export default function Home() {
     // 4. Fetch SALE
     const fetchSaleListings = async () => {
       try {
-        const res = await fetch('/api/listing/get?type=sale&limit=4');
+        // ✅ Limit increased to 9
+        const res = await fetch('/api/listing/get?type=sale&limit=9');
         const data = await res.json();
         setSaleListings(data);
       } catch (error) {

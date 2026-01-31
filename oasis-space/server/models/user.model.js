@@ -12,16 +12,15 @@ const userSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    // ✅ FIX: Mobile se 'unique: true' hata diya gaya hai
-    // Taaki Google Auth users same dummy number (0000000000) share kar sakein bina crash hue.
     mobile: {
       type: String,
       required: true,
       unique: false, 
     },
+    // ✅ FIX: 'required: false' kar diya taaki Google users ka data save ho sake
     password: {
       type: String,
-      required: true,
+      required: false, 
     },
     avatar: {
       type: String,

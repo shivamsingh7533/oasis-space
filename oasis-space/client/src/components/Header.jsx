@@ -1,8 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
-// ✅ ADDED: FaBell for Notifications
-import { FaBars, FaTimes, FaUserShield, FaHeart, FaChartLine, FaBell } from 'react-icons/fa'; 
+import { FaBars, FaTimes, FaUserShield, FaHeart, FaChartLine, FaBell, FaTrash } from 'react-icons/fa'; // ✅ Added FaTrash
 import Profile from '../pages/Profile'; 
 
 export default function Header() {
@@ -11,16 +10,16 @@ export default function Header() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
   const [showProfile, setShowProfile] = useState(false);     
 
-  // ✅ Notification States
+  // Notification States
   const [notifications, setNotifications] = useState([]);
   const [showNotif, setShowNotif] = useState(false);
   
-  // Calculate unread messages (Red Badge ke liye)
+  // Calculate unread messages
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const [deferredPrompt, setDeferredPrompt] = useState(window.deferredPrompt || null);
 
-  // 1. PWA Install Logic (Existing)
+  // 1. PWA Install Logic
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault();
@@ -47,7 +46,7 @@ export default function Header() {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
-  // ✅ 2. Notification Fetch Logic (Polling every 10 sec)
+  // 2. Notification Fetch Logic (Polling)
   useEffect(() => {
     if(currentUser) {
        const fetchNotifs = async () => {
@@ -64,17 +63,28 @@ export default function Header() {
     }
  }, [currentUser]);
 
- // ✅ 3. Mark Notifications as Read
+ // 3. Mark Notifications as Read
  const handleRead = async () => {
      setShowNotif(!showNotif); // Toggle Dropdown
-     // Agar unread messages hain, to unhe server par 'read' mark karo
      if (unreadCount > 0) {
          try {
             await fetch('/api/notification/read', { method: 'POST' });
-            // Local state update update karo taaki badge hat jaye
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
          } catch (error) { console.log(error); }
      }
+ };
+
+ // ✅ 4. CLEAR ALL NOTIFICATIONS (New Function)
+ const handleClear = async (e) => {
+     if(e) e.stopPropagation(); // Stop dropdown from closing instantly
+     if(!window.confirm("Clear all notifications?")) return;
+
+     try {
+         const res = await fetch('/api/notification/clear', { method: 'DELETE' });
+         if(res.ok) {
+             setNotifications([]); // UI Clean
+         }
+     } catch (error) { console.log(error); }
  };
 
   return (
@@ -98,7 +108,6 @@ export default function Header() {
           {/* --- DESKTOP NAVIGATION --- */}
           <ul className='hidden md:flex gap-6 items-center font-medium'>
               
-              {/* Install Button */}
               {deferredPrompt && (
                   <button 
                     onClick={handleInstallClick}
@@ -138,7 +147,7 @@ export default function Header() {
                         </Link>
                       )}
 
-                      {/* ✅ NOTIFICATION BELL (Added Here) */}
+                      {/* NOTIFICATION BELL */}
                       <div className="relative cursor-pointer" onClick={handleRead}>
                         <div className="relative">
                             <FaBell className="text-xl text-slate-300 hover:text-white transition mt-1" />
@@ -154,7 +163,15 @@ export default function Header() {
                             <div className="absolute right-0 top-10 w-72 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 z-50">
                                 <div className="p-3 bg-slate-900 border-b border-slate-700 font-bold text-slate-200 flex justify-between items-center">
                                     <span>Notifications</span>
-                                    <span className="text-xs text-slate-400 cursor-pointer hover:text-white" onClick={(e) => { e.stopPropagation(); setShowNotif(false); }}>Close</span>
+                                    <div className="flex gap-3">
+                                        {/* ✅ Clear All Button */}
+                                        {notifications.length > 0 && (
+                                            <span className="text-xs text-red-400 cursor-pointer hover:text-red-300 flex items-center gap-1" onClick={handleClear}>
+                                                <FaTrash /> Clear
+                                            </span>
+                                        )}
+                                        <span className="text-xs text-slate-400 cursor-pointer hover:text-white" onClick={(e) => { e.stopPropagation(); setShowNotif(false); }}>Close</span>
+                                    </div>
                                 </div>
                                 <div className="max-h-64 overflow-y-auto custom-scrollbar">
                                     {notifications.length === 0 ? (
@@ -190,7 +207,6 @@ export default function Header() {
 
           {/* --- MOBILE BURGER ICON --- */}
           <div className='md:hidden flex items-center gap-4'>
-              {/* Mobile Bell Icon (Simplified) */}
               {currentUser && (
                   <div className="relative cursor-pointer" onClick={() => setIsSidebarOpen(true)}>
                        <FaBell className="text-xl text-slate-200" />
@@ -234,14 +250,12 @@ export default function Header() {
           </div>
 
           <div className='flex flex-col p-4 gap-4'>
-              {/* Mobile Admin Link */}
               {currentUser && currentUser.role === 'admin' && (
                   <Link to='/dashboard' className='bg-green-600 text-white font-bold text-lg p-3 rounded-lg text-center shadow-lg mb-2 flex items-center justify-center gap-2' onClick={toggleSidebar}>
                       <FaUserShield /> Admin Dashboard
                   </Link>
               )}
 
-              {/* Mobile Seller Link */}
               {currentUser && currentUser.sellerStatus === 'approved' && (
                   <Link to='/seller-dashboard' className='bg-blue-600 text-white font-bold text-lg p-3 rounded-lg text-center shadow-lg mb-2 flex items-center justify-center gap-2' onClick={toggleSidebar}>
                       <FaChartLine /> Seller Dashboard
@@ -257,16 +271,24 @@ export default function Header() {
 
               {currentUser ? (
                   <>  
-                      {/* Mobile Wishlist */}
                       <Link to='/saved-listings' className='text-pink-400 hover:text-pink-300 text-lg font-medium p-2 hover:bg-slate-700 rounded transition flex items-center gap-2' onClick={toggleSidebar}>
                           <FaHeart /> My Wishlist
                       </Link>
 
                       {/* ✅ Mobile Notifications Section */}
                       <div className="border-t border-slate-700 pt-4 mt-2">
-                          <p className="text-slate-400 text-sm mb-2 px-2 uppercase font-bold flex items-center gap-2">
-                             <FaBell /> Notifications ({unreadCount})
-                          </p>
+                          <div className="flex justify-between items-center mb-2 px-2">
+                              <p className="text-slate-400 text-sm uppercase font-bold flex items-center gap-2">
+                                  <FaBell /> Notifications ({unreadCount})
+                              </p>
+                              {/* ✅ Mobile Clear Button */}
+                              {notifications.length > 0 && (
+                                  <button onClick={handleClear} className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
+                                      <FaTrash /> Clear All
+                                  </button>
+                              )}
+                          </div>
+                          
                           <div className="max-h-40 overflow-y-auto bg-slate-900 rounded-lg p-2">
                               {notifications.length === 0 ? (
                                   <p className="text-slate-500 text-xs text-center">No notifications</p>
@@ -289,7 +311,6 @@ export default function Header() {
                           Create Listing
                       </Link>
 
-                      {/* Profile Trigger */}
                       <div 
                         className='flex items-center gap-3 p-2 hover:bg-slate-700 rounded transition cursor-pointer mt-4 border-t border-slate-700 pt-4'
                         onClick={() => {

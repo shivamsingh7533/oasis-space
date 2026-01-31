@@ -24,3 +24,13 @@ export const markRead = async (req, res, next) => {
     next(error);
   }
 };
+
+// ✅ 3. DELETE ALL NOTIFICATIONS (New Function)
+export const clearNotifications = async (req, res, next) => {
+  try {
+    await Notification.deleteMany({ recipient: req.user.id });
+    res.status(200).json("All notifications cleared!");
+  } catch (error) {
+    next(error);
+  }
+};
