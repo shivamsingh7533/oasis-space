@@ -429,9 +429,16 @@ This project is open source and available under the [MIT License](LICENSE).
 ## 👨‍💻 Author
 
 <p align="center">
-  <strong>Shivam Singh</strong><br/>
-  <a href="https://github.com/shivamsingh7533">GitHub</a> •
-  <a href="https://oasis-space.vercel.app/">Portfolio</a>
+  <strong>Shivam Singh</strong><br/><br/>
+  <a href="https://github.com/shivamsingh7533">
+    <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" alt="GitHub"/>
+  </a>
+  <a href="https://www.linkedin.com/in/shivam-kumar-b61784293/">
+    <img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" alt="LinkedIn"/>
+  </a>
+  <a href="https://oasis-space.vercel.app/">
+    <img src="https://img.shields.io/badge/Portfolio-00C7B7?style=for-the-badge&logo=vercel&logoColor=white" alt="Portfolio"/>
+  </a>
 </p>
 
 ---
