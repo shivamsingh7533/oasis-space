@@ -315,20 +315,84 @@ Navigate to `http://localhost:5173`
 
 ## 📸 Screenshots
 
-### 🏠 Home Page
-> Beautiful hero section with property search and featured listings carousel
+### 🏠 Home Page — Hero Section
+> Beautiful landing page with animated hero, search bar, and featured properties carousel
 
-### 🔍 Property Search
-> Advanced filtering by type, price, bedrooms, amenities
+<p align="center">
+  <img src="./assets/screenshots/home-hero.png" alt="Home Page" width="100%"/>
+</p>
 
-### 📝 Listing Details
-> Image gallery, EMI calculator, contact landlord, Razorpay booking
+---
 
-### 🤖 AI Chatbot
-> Jarvis assistant for property recommendations
+### 🔍 Property Search & Filters
+> Advanced search with filters for property type, price range, bedrooms, amenities, and sorting options
 
-### 📊 Admin Dashboard
-> User management, seller approvals, listing controls
+<p align="center">
+  <img src="./assets/screenshots/property-search.png" alt="Property Search" width="100%"/>
+</p>
+
+---
+
+### 📝 Listing Details Page
+> Comprehensive property view with image gallery, description, EMI calculator, and contact options
+
+<p align="center">
+  <img src="./assets/screenshots/listing-details.png" alt="Listing Details" width="100%"/>
+</p>
+
+---
+
+### 💳 Razorpay Payment Integration
+> Secure payment gateway with multiple payment options (Cards, UPI, Netbanking, Wallets)
+
+<p align="center">
+  <img src="./assets/screenshots/razorpay-payment.png" alt="Razorpay Payment" width="100%"/>
+</p>
+
+---
+
+### 📜 Transaction History
+> Complete order history with booking details, payment status, and cancellation options
+
+<p align="center">
+  <img src="./assets/screenshots/order-history.png" alt="Order History" width="100%"/>
+</p>
+
+---
+
+### 🤖 Jarvis AI Chatbot
+> Intelligent real estate assistant powered by Groq LLaMA 3.3 for instant property recommendations
+
+<p align="center">
+  <img src="./assets/screenshots/ai-chatbot.png" alt="AI Chatbot" width="350"/>
+</p>
+
+---
+
+### 📊 Admin Dashboard — Overview
+> Real-time analytics with revenue tracking, inventory value, and key metrics
+
+<p align="center">
+  <img src="./assets/screenshots/admin-dashboard.png" alt="Admin Dashboard Overview" width="100%"/>
+</p>
+
+---
+
+### 🏘️ Admin Dashboard — Property Management
+> Complete listing management with featured toggle, status updates, and quick actions
+
+<p align="center">
+  <img src="./assets/screenshots/admin-properties.png" alt="Admin Properties" width="100%"/>
+</p>
+
+---
+
+### 👥 Admin Dashboard — User Management
+> Role-based user management with seller verification and account controls
+
+<p align="center">
+  <img src="./assets/screenshots/admin-users.png" alt="Admin Users" width="100%"/>
+</p>
 
 ---
 
