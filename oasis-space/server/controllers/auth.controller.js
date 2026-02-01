@@ -134,8 +134,11 @@ export const verifyEmail = async (req, res, next) => {
 // ✅ 3. GOOGLE AUTH
 export const google = async (req, res, next) => {
   const { name, email, photo } = req.body;
+  console.log("🔹 Google Auth Request:", { name, email }); // DEBUG LOG
+
   try {
     const user = await User.findOne({ email });
+    console.log("🔹 User found in DB:", user ? "Yes" : "No"); // DEBUG LOG
 
     if (user) {
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
@@ -145,8 +148,12 @@ export const google = async (req, res, next) => {
       const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
       const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
 
+      // Make username more unique with timestamp
+      const uniqueUsername = name.toLowerCase().split(' ').join('') + Date.now().toString(36).slice(-4);
+      console.log("🔹 Creating new user with username:", uniqueUsername); // DEBUG LOG
+
       const newUser = new User({
-        username: name.toLowerCase().split(' ').join('') + Math.random().toString(36).slice(-4),
+        username: uniqueUsername,
         email,
         password: hashedPassword,
         avatar: photo,
@@ -155,6 +162,7 @@ export const google = async (req, res, next) => {
       });
 
       await newUser.save();
+      console.log("✅ New Google user saved to DB"); // DEBUG LOG
 
       console.log("⏳ Sending Google Welcome Email...");
       try {
@@ -169,6 +177,8 @@ export const google = async (req, res, next) => {
       res.cookie('access_token', token, cookieOptions).status(200).json(rest2);
     }
   } catch (error) {
+    console.error("❌ GOOGLE AUTH ERROR:", error.message); // DEBUG ERROR LOG
+    console.error("❌ Full Error:", error); // FULL ERROR
     next(error);
   }
 };
@@ -207,8 +217,8 @@ export const forgotPassword = async (req, res, next) => {
     user.otpExpires = Date.now() + 15 * 60 * 1000;
 
     // Ab ye line crash nahi karegi kyunki Model me password required: false hai
-    await user.save(); 
-    
+    await user.save();
+
     await sendEmail(user.email, 'Reset Password OTP', getOtpTemplate(otp));
 
     res.status(200).json({ success: true, message: 'OTP sent to your email!' });
