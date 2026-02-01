@@ -45,12 +45,14 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <div className="flex flex-col min-h-screen relative bg-slate-900"> {/* Added bg-slate-900 for safety */}
+      {/* ✅ FIX: Added 'w-full' and 'overflow-x-hidden' to force full width */}
+      <div className="flex flex-col min-h-screen w-full overflow-x-hidden relative bg-slate-900"> 
+        
+        {/* Header (Ab ye bhi full width container ke andar hoga) */}
         <Header />
         
-        {/* 👇👇👇 MAGIC FIX IS HERE 👇👇👇 */}
-        {/* 'min-h-[85vh]' ensure karega ki ye hissa hamesha bada rahe */}
-        <main className="flex-grow min-h-[85vh]">
+        {/* ✅ FIX: Added 'w-full' to main tag */}
+        <main className="flex-grow w-full min-h-[85vh]">
           <Routes>
             {/* --- PUBLIC ROUTES --- */}
             <Route path='/' element={<Home />} />
