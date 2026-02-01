@@ -68,14 +68,9 @@ export const verifyPayment = async (req, res, next) => {
        const rzpOrder = await razorpay.orders.fetch(razorpay_order_id);
        const listingId = rzpOrder.notes.listingId;
 
-       // ✅ FIX: Fetch FULL user from DB to get correct mobile (token only has id)
-       const dbUser = await User.findById(req.user.id);
-       if (!dbUser) {
-           return next(errorHandler(404, "User not found in database!"));
-       }
-
-       // Handle dummy/missing mobile for Google Users
-       let savedMobile = dbUser.mobile;
+       // ✅ FIX: HANDLE DUMMY MOBILE NUMBER for Google Users
+       // Agar DB mein mobile nahi hai, ya 0000.. hai, to valid dummy set karo
+       let savedMobile = req.user.mobile;
        if (!savedMobile || savedMobile === "0000000000" || savedMobile === "9999999999") {
            savedMobile = "9999999999"; 
        }
@@ -88,61 +83,55 @@ export const verifyPayment = async (req, res, next) => {
          paymentId: razorpay_payment_id,
          orderId: razorpay_order_id,
          status: 'success',
-         mobile: savedMobile
+         mobile: savedMobile // ✅ Saves safely to DB
        });
  
        const order = await newOrder.save();
 
-       // ✅ FIX: Wrap notifications in try-catch so email failures don't break the response
-       try {
-          // C. Notifications & Emails
-          const listing = await Listing.findById(listingId);
-          const buyer = dbUser; // Use already fetched user
-          const landlord = await User.findById(listing.userRef);
+      // C. Notifications & Emails
+      const listing = await Listing.findById(listingId);
+      const buyer = await User.findById(req.user.id);
+      const landlord = await User.findById(listing.userRef);
 
-          if (listing && buyer && landlord) {
-              // Email to Landlord
-              const emailSubject = `🏠 New Booking Alert: ${listing.name}`;
-              const emailBody = `
-                <div style="font-family: Arial, sans-serif; color: #333;">
-                  <h2 style="color: #2563eb;">Good News, ${landlord.username}!</h2>
-                  <p>Your property <strong>${listing.name}</strong> has just been booked.</p>
-                  <div style="background: #f3f4f6; padding: 15px; border-radius: 10px; margin: 20px 0;">
-                    <p><strong>👤 Buyer Name:</strong> ${buyer.username}</p>
-                    <p><strong>📞 Contact:</strong> ${savedMobile === "9999999999" ? "Provided via Payment Gateway" : savedMobile}</p>
-                    <p><strong>✉️ Email:</strong> ${buyer.email}</p>
-                    <p><strong>💰 Booking Amount:</strong> ₹${order.amount}</p>
-                  </div>
-                  <p>Please contact the buyer as soon as possible to proceed further.</p>
-                  <br/>
-                  <p style="font-size: 12px; color: #888;">Team OasisSpace</p>
-                </div>
-              `;
-              await sendEmail(landlord.email, emailSubject, emailBody);
+      if (listing && buyer && landlord) {
+          // Email to Landlord
+          const emailSubject = `🏠 New Booking Alert: ${listing.name}`;
+          const emailBody = `
+            <div style="font-family: Arial, sans-serif; color: #333;">
+              <h2 style="color: #2563eb;">Good News, ${landlord.username}!</h2>
+              <p>Your property <strong>${listing.name}</strong> has just been booked.</p>
+              <div style="background: #f3f4f6; padding: 15px; border-radius: 10px; margin: 20px 0;">
+                <p><strong>👤 Buyer Name:</strong> ${buyer.username}</p>
+                <p><strong>📞 Contact:</strong> ${savedMobile === "9999999999" ? "Provided via Payment Gateway" : savedMobile}</p>
+                <p><strong>✉️ Email:</strong> ${buyer.email}</p>
+                <p><strong>💰 Booking Amount:</strong> ₹${order.amount}</p>
+              </div>
+              <p>Please contact the buyer as soon as possible to proceed further.</p>
+              <br/>
+              <p style="font-size: 12px; color: #888;">Team OasisSpace</p>
+            </div>
+          `;
+          await sendEmail(landlord.email, emailSubject, emailBody);
 
-              // In-App Notification
-              const msg = `🚀 New Booking! ${buyer.username} booked "${listing.name}". Check your email for details.`;
-              await Notification.create({ recipient: listing.userRef, sender: buyer._id, message: msg, relatedId: listingId });
+          // In-App Notification
+          const msg = `🚀 New Booking! ${buyer.username} booked "${listing.name}". Check your email for details.`;
+          await Notification.create({ recipient: listing.userRef, sender: buyer._id, message: msg, relatedId: listingId });
 
-              // Admin Notification
-              const admins = await User.find({ role: 'admin' });
-              for (const admin of admins) {
-                  await Notification.create({
-                    recipient: admin._id,
-                    sender: buyer._id,
-                    message: `👑 Admin Alert: ${buyer.username} booked ${listing.name}`,
-                    relatedId: listingId
-                  });
-              }
+          // Admin Notification
+          const admins = await User.find({ role: 'admin' });
+          for (const admin of admins) {
+              await Notification.create({
+                recipient: admin._id,
+                sender: buyer._id,
+                message: `👑 Admin Alert: ${buyer.username} booked ${listing.name}`,
+                relatedId: listingId
+              });
           }
-       } catch (notificationError) {
-          // Log error but don't fail the payment
-          console.error("⚠️ Notification Error (Payment still successful):", notificationError.message);
-       }
+      }
 
       res.status(200).json({
         success: true,
-        message: "Payment Verified & Booking Confirmed!",
+        message: "Payment Verified, Email Sent & Landlord Notified!",
       });
     } else {
       res.status(400).json({
