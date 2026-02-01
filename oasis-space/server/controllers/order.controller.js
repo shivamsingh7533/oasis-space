@@ -23,7 +23,7 @@ export const createOrder = async (req, res, next) => {
     }
 
     const options = {
-      amount: Number(amount * 100),
+      amount: Number(amount * 100), // Convert to paise
       currency: "INR",
       receipt: `receipt_order_${Date.now()}`,
       notes: {
@@ -38,8 +38,6 @@ export const createOrder = async (req, res, next) => {
       return next(errorHandler(500, "Razorpay Order Creation Failed"));
     }
 
-    // Note: Hum abhi pending order save nahi kar rahe, verify hone par seedha success save karenge.
-    // Isse duplicate entries se bachenge.
     res.status(200).json({
       success: true,
       order,
@@ -51,8 +49,7 @@ export const createOrder = async (req, res, next) => {
   }
 };
 
-// 2. VERIFY PAYMENT (Renamed to match your Route)
-// ✅ Function name changed from verifyOrder -> verifyPayment
+// 2. VERIFY PAYMENT
 export const verifyPayment = async (req, res, next) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
@@ -72,8 +69,9 @@ export const verifyPayment = async (req, res, next) => {
        const listingId = rzpOrder.notes.listingId;
 
        // ✅ FIX: HANDLE DUMMY MOBILE NUMBER for Google Users
+       // Agar DB mein mobile nahi hai, ya 0000.. hai, to valid dummy set karo
        let savedMobile = req.user.mobile;
-       if (!savedMobile || savedMobile === "0000000000" || savedMobile === "9999999999") {
+       if (!savedMobile || savedMobile === "0000000000") {
            savedMobile = "9999999999"; 
        }
 
@@ -85,7 +83,7 @@ export const verifyPayment = async (req, res, next) => {
          paymentId: razorpay_payment_id,
          orderId: razorpay_order_id,
          status: 'success',
-         mobile: savedMobile 
+         mobile: savedMobile // ✅ Ab Model mein field hai, to ye Error nahi dega!
        });
  
        const order = await newOrder.save();
@@ -165,17 +163,9 @@ export const getOrderHistory = async (req, res, next) => {
 export const deleteOrder = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id);
-
-    if (!order) {
-      return next(errorHandler(404, 'Order not found!'));
-    }
-
-    if (order.userRef !== req.user.id) {
-      return next(errorHandler(401, 'You can only delete your own orders!'));
-    }
-
+    if (!order) return next(errorHandler(404, 'Order not found!'));
+    if (order.userRef !== req.user.id) return next(errorHandler(401, 'You can only delete your own orders!'));
     await Order.findByIdAndDelete(req.params.id);
-
     res.status(200).json('Order has been deleted!');
   } catch (error) {
     next(error);
@@ -187,10 +177,7 @@ export const cancelOrder = async (req, res, next) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) return next(errorHandler(404, 'Order not found!'));
-
-    if (order.userRef !== req.user.id) {
-      return next(errorHandler(401, 'You can only cancel your own orders!'));
-    }
+    if (order.userRef !== req.user.id) return next(errorHandler(401, 'You can only cancel your own orders!'));
 
     order.status = 'cancelled';
     await order.save();
@@ -207,8 +194,6 @@ export const cancelOrder = async (req, res, next) => {
            <p>Hello ${landlord.username},</p>
            <p>The user <strong>${buyer.username}</strong> has cancelled their booking for <strong>${listing.name}</strong>.</p>
            <p>The status has been updated in your dashboard.</p>
-           <br/>
-           <p style="font-size: 12px; color: #888;">Team OasisSpace</p>
          </div>
        `;
        await sendEmail(landlord.email, emailSubject, emailBody);
@@ -220,9 +205,7 @@ export const cancelOrder = async (req, res, next) => {
          relatedId: listing._id
        });
     }
-
     res.status(200).json('Order has been cancelled successfully!');
-
   } catch (error) {
     next(error);
   }

@@ -25,8 +25,13 @@ const orderSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      default: 'pending', // pending, success, failed
+      default: 'pending', // pending, success, failed, cancelled
     },
+    // ✅ NEW FIELD: Mobile Number (Zaroori hai fix ke liye)
+    mobile: {
+      type: String,
+      default: "Not Provided"
+    }
   },
   { timestamps: true }
 );
