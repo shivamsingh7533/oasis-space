@@ -48,29 +48,37 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
       const orderData = await orderRes.json();
       if (orderData.success === false) throw new Error(orderData.message);
 
-      // ✅ SMART PREFILL LOGIC
-      // Agar number dummy hai (0000000000) ya nahi hai, to contact field mat bhejo.
-      // Razorpay tab user se uska number input karne ko bolega.
+      // ✅ SMART PREFILL LOGIC (Google Login Fix)
       const prefillData = {
           name: currentUser.username,
           email: currentUser.email
       };
 
       const userMobile = currentUser.mobile;
+      // Check for dummy or missing mobile
       const isDummyMobile = !userMobile || userMobile === "0000000000" || userMobile === "9999999999";
 
       if (!isDummyMobile) {
           prefillData.contact = userMobile;
       }
 
+      // ✅ FIX: Use import.meta.env for Vite
+      const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+      
+      if (!razorpayKey) {
+          alert("Razorpay Key Not Found! Check .env file.");
+          setPaymentStatus('failed');
+          return;
+      }
+
       // C. Open Razorpay Options
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Frontend Key
+        key: razorpayKey, // ✅ Fixed Variable
         amount: orderData.order.amount,
         currency: orderData.order.currency,
         name: "OasisSpace",
         description: `Booking for ${listing.name}`,
-        image: "https://cdn-icons-png.flaticon.com/512/1040/1040993.png", // Aapka logo URL
+        image: "https://cdn-icons-png.flaticon.com/512/1040/1040993.png",
         order_id: orderData.order.id, // Backend Order ID
         
         // D. Success Handler
@@ -93,7 +101,6 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
                 setPaymentStatus('success');
                 setTimeout(() => {
                     setPaymentStatus(null);
-                    // REDIRECT instead of RELOAD
                     navigate('/order-history'); 
                 }, 3000);
              } else {
@@ -107,13 +114,10 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
              setTimeout(() => setPaymentStatus(null), 3000);
           }
         },
-        // ✅ Updated Prefill Object
         prefill: prefillData,
-        
         theme: {
-          color: "#2563eb" // Blue Theme
+          color: "#2563eb"
         },
-        // Handle Modal Close by User
         modal: {
             ondismiss: function() {
                 setPaymentStatus(null);
@@ -125,7 +129,7 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
       paymentObject.open();
 
     } catch (error) {
-      console.log(error);
+      console.log("Payment Error:", error);
       setPaymentStatus('failed');
       setTimeout(() => setPaymentStatus(null), 3000);
     }
@@ -133,7 +137,6 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
 
   return (
     <>
-      {/* The Button */}
       <button 
         onClick={handlePayment} 
         className={customStyle || "bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-lg uppercase font-bold shadow-lg transition flex items-center justify-center gap-2"}
@@ -141,7 +144,6 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
         <FaCreditCard /> {btnText}
       </button>
 
-      {/* The Production Level Loader */}
       <PaymentLoading status={paymentStatus} />
     </>
   );
