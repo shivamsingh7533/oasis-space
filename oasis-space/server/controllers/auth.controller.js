@@ -29,7 +29,7 @@ const getWelcomeTemplate = (username) => `
         <p style="margin: 5px 0; color: #166534;">✅ <b>List:</b> Sell your property with ease.</p>
       </div>
       <a href="${process.env.CLIENT_URL || 'https://oasis-space.vercel.app'}" 
-         style="display: inline-block; background-color: #10b981; color: white; padding: 16px 32px; font-size: 18px; font-weight: bold; text-decoration: none; border-radius: 50px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3); transition: background 0.3s;">
+          style="display: inline-block; background-color: #10b981; color: white; padding: 16px 32px; font-size: 18px; font-weight: bold; text-decoration: none; border-radius: 50px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3); transition: background 0.3s;">
           Start Exploring Now 🚀
       </a>
       <p style="margin-top: 30px; font-size: 14px; color: #9ca3af;">(If the button doesn't work, verify via your profile settings)</p>
@@ -73,7 +73,6 @@ const clearCookieOptions = {
 // ✅ 1. SIGN UP
 export const signup = async (req, res, next) => {
   const { username, email, password, mobile } = req.body;
-  // Manual check zaroori hai kyunki model se required hata diya hai
   if (!username || !email || !password || !mobile) return next(errorHandler(400, 'All fields are required'));
 
   try {
@@ -131,7 +130,7 @@ export const verifyEmail = async (req, res, next) => {
   }
 };
 
-// ✅ 3. GOOGLE AUTH
+// ✅ 3. GOOGLE AUTH (Updated with Unique Mobile Fix)
 export const google = async (req, res, next) => {
   const { name, email, photo } = req.body;
   try {
@@ -145,12 +144,16 @@ export const google = async (req, res, next) => {
       const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
       const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
 
+      // ✅ FIX: Generate a random unique mobile number to avoid duplicate key error
+      // Kyunki agar sabka 0000000000 hoga to MongoDB dusre user ko save nahi karega.
+      const randomMobile = "91" + Math.floor(100000000 + Math.random() * 900000000).toString();
+
       const newUser = new User({
         username: name.toLowerCase().split(' ').join('') + Math.random().toString(36).slice(-4),
         email,
         password: hashedPassword,
         avatar: photo,
-        mobile: "0000000000",
+        mobile: randomMobile, // ✅ Now Unique
         isVerified: true
       });
 
@@ -180,7 +183,6 @@ export const signin = async (req, res, next) => {
     const user = await User.findOne({ email: email.trim().toLowerCase() });
     if (!user) return next(errorHandler(404, 'User not found'));
 
-    // Google users might not have a password set initially
     if (!user.password) return next(errorHandler(400, 'Please login with Google'));
 
     const validPassword = bcryptjs.compareSync(password, user.password);
@@ -195,7 +197,7 @@ export const signin = async (req, res, next) => {
   }
 };
 
-// ✅ 5. FORGOT PASSWORD (Fix applied here indirectly via Model)
+// ✅ 5. FORGOT PASSWORD
 export const forgotPassword = async (req, res, next) => {
   const { email } = req.body;
   try {
@@ -206,7 +208,6 @@ export const forgotPassword = async (req, res, next) => {
     user.otp = otp;
     user.otpExpires = Date.now() + 15 * 60 * 1000;
 
-    // Ab ye line crash nahi karegi kyunki Model me password required: false hai
     await user.save(); 
     
     await sendEmail(user.email, 'Reset Password OTP', getOtpTemplate(otp));

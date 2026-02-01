@@ -1,9 +1,9 @@
 import { GoogleAuthProvider, getAuth, signInWithPopup } from 'firebase/auth';
 import { app } from '../firebase';
 import { useDispatch } from 'react-redux';
-import { signInSuccess } from '../redux/user/userSlice';
+import { signInSuccess, signInFailure } from '../redux/user/userSlice'; // ✅ signInFailure add kiya
 import { useNavigate } from 'react-router-dom';
-import { FaGoogle } from 'react-icons/fa'; // Google Icon for better UI
+import { FaGoogle } from 'react-icons/fa';
 
 export default function OAuth() {
   const dispatch = useDispatch();
@@ -14,7 +14,7 @@ export default function OAuth() {
       const provider = new GoogleAuthProvider();
       const auth = getAuth(app);
 
-      // 1. Firebase Popup Open karein
+      // 1. Firebase Popup Open
       const result = await signInWithPopup(auth, provider);
 
       // 2. Data Backend ko bhejein
@@ -32,17 +32,23 @@ export default function OAuth() {
 
       const data = await res.json();
 
-      // 3. Agar Backend ne success diya, to Redux update karein
+      // ✅ FIX: Agar Backend ne error diya, to process yahin rok dein
+      if (data.success === false) {
+          dispatch(signInFailure(data.message));
+          return;
+      }
+
+      // 3. Sab sahi hai to Redux update karein aur Home par bhejein
       dispatch(signInSuccess(data));
       navigate('/');
       
     } catch (error) {
       console.log('Could not sign in with google', error);
+      dispatch(signInFailure(error.message)); // Optional: Error handle karna
     }
   };
 
   return (
-    // type='button' zaroori hai taaki ye form submit na kar de
     <button
       onClick={handleGoogleClick}
       type='button'
