@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom'; // ✅ Added useNavigate
+import { useNavigate } from 'react-router-dom';
 import PaymentLoading from './PaymentLoading';
 import { FaCreditCard } from 'react-icons/fa';
 
 export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle = "" }) {
   const { currentUser } = useSelector((state) => state.user);
   const [paymentStatus, setPaymentStatus] = useState(null); // null | 'processing' | 'success' | 'failed'
-  const navigate = useNavigate(); // ✅ Initialize hook
+  const navigate = useNavigate();
 
   // 1. Script Load Function
   const loadRazorpayScript = () => {
@@ -48,6 +48,21 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
       const orderData = await orderRes.json();
       if (orderData.success === false) throw new Error(orderData.message);
 
+      // ✅ SMART PREFILL LOGIC
+      // Agar number dummy hai (0000000000) ya nahi hai, to contact field mat bhejo.
+      // Razorpay tab user se uska number input karne ko bolega.
+      const prefillData = {
+          name: currentUser.username,
+          email: currentUser.email
+      };
+
+      const userMobile = currentUser.mobile;
+      const isDummyMobile = !userMobile || userMobile === "0000000000" || userMobile === "9999999999";
+
+      if (!isDummyMobile) {
+          prefillData.contact = userMobile;
+      }
+
       // C. Open Razorpay Options
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Frontend Key
@@ -78,7 +93,7 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
                 setPaymentStatus('success');
                 setTimeout(() => {
                     setPaymentStatus(null);
-                    // ✅ REDIRECT instead of RELOAD
+                    // REDIRECT instead of RELOAD
                     navigate('/order-history'); 
                 }, 3000);
              } else {
@@ -92,11 +107,9 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
              setTimeout(() => setPaymentStatus(null), 3000);
           }
         },
-        prefill: {
-          name: currentUser.username,
-          email: currentUser.email,
-          contact: currentUser.mobile || "9999999999"
-        },
+        // ✅ Updated Prefill Object
+        prefill: prefillData,
+        
         theme: {
           color: "#2563eb" // Blue Theme
         },
