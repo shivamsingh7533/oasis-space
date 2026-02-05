@@ -11,7 +11,6 @@ import listingRouter from './routes/listing.route.js';
 import chatRouter from './routes/chat.route.js';
 import orderRouter from './routes/order.route.js';
 import notificationRouter from './routes/notification.route.js'; // ✅ NEW NOTIFICATION IMPORT
-import { globalLimiter, authLimiter } from './utils/rateLimiter.js'; // 🛡️ RATE LIMITER
 
 dotenv.config();
 
@@ -46,8 +45,6 @@ app.use(express.json());
 app.use(cookieParser());
 
 // --- ROUTES ---
-app.use('/api', globalLimiter); // 🛡️ Global Rate Limit (100 req/15min)
-app.use('/api/auth', authLimiter); // 🛡️ Strict Auth Limit (20 req/15min)
 
 app.use('/api/user', userRouter);
 app.use('/api/auth', authRouter);
