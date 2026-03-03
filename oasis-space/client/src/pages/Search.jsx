@@ -34,19 +34,19 @@ export default function Search() {
     // ✅ FIX: Sync State with URL (Important for Back Button)
     // Hum check kar rahe hain ki agar URL params badle hain to hi state update karein
     if (JSON.stringify(newParams) !== JSON.stringify(sidebardata)) {
-       // eslint-disable-next-line
-       setSidebardata(newParams);
+      // eslint-disable-next-line
+      setSidebardata(newParams);
     }
 
     const fetchListings = async () => {
       setLoading(true);
       setShowMore(false);
       const searchQuery = urlParams.toString();
-      
+
       try {
         const res = await fetch(`/api/listing/get?${searchQuery}`);
         const data = await res.json();
-        
+
         if (data.length > 8) {
           setShowMore(true);
         } else {
@@ -62,7 +62,7 @@ export default function Search() {
 
     fetchListings();
     // eslint-disable-next-line
-  }, [location.search]); 
+  }, [location.search]);
 
   const handleChange = (e) => {
     if (e.target.id === 'all' || e.target.id === 'rent' || e.target.id === 'sale') {
@@ -91,7 +91,7 @@ export default function Search() {
     urlParams.set('offer', sidebardata.offer);
     urlParams.set('sort', sidebardata.sort);
     urlParams.set('order', sidebardata.order);
-    
+
     const searchQuery = urlParams.toString();
     navigate(`/search?${searchQuery}`);
     setShowFilters(false); // Mobile sidebar close
@@ -121,22 +121,22 @@ export default function Search() {
 
   return (
     <div className='flex flex-col md:flex-row min-h-screen bg-slate-900 text-slate-200'>
-      
+
       {/* --- SIDEBAR FILTERS --- */}
-      <div 
-        className={`fixed inset-0 z-40 bg-slate-800 md:static md:z-auto md:min-h-screen md:w-80 border-r border-slate-700 shadow-xl p-6 overflow-y-auto transition-transform transform ${
-          showFilters ? 'translate-x-0' : '-translate-x-full'
-        } md:translate-x-0`}
+      <div
+        className={`fixed inset-0 z-40 bg-slate-800 md:static md:z-auto md:min-h-screen md:w-80 border-r border-slate-700 shadow-xl p-6 overflow-y-auto transition-transform transform ${showFilters ? 'translate-x-0' : '-translate-x-full'
+          } md:translate-x-0`}
       >
+        <h1 className="sr-only">Search Properties</h1>
         <div className="flex justify-between items-center md:hidden mb-6 border-b border-slate-600 pb-4">
-            <h2 className='text-xl font-bold text-slate-200'>Filters</h2>
-            <button onClick={() => setShowFilters(false)} className='text-slate-400 hover:text-white text-2xl font-bold'>&times;</button>
+          <h2 className='text-xl font-bold text-slate-200'>Filters</h2>
+          <button aria-label="Close Filters" onClick={() => setShowFilters(false)} className='text-slate-400 hover:text-white text-2xl font-bold'>&times;</button>
         </div>
 
         <form onSubmit={handleSubmit} className='flex flex-col gap-8'>
           <div className='flex flex-col gap-2'>
             <label className='whitespace-nowrap font-semibold text-slate-300 flex items-center gap-2'>
-                <FaSearchLocation className="text-indigo-400"/> Search Location / Property
+              <FaSearchLocation className="text-indigo-400" /> Search Location / Property
             </label>
             <input
               type='text'
@@ -193,11 +193,11 @@ export default function Search() {
       {/* --- RESULTS SECTION --- */}
       <div className='flex-1 w-full'>
         <div className='bg-slate-800 shadow-md p-5 sticky top-0 z-30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700'>
-          
+
           <div className="flex items-center gap-4 w-full sm:w-auto justify-between">
-            <h1 className='text-2xl font-bold text-slate-200'>Listing Results</h1>
-            <button 
-              onClick={() => setShowFilters(true)} 
+            <h2 className='text-2xl font-bold text-slate-200'>Listing Results</h2>
+            <button
+              onClick={() => setShowFilters(true)}
               className='md:hidden flex items-center gap-2 bg-slate-700 text-slate-200 px-4 py-2 rounded-full font-medium shadow-sm border border-slate-600 hover:bg-slate-600'
             >
               <FaFilter className='text-sm' /> Filters
@@ -206,36 +206,33 @@ export default function Search() {
 
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <span className="font-semibold text-slate-400 hidden lg:inline">Sort By:</span>
-            
-            <button 
+
+            <button
               onClick={() => handleSortChange('created_at', 'desc')}
-              className={`px-4 py-1.5 rounded-full transition-all border ${
-                sidebardata.sort === 'created_at' 
-                  ? 'bg-indigo-600 text-white border-indigo-500' 
+              className={`px-4 py-1.5 rounded-full transition-all border ${sidebardata.sort === 'created_at'
+                  ? 'bg-indigo-600 text-white border-indigo-500'
                   : 'bg-slate-900 text-slate-300 border-slate-600 hover:bg-slate-700'
-              }`}
+                }`}
             >
               Latest
             </button>
-            
-            <button 
+
+            <button
               onClick={() => handleSortChange('regularPrice', 'asc')}
-              className={`px-4 py-1.5 rounded-full transition-all border ${
-                sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc'
-                  ? 'bg-indigo-600 text-white border-indigo-500' 
+              className={`px-4 py-1.5 rounded-full transition-all border ${sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc'
+                  ? 'bg-indigo-600 text-white border-indigo-500'
                   : 'bg-slate-900 text-slate-300 border-slate-600 hover:bg-slate-700'
-              }`}
+                }`}
             >
               Price: Low to High
             </button>
-            
-            <button 
+
+            <button
               onClick={() => handleSortChange('regularPrice', 'desc')}
-              className={`px-4 py-1.5 rounded-full transition-all border ${
-                sidebardata.sort === 'regularPrice' && sidebardata.order === 'desc'
-                  ? 'bg-indigo-600 text-white border-indigo-500' 
+              className={`px-4 py-1.5 rounded-full transition-all border ${sidebardata.sort === 'regularPrice' && sidebardata.order === 'desc'
+                  ? 'bg-indigo-600 text-white border-indigo-500'
                   : 'bg-slate-900 text-slate-300 border-slate-600 hover:bg-slate-700'
-              }`}
+                }`}
             >
               Price: High to Low
             </button>
@@ -245,11 +242,11 @@ export default function Search() {
         <div className='p-7 flex flex-wrap gap-6 justify-center sm:justify-start'>
           {!loading && listings.length === 0 && (
             <div className="flex flex-col items-center justify-center w-full py-20 text-slate-500">
-                <FaSearchLocation className="text-6xl mb-4 opacity-50"/>
-                <p className='text-xl'>No listings found matching your search!</p>
+              <FaSearchLocation className="text-6xl mb-4 opacity-50" />
+              <p className='text-xl'>No listings found matching your search!</p>
             </div>
           )}
-          
+
           {loading && (
             <p className='text-xl text-slate-400 text-center w-full mt-10 animate-pulse'>Loading properties...</p>
           )}
@@ -270,9 +267,9 @@ export default function Search() {
           )}
         </div>
       </div>
-      
+
       {showFilters && (
-        <div 
+        <div
           onClick={() => setShowFilters(false)}
           className="fixed inset-0 bg-black bg-opacity-70 z-30 md:hidden"
         ></div>

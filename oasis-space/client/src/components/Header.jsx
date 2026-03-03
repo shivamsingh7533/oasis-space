@@ -148,7 +148,7 @@ export default function Header() {
                                 )}
 
                                 {/* NOTIFICATION BELL */}
-                                <div className="relative cursor-pointer" onClick={handleRead}>
+                                <button aria-label="Notifications" className="relative cursor-pointer focus:outline-none" onClick={handleRead}>
                                     <div className="relative">
                                         <FaBell className="text-xl text-slate-300 hover:text-white transition mt-1" />
                                         {unreadCount > 0 && (
@@ -189,16 +189,16 @@ export default function Header() {
                                             </div>
                                         </div>
                                     )}
-                                </div>
+                                </button>
 
                                 {/* Profile Trigger */}
-                                <div className='relative cursor-pointer' onClick={() => setShowProfile(true)}>
+                                <button aria-label="User Profile" className='relative cursor-pointer focus:outline-none' onClick={() => setShowProfile(true)}>
                                     <img
                                         className='rounded-full h-9 w-9 object-cover border-2 border-slate-600 hover:border-slate-400 transition'
                                         src={currentUser.avatar}
                                         alt='profile'
                                     />
-                                </div>
+                                </button>
                             </>
                         ) : (
                             <Link to='/sign-in' className='text-slate-300 hover:text-white'>Sign in</Link>
@@ -208,14 +208,14 @@ export default function Header() {
                     {/* --- MOBILE BURGER ICON --- */}
                     <div className='md:hidden flex items-center gap-4'>
                         {currentUser && (
-                            <div className="relative cursor-pointer" onClick={() => setIsSidebarOpen(true)}>
+                            <button aria-label="Mobile Notifications" className="relative cursor-pointer focus:outline-none" onClick={() => setIsSidebarOpen(true)}>
                                 <FaBell className="text-xl text-slate-200" />
                                 {unreadCount > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-bold w-3 h-3 flex items-center justify-center rounded-full">
                                         {unreadCount}
                                     </span>
                                 )}
-                            </div>
+                            </button>
                         )}
 
                         {deferredPrompt && (

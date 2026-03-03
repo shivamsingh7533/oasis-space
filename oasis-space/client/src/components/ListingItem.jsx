@@ -50,7 +50,7 @@ export default function ListingItem({ listing }) {
 
   return (
     <div className='bg-slate-800 border border-slate-700 shadow-md hover:shadow-2xl transition-all overflow-hidden rounded-2xl w-full sm:w-[300px] group relative'>
-      <Link to={`/listing/${listing._id}`}>
+      <Link to={`/listing/${listing._id}`} aria-label={`View details for ${listing.name}`}>
 
         {/* IMAGE SECTION (Enhanced) */}
         <div className='relative overflow-hidden h-[180px] bg-slate-700'>
