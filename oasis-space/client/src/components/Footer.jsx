@@ -15,7 +15,7 @@ export default function Footer() {
     <footer className='bg-slate-900 text-slate-300 text-sm mt-auto border-t border-slate-800'>
       {/* Top Section - 4 Columns */}
       <div className='max-w-6xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8'>
-        
+
         {/* Column 1: Brand & About */}
         <div className='flex flex-col gap-4'>
           <Link to='/' className='flex items-center gap-1'>
@@ -28,37 +28,41 @@ export default function Footer() {
           <p className='text-slate-400 leading-relaxed text-sm'>
             Experience the best property finding service in town. Find your next perfect place with ease, comfort, and trust.
           </p>
-          
+
           {/* --- SOCIAL MEDIA LINKS --- */}
           <div className='flex gap-4 mt-2'>
-            <a 
-              href='https://www.facebook.com/profile.php?id=100025819383094' 
-              target='_blank' 
+            <a
+              href='https://www.facebook.com/profile.php?id=100025819383094'
+              target='_blank'
               rel='noopener noreferrer'
+              aria-label='Follow us on Facebook'
               className='bg-slate-800 p-2 rounded-full hover:bg-blue-600 hover:text-white transition-all duration-300'
             >
               <FaFacebook className="text-lg" />
             </a>
-            <a 
-              href='https://twitter.com' 
-              target='_blank' 
+            <a
+              href='https://twitter.com'
+              target='_blank'
               rel='noopener noreferrer'
+              aria-label='Follow us on Twitter'
               className='bg-slate-800 p-2 rounded-full hover:bg-sky-500 hover:text-white transition-all duration-300'
             >
               <FaTwitter className="text-lg" />
             </a>
-            <a 
-              href='https://www.instagram.com/shivam_singh_7533?igsh=MTMzNDUzaDJ1d2Q2' 
-              target='_blank' 
+            <a
+              href='https://www.instagram.com/shivam_singh_7533?igsh=MTMzNDUzaDJ1d2Q2'
+              target='_blank'
               rel='noopener noreferrer'
+              aria-label='Follow us on Instagram'
               className='bg-slate-800 p-2 rounded-full hover:bg-pink-600 hover:text-white transition-all duration-300'
             >
               <FaInstagram className="text-lg" />
             </a>
-            <a 
-              href='https://www.linkedin.com/in/shivam-kumar-b61784293?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app' 
-              target='_blank' 
+            <a
+              href='https://www.linkedin.com/in/shivam-kumar-b61784293?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app'
+              target='_blank'
               rel='noopener noreferrer'
+              aria-label='Connect with us on LinkedIn'
               className='bg-slate-800 p-2 rounded-full hover:bg-blue-700 hover:text-white transition-all duration-300'
             >
               <FaLinkedin className="text-lg" />
@@ -94,9 +98,9 @@ export default function Footer() {
           <ul className='flex flex-col gap-4'>
             <li className='flex items-start gap-3 group'>
               <FaMapMarkerAlt className='text-blue-500 mt-1 text-lg group-hover:animate-bounce' />
-              <a 
-                href="https://www.google.com/maps/search/?api=1&query=Jaipur+Rajasthan+India" 
-                target="_blank" 
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=Jaipur+Rajasthan+India"
+                target="_blank"
                 rel="noreferrer"
                 className='hover:text-white transition-colors'
               >
@@ -124,14 +128,14 @@ export default function Footer() {
             © {new Date().getFullYear()} <span className='font-bold text-slate-200'>OasisSpace</span>. All rights reserved.
           </p>
           <p className='flex items-center gap-1 text-slate-400'>
-            Made with <FaHeart className='text-red-500 animate-pulse mx-1' /> by 
-            <a 
-                href='https://www.linkedin.com/in/shivam-kumar-b61784293' 
-                target='_blank' 
-                rel='noreferrer' 
-                className='font-bold text-blue-400 hover:text-blue-300 hover:underline'
+            Made with <FaHeart className='text-red-500 animate-pulse mx-1' /> by
+            <a
+              href='https://www.linkedin.com/in/shivam-kumar-b61784293'
+              target='_blank'
+              rel='noreferrer'
+              className='font-bold text-blue-400 hover:text-blue-300 hover:underline'
             >
-                Shivam
+              Shivam
             </a>
           </p>
         </div>

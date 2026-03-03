@@ -1,44 +1,51 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="OasisSpace - Find your perfect home, apartments, and villas for rent and sale. Check out exclusive offers today." />
-    
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#0f172a" />
-    <link rel="apple-touch-icon" href="/icon-192.png" />
 
-    <!-- Performance: Preconnect to external domains -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/logo.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="OasisSpace - Find your perfect home, apartments, and villas for rent and sale. Check out exclusive offers today." />
 
-    <script>
-      // Global variable banaya taaki Header.jsx isse access kar sake
-      window.deferredPrompt = null;
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0f172a" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
 
-      window.addEventListener('beforeinstallprompt', (e) => {
-        // 1. Browser ka default mini-infobar roko
-        e.preventDefault();
-        // 2. Event ko global window object mein save karo
-        window.deferredPrompt = e;
-        console.log("⚡ PWA Event Caught Globally in index.html!");
-      });
-    </script>
-    <title>OasisSpace</title>
-  </head>
-  <body>
-    
-    <svg width="0" height="0" style="position: absolute; display: block; height: 0; width: 0; overflow: hidden;">
-      <defs>
-        <filter id="smart-sharpen" x="-20%" y="-20%" width="140%" height="140%">
-          <feConvolveMatrix order="3,3" kernelMatrix="0 -1 0   -1 5 -1   0 -1 0"/>
-        </filter>
-      </defs>
-    </svg>
+  <!-- Performance: Preconnect to external domains -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+  <!-- LCP Preload: Hero Background Image -->
+  <link rel="preload" href="/home.jpg" as="image" type="image/jpeg" fetchpriority="high" />
+
+  <script>
+    // Global variable banaya taaki Header.jsx isse access kar sake
+    window.deferredPrompt = null;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // 1. Browser ka default mini-infobar roko
+      e.preventDefault();
+      // 2. Event ko global window object mein save karo
+      window.deferredPrompt = e;
+      console.log("⚡ PWA Event Caught Globally in index.html!");
+    });
+  </script>
+  <title>OasisSpace</title>
+</head>
+
+<body>
+
+  <svg width="0" height="0" style="position: absolute; display: block; height: 0; width: 0; overflow: hidden;">
+    <defs>
+      <filter id="smart-sharpen" x="-20%" y="-20%" width="140%" height="140%">
+        <feConvolveMatrix order="3,3" kernelMatrix="0 -1 0   -1 5 -1   0 -1 0" />
+      </filter>
+    </defs>
+  </svg>
+
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>

@@ -11,7 +11,7 @@ import { FaSearch } from 'react-icons/fa';
 // eslint-disable-next-line
 import { motion } from 'framer-motion';
 
-import homeImage from '../assets/home.jpg';
+// (Hero image is now loaded from /home.jpg in public for LCP preloading)
 
 export default function Home() {
   const [offerListings, setOfferListings] = useState([]);
@@ -98,7 +98,7 @@ export default function Home() {
       {/* --- HERO SECTION --- */}
       <div
         className="relative w-full h-[550px] flex flex-col items-center justify-center bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${homeImage})` }}
+        style={{ backgroundImage: `url('/home.jpg')` }}
       >
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent z-10"></div>
 
