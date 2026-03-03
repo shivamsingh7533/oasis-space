@@ -11,7 +11,7 @@ export default function AuthModal({ onClose }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   const dispatch = useDispatch();
   const navigate = useNavigate(); // ✅ Hook initialize kiya
 
@@ -44,16 +44,16 @@ export default function AuthModal({ onClose }) {
       }
 
       setLoading(false);
-      
+
       if (isSignUp) {
         // ✅ SUCCESSFUL SIGNUP LOGIC
         // Modal band karo aur Verify Page par bhejo
-        onClose(); 
-        navigate('/verify-email', { state: { email: formData.email } }); 
+        onClose();
+        navigate('/verify-email', { state: { email: formData.email } });
       } else {
         // ✅ SUCCESSFUL SIGNIN LOGIC
         dispatch(signInSuccess(data));
-        onClose(); 
+        onClose();
       }
 
     } catch (error) {
@@ -65,10 +65,11 @@ export default function AuthModal({ onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-all duration-300">
-      
+
       <div className="bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl border border-slate-700 relative overflow-hidden animate-fadeIn">
-        <button 
+        <button
           onClick={onClose}
+          aria-label="Close modal"
           className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors z-10"
         >
           <FaTimes size={20} />
@@ -123,7 +124,7 @@ export default function AuthModal({ onClose }) {
                 onChange={handleChange}
                 required
               />
-              <div 
+              <div
                 className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-slate-200'
                 onClick={() => setShowPassword(!showPassword)}
               >
@@ -131,7 +132,7 @@ export default function AuthModal({ onClose }) {
               </div>
             </div>
 
-            <button 
+            <button
               disabled={loading}
               className="bg-slate-100 text-slate-900 font-bold p-3 rounded-lg hover:bg-slate-200 transition-colors mt-2 uppercase disabled:opacity-70 shadow-md flex justify-center items-center gap-2"
             >
@@ -154,7 +155,7 @@ export default function AuthModal({ onClose }) {
             <p className="text-slate-400">
               {isSignUp ? 'Already have an account?' : "Don't have an account?"}
             </p>
-            <span 
+            <span
               onClick={() => { setIsSignUp(!isSignUp); setError(null); }}
               className="text-blue-400 hover:text-blue-300 cursor-pointer font-semibold underline"
             >

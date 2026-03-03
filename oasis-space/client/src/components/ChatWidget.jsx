@@ -38,7 +38,7 @@ export default function ChatWidget() {
       });
 
       const data = await res.json();
-      
+
       if (data.reply) {
         setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
       } else {
@@ -53,18 +53,18 @@ export default function ChatWidget() {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-      
+
       {/* CHAT WINDOW */}
       {isOpen && (
         <div className="bg-slate-800 border border-slate-700 w-[320px] sm:w-[380px] h-[500px] rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-4 animate-fadeIn">
-          
+
           {/* Header */}
           <div className="bg-indigo-600 p-4 flex justify-between items-center">
             <div className="flex items-center gap-2 text-white font-bold">
               <FaRobot className="text-xl" />
               <span>Oasis AI Assistant</span>
             </div>
-            <button onClick={() => setIsOpen(false)} className="text-white hover:text-gray-200">
+            <button onClick={() => setIsOpen(false)} aria-label="Close chat" className="text-white hover:text-gray-200">
               <FaTimes />
             </button>
           </div>
@@ -73,20 +73,19 @@ export default function ChatWidget() {
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-slate-900 custom-scrollbar">
             {messages.map((msg, index) => (
               <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] p-3 rounded-lg text-sm leading-relaxed ${
-                  msg.role === 'user' 
-                    ? 'bg-indigo-600 text-white rounded-br-none' 
+                <div className={`max-w-[80%] p-3 rounded-lg text-sm leading-relaxed ${msg.role === 'user'
+                    ? 'bg-indigo-600 text-white rounded-br-none'
                     : 'bg-slate-700 text-slate-200 rounded-bl-none'
-                }`}>
+                  }`}>
                   {msg.content}
                 </div>
               </div>
             ))}
             {loading && (
               <div className="flex justify-start">
-                 <div className="bg-slate-700 text-slate-400 p-3 rounded-lg rounded-bl-none text-xs italic animate-pulse">
-                   Thinking...
-                 </div>
+                <div className="bg-slate-700 text-slate-400 p-3 rounded-lg rounded-bl-none text-xs italic animate-pulse">
+                  Thinking...
+                </div>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -94,16 +93,17 @@ export default function ChatWidget() {
 
           {/* Input Area */}
           <form onSubmit={handleSend} className="p-3 bg-slate-800 border-t border-slate-700 flex gap-2">
-            <input 
-              type="text" 
-              placeholder="Ask about property..." 
+            <input
+              type="text"
+              placeholder="Ask about property..."
               className="flex-1 bg-slate-700 text-white text-sm rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               value={input}
               onChange={(e) => setInput(e.target.value)}
             />
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={loading}
+              aria-label="Send message"
               className="bg-indigo-600 text-white p-3 rounded-full hover:bg-indigo-700 transition shadow-md disabled:opacity-50"
             >
               <FaPaperPlane />
@@ -113,8 +113,9 @@ export default function ChatWidget() {
       )}
 
       {/* FLOATING TOGGLE BUTTON */}
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-label={isOpen ? "Close chat widget" : "Open chat widget"}
         className="bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-2xl transition-all transform hover:scale-110 flex items-center justify-center"
       >
         {isOpen ? <FaTimes className="text-xl" /> : <FaCommentDots className="text-2xl" />}
