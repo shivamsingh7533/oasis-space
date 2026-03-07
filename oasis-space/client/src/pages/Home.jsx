@@ -24,27 +24,19 @@ export default function Home() {
   useEffect(() => {
     const fetchAllListings = async () => {
       try {
-        const [featuredRes, offerRes, rentRes, saleRes] = await Promise.allSettled([
-          fetch('/api/listing/get?featured=true&limit=9'),
-          fetch('/api/listing/get?offer=true&limit=9'),
-          fetch('/api/listing/get?type=rent&limit=9'),
-          fetch('/api/listing/get?type=sale&limit=9')
-        ]);
+        const featuredRes = await fetch('/api/listing/get?featured=true&limit=9');
+        if (featuredRes.ok) setFeaturedListings(await featuredRes.json());
 
-        if (featuredRes.status === 'fulfilled' && featuredRes.value.ok) {
-          setFeaturedListings(await featuredRes.value.json());
-        }
-        if (offerRes.status === 'fulfilled' && offerRes.value.ok) {
-          setOfferListings(await offerRes.value.json());
-        }
-        if (rentRes.status === 'fulfilled' && rentRes.value.ok) {
-          setRentListings(await rentRes.value.json());
-        }
-        if (saleRes.status === 'fulfilled' && saleRes.value.ok) {
-          setSaleListings(await saleRes.value.json());
-        }
+        const offerRes = await fetch('/api/listing/get?offer=true&limit=9');
+        if (offerRes.ok) setOfferListings(await offerRes.json());
+
+        const rentRes = await fetch('/api/listing/get?type=rent&limit=9');
+        if (rentRes.ok) setRentListings(await rentRes.json());
+
+        const saleRes = await fetch('/api/listing/get?type=sale&limit=9');
+        if (saleRes.ok) setSaleListings(await saleRes.json());
       } catch (error) {
-        console.log('Error parallel fetching listings combinations:', error);
+        console.log('Error fetching listings:', error);
       }
     };
     fetchAllListings();
