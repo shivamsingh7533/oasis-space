@@ -177,7 +177,7 @@ export default function Home() {
                 >
                   <div className='absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent'></div>
                   <div className='absolute bottom-0 left-0 p-6 w-full'>
-                    <h3 className='text-white text-2xl font-bold truncate drop-shadow-md'>{listing.name}</h3>
+                    <p className='text-white text-2xl font-bold truncate drop-shadow-md'>{listing.name}</p>
                     <p className='text-[#8EA6C7] font-bold text-lg'>
                       ₹ {listing.offer ? listing.discountPrice.toLocaleString('en-IN') : listing.regularPrice.toLocaleString('en-IN')}
                       {listing.type === 'rent' && <span className='text-xs text-gray-300'> / month</span>}

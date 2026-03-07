@@ -72,7 +72,7 @@ export default function Footer() {
 
         {/* Column 2: Quick Links */}
         <div>
-          <h3 className='font-bold text-white mb-4 uppercase tracking-wider text-sm border-b-2 border-blue-500 inline-block pb-1'>Quick Links</h3>
+          <h2 className='font-bold text-white mb-4 uppercase tracking-wider text-sm border-b-2 border-blue-500 inline-block pb-1'>Quick Links</h2>
           <ul className='flex flex-col gap-3'>
             <li><Link to='/' className='hover:text-blue-400 transition-colors flex items-center gap-2'>Home</Link></li>
             <li><Link to='/search' className='hover:text-blue-400 transition-colors flex items-center gap-2'>Listings</Link></li>
@@ -83,7 +83,7 @@ export default function Footer() {
 
         {/* Column 3: Support */}
         <div>
-          <h3 className='font-bold text-white mb-4 uppercase tracking-wider text-sm border-b-2 border-blue-500 inline-block pb-1'>Support</h3>
+          <h2 className='font-bold text-white mb-4 uppercase tracking-wider text-sm border-b-2 border-blue-500 inline-block pb-1'>Support</h2>
           <ul className='flex flex-col gap-3'>
             <li><Link to='/profile' className='hover:text-blue-400 transition-colors'>My Account</Link></li>
             <li><Link to='/faq' className='hover:text-blue-400 transition-colors'>FAQ</Link></li>
@@ -94,7 +94,7 @@ export default function Footer() {
 
         {/* Column 4: Contact Us */}
         <div>
-          <h3 className='font-bold text-white mb-4 uppercase tracking-wider text-sm border-b-2 border-blue-500 inline-block pb-1'>Contact Us</h3>
+          <h2 className='font-bold text-white mb-4 uppercase tracking-wider text-sm border-b-2 border-blue-500 inline-block pb-1'>Contact Us</h2>
           <ul className='flex flex-col gap-4'>
             <li className='flex items-start gap-3 group'>
               <FaMapMarkerAlt className='text-blue-500 mt-1 text-lg group-hover:animate-bounce' />

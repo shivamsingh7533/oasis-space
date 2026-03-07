@@ -109,99 +109,111 @@ export default function Header() {
                     <ul className='hidden md:flex gap-6 items-center font-medium'>
 
                         {deferredPrompt && (
-                            <button
-                                onClick={handleInstallClick}
-                                className='bg-slate-700 hover:bg-slate-600 text-blue-400 border border-slate-600 px-3 py-1 rounded-lg text-sm font-semibold transition-all shadow-lg animate-pulse'
-                            >
-                                Install App
-                            </button>
+                            <li>
+                                <button
+                                    onClick={handleInstallClick}
+                                    className='bg-slate-700 hover:bg-slate-600 text-blue-400 border border-slate-600 px-3 py-1 rounded-lg text-sm font-semibold transition-all shadow-lg animate-pulse'
+                                >
+                                    Install App
+                                </button>
+                            </li>
                         )}
 
-                        <Link to='/' className='text-slate-300 hover:text-white transition-colors'>Home</Link>
-                        <Link to='/about' className='text-slate-300 hover:text-white transition-colors'>About</Link>
+                        <li><Link to='/' className='text-slate-300 hover:text-white transition-colors'>Home</Link></li>
+                        <li><Link to='/about' className='text-slate-300 hover:text-white transition-colors'>About</Link></li>
 
                         {currentUser ? (
                             <>
                                 {/* Wishlist Link */}
-                                <Link to='/saved-listings' className='text-slate-300 hover:text-pink-500 transition-colors flex items-center gap-1' title="My Wishlist">
-                                    <FaHeart className='text-lg' /> <span className='hidden lg:inline text-sm'>Wishlist</span>
-                                </Link>
+                                <li>
+                                    <Link to='/saved-listings' className='text-slate-300 hover:text-pink-500 transition-colors flex items-center gap-1' title="My Wishlist">
+                                        <FaHeart className='text-lg' /> <span className='hidden lg:inline text-sm'>Wishlist</span>
+                                    </Link>
+                                </li>
 
                                 {/* Seller Dashboard Button */}
                                 {currentUser.sellerStatus === 'approved' && (
-                                    <Link
-                                        to='/seller-dashboard'
-                                        className='flex items-center gap-1 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-md transition-all'
-                                    >
-                                        <FaChartLine /> Seller Panel
-                                    </Link>
+                                    <li>
+                                        <Link
+                                            to='/seller-dashboard'
+                                            className='flex items-center gap-1 bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-md transition-all'
+                                        >
+                                            <FaChartLine /> Seller Panel
+                                        </Link>
+                                    </li>
                                 )}
 
                                 {/* Admin Panel Button */}
                                 {currentUser.role === 'admin' && (
-                                    <Link
-                                        to='/dashboard'
-                                        className='flex items-center gap-1 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-md transition-all'
-                                    >
-                                        <FaUserShield /> Admin Panel
-                                    </Link>
+                                    <li>
+                                        <Link
+                                            to='/dashboard'
+                                            className='flex items-center gap-1 bg-green-600 hover:bg-green-500 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-md transition-all'
+                                        >
+                                            <FaUserShield /> Admin Panel
+                                        </Link>
+                                    </li>
                                 )}
 
                                 {/* NOTIFICATION BELL */}
-                                <button aria-label="Notifications" className="relative cursor-pointer focus:outline-none" onClick={handleRead}>
-                                    <div className="relative">
-                                        <FaBell className="text-xl text-slate-300 hover:text-white transition mt-1" />
-                                        {unreadCount > 0 && (
-                                            <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-sm">
-                                                {unreadCount}
-                                            </span>
-                                        )}
-                                    </div>
+                                <li>
+                                    <button aria-label="Notifications" className="relative cursor-pointer focus:outline-none" onClick={handleRead}>
+                                        <div className="relative">
+                                            <FaBell className="text-xl text-slate-300 hover:text-white transition mt-1" />
+                                            {unreadCount > 0 && (
+                                                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-sm">
+                                                    {unreadCount}
+                                                </span>
+                                            )}
+                                        </div>
 
-                                    {/* DROPDOWN MENU */}
-                                    {showNotif && (
-                                        <div className="absolute right-0 top-10 w-72 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 z-50">
-                                            <div className="p-3 bg-slate-900 border-b border-slate-700 font-bold text-slate-200 flex justify-between items-center">
-                                                <span>Notifications</span>
-                                                <div className="flex gap-3">
-                                                    {/* ✅ Clear All Button */}
-                                                    {notifications.length > 0 && (
-                                                        <span className="text-xs text-red-400 cursor-pointer hover:text-red-300 flex items-center gap-1" onClick={handleClear}>
-                                                            <FaTrash /> Clear
-                                                        </span>
+                                        {/* DROPDOWN MENU */}
+                                        {showNotif && (
+                                            <div className="absolute right-0 top-10 w-72 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 z-50 cursor-default" onClick={(e) => e.stopPropagation()}>
+                                                <div className="p-3 bg-slate-900 border-b border-slate-700 font-bold text-slate-200 flex justify-between items-center">
+                                                    <span>Notifications</span>
+                                                    <div className="flex gap-3">
+                                                        {/* ✅ Clear All Button */}
+                                                        {notifications.length > 0 && (
+                                                            <span className="text-xs text-red-400 cursor-pointer hover:text-red-300 flex items-center gap-1" onClick={handleClear}>
+                                                                <FaTrash /> Clear
+                                                            </span>
+                                                        )}
+                                                        <span className="text-xs text-slate-400 cursor-pointer hover:text-white" onClick={(e) => { e.stopPropagation(); setShowNotif(false); }}>Close</span>
+                                                    </div>
+                                                </div>
+                                                <div className="max-h-64 overflow-y-auto custom-scrollbar">
+                                                    {notifications.length === 0 ? (
+                                                        <p className="p-6 text-center text-slate-400 text-sm">No new notifications</p>
+                                                    ) : (
+                                                        notifications.map((notif) => (
+                                                            <div key={notif._id} className={`p-3 border-b border-slate-700/50 text-sm hover:bg-slate-700 transition ${notif.isRead ? 'text-slate-400' : 'bg-slate-700/30 text-white font-semibold'}`}>
+                                                                <p>{notif.message}</p>
+                                                                <p className="text-[10px] text-slate-400 mt-1 text-right">
+                                                                    {new Date(notif.createdAt).toLocaleDateString()}
+                                                                </p>
+                                                            </div>
+                                                        ))
                                                     )}
-                                                    <span className="text-xs text-slate-400 cursor-pointer hover:text-white" onClick={(e) => { e.stopPropagation(); setShowNotif(false); }}>Close</span>
                                                 </div>
                                             </div>
-                                            <div className="max-h-64 overflow-y-auto custom-scrollbar">
-                                                {notifications.length === 0 ? (
-                                                    <p className="p-6 text-center text-slate-400 text-sm">No new notifications</p>
-                                                ) : (
-                                                    notifications.map((notif) => (
-                                                        <div key={notif._id} className={`p-3 border-b border-slate-700/50 text-sm hover:bg-slate-700 transition ${notif.isRead ? 'text-slate-400' : 'bg-slate-700/30 text-white font-semibold'}`}>
-                                                            <p>{notif.message}</p>
-                                                            <p className="text-[10px] text-slate-400 mt-1 text-right">
-                                                                {new Date(notif.createdAt).toLocaleDateString()}
-                                                            </p>
-                                                        </div>
-                                                    ))
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                </button>
+                                        )}
+                                    </button>
+                                </li>
 
                                 {/* Profile Trigger */}
-                                <button aria-label="User Profile" className='relative cursor-pointer focus:outline-none' onClick={() => setShowProfile(true)}>
-                                    <img
-                                        className='rounded-full h-9 w-9 object-cover border-2 border-slate-600 hover:border-slate-400 transition'
-                                        src={currentUser.avatar}
-                                        alt='profile'
-                                    />
-                                </button>
+                                <li>
+                                    <button aria-label="User Profile" className='relative cursor-pointer focus:outline-none' onClick={() => setShowProfile(true)}>
+                                        <img
+                                            className='rounded-full h-9 w-9 object-cover border-2 border-slate-600 hover:border-slate-400 transition'
+                                            src={currentUser.avatar}
+                                            alt='profile'
+                                        />
+                                    </button>
+                                </li>
                             </>
                         ) : (
-                            <Link to='/sign-in' className='text-slate-300 hover:text-white'>Sign in</Link>
+                            <li><Link to='/sign-in' className='text-slate-300 hover:text-white'>Sign in</Link></li>
                         )}
                     </ul>
 
