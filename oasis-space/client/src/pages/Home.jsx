@@ -170,7 +170,7 @@ export default function Home() {
                     className="absolute inset-0 w-full h-full object-cover z-0"
                   />
                   <div className='absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent z-10'></div>
-                  <div className='absolute bottom-0 left-0 p-6 w-full z-20'>
+                  <div className='absolute bottom-0 left-0 p-6 w-full z-20 bg-black/60 backdrop-blur-sm'>
                     <p className='text-white text-2xl font-bold truncate drop-shadow-md'>{listing.name}</p>
                     <p className='text-[#8EA6C7] font-bold text-lg'>
                       ₹ {listing.offer ? listing.discountPrice.toLocaleString('en-IN') : listing.regularPrice.toLocaleString('en-IN')}
