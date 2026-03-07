@@ -7,9 +7,7 @@ import 'swiper/css/bundle';
 import ListingItem from '../components/ListingItem';
 import { FaSearch } from 'react-icons/fa';
 
-// 🔥 ANIMATION LIBRARY
-// eslint-disable-next-line
-import { motion } from 'framer-motion';
+// No framer-motion needed.
 
 // (Hero image is now loaded from /home.jpg in public for LCP preloading)
 
@@ -87,10 +85,7 @@ export default function Home() {
     navigate(`/search?${searchQuery}`);
   };
 
-  const fadeIn = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
-  };
+  // Animations removed for maximum mobile performance
 
   return (
     <div className='bg-slate-900 min-h-screen text-slate-200'>
@@ -147,11 +142,7 @@ export default function Home() {
 
       {/* --- FEATURED SLIDER (VIP) --- */}
       {featuredListings && featuredListings.length > 0 && (
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          variants={fadeIn}
+        <div
           className='max-w-6xl mx-auto pt-10 px-4'
         >
           <div className='my-3 flex items-center gap-2 mb-5'>
@@ -168,15 +159,18 @@ export default function Home() {
             {featuredListings.map((listing) => (
               <SwiperSlide key={listing._id}>
                 <div
-                  style={{
-                    background: `url(${listing.imageUrls[0]}) center no-repeat`,
-                    backgroundSize: 'cover',
-                  }}
                   className='h-full w-full relative group cursor-pointer'
                   onClick={() => navigate(`/listing/${listing._id}`)}
                 >
-                  <div className='absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent'></div>
-                  <div className='absolute bottom-0 left-0 p-6 w-full'>
+                  {/* EXPLICT LAZY LOAD IMAGE instead of CSS Background */}
+                  <img
+                    src={listing.imageUrls[0]}
+                    alt={listing.name}
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-cover z-0"
+                  />
+                  <div className='absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent z-10'></div>
+                  <div className='absolute bottom-0 left-0 p-6 w-full z-20'>
                     <p className='text-white text-2xl font-bold truncate drop-shadow-md'>{listing.name}</p>
                     <p className='text-[#8EA6C7] font-bold text-lg'>
                       ₹ {listing.offer ? listing.discountPrice.toLocaleString('en-IN') : listing.regularPrice.toLocaleString('en-IN')}
@@ -187,7 +181,7 @@ export default function Home() {
               </SwiperSlide>
             ))}
           </Swiper>
-        </motion.div>
+        </div>
       )}
 
       {/* --- LISTINGS SECTIONS --- */}
@@ -195,12 +189,7 @@ export default function Home() {
 
         {/* RECENT OFFERS */}
         {offerListings && offerListings.length > 0 && (
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeIn}
-          >
+          <div>
             <div className='my-3 flex justify-between items-end'>
               <h2 className='text-xl sm:text-2xl font-semibold text-slate-200'>Recent Offers</h2>
               <Link className='text-sm text-[#8EA6C7] hover:text-[#7a92b3] hover:underline' to={'/search?offer=true'}>View All</Link>
@@ -210,17 +199,12 @@ export default function Home() {
                 <ListingItem listing={listing} key={listing._id} />
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* RENT LISTINGS */}
         {rentListings && rentListings.length > 0 && (
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeIn}
-          >
+          <div>
             <div className='my-3 flex justify-between items-end'>
               <h2 className='text-xl sm:text-2xl font-semibold text-slate-200'>Places for Rent</h2>
               <Link className='text-sm text-[#8EA6C7] hover:text-[#7a92b3] hover:underline' to={'/search?type=rent'}>View All</Link>
@@ -230,17 +214,12 @@ export default function Home() {
                 <ListingItem listing={listing} key={listing._id} />
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* SALE LISTINGS */}
         {saleListings && saleListings.length > 0 && (
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={fadeIn}
-          >
+          <div>
             <div className='my-3 flex justify-between items-end'>
               <h2 className='text-xl sm:text-2xl font-semibold text-slate-200'>Places for Sale</h2>
               <Link className='text-sm text-[#8EA6C7] hover:text-[#7a92b3] hover:underline' to={'/search?type=sale'}>View All</Link>
@@ -250,7 +229,7 @@ export default function Home() {
                 <ListingItem listing={listing} key={listing._id} />
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
       </div>
     </div>
