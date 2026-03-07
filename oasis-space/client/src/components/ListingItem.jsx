@@ -84,12 +84,13 @@ export default function ListingItem({ listing }) {
           `}
         />
 
-        <div className='absolute top-3 left-3 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider border border-slate-600 shadow-sm z-20'>
+        {/* Performance Fix: Removed backdrop-blur-sm to eradicate mobile scroll lagging */}
+        <div className='absolute top-3 left-3 bg-slate-900/90 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider border border-slate-600 shadow-sm z-20'>
           {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
         </div>
 
         {listing.offer && (
-          <div className='absolute top-3 left-20 bg-green-800/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-sm z-20'>
+          <div className='absolute top-3 left-20 bg-green-800/90 text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-sm z-20'>
             Offer
           </div>
         )}
@@ -147,6 +148,6 @@ export default function ListingItem({ listing }) {
         </div>
 
       </div>
-    </div>
+    </div >
   );
 }
