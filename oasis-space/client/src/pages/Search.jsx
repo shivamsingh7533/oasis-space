@@ -135,7 +135,7 @@ export default function Search() {
 
         <form onSubmit={handleSubmit} className='flex flex-col gap-8'>
           <div className='flex flex-col gap-2'>
-            <label className='whitespace-nowrap font-semibold text-slate-300 flex items-center gap-2'>
+            <label htmlFor='searchTerm' className='whitespace-nowrap font-semibold text-slate-300 flex items-center gap-2'>
               <FaSearchLocation className="text-indigo-400" /> Search Location / Property
             </label>
             <input
@@ -149,37 +149,37 @@ export default function Search() {
           </div>
 
           <div className='flex flex-col gap-2'>
-            <label className='font-semibold text-slate-300'>Type</label>
+            <span className='font-semibold text-slate-300'>Type</span>
             <div className='flex flex-wrap gap-4'>
               <div className='flex gap-2 items-center'>
                 <input type='checkbox' id='all' className='w-5 h-5 accent-indigo-500 bg-slate-700' onChange={handleChange} checked={sidebardata.type === 'all'} />
-                <span>Rent & Sale</span>
+                <label htmlFor='all' className='cursor-pointer'>Rent & Sale</label>
               </div>
               <div className='flex gap-2 items-center'>
                 <input type='checkbox' id='rent' className='w-5 h-5 accent-indigo-500 bg-slate-700' onChange={handleChange} checked={sidebardata.type === 'rent'} />
-                <span>Rent</span>
+                <label htmlFor='rent' className='cursor-pointer'>Rent</label>
               </div>
               <div className='flex gap-2 items-center'>
                 <input type='checkbox' id='sale' className='w-5 h-5 accent-indigo-500 bg-slate-700' onChange={handleChange} checked={sidebardata.type === 'sale'} />
-                <span>Sale</span>
+                <label htmlFor='sale' className='cursor-pointer'>Sale</label>
               </div>
             </div>
           </div>
 
           <div className='flex flex-col gap-2'>
-            <label className='font-semibold text-slate-300'>Amenities</label>
+            <span className='font-semibold text-slate-300'>Amenities</span>
             <div className='flex flex-wrap gap-4'>
               <div className='flex gap-2 items-center'>
                 <input type='checkbox' id='parking' className='w-5 h-5 accent-indigo-500 bg-slate-700' onChange={handleChange} checked={sidebardata.parking} />
-                <span>Parking</span>
+                <label htmlFor='parking' className='cursor-pointer'>Parking</label>
               </div>
               <div className='flex gap-2 items-center'>
                 <input type='checkbox' id='furnished' className='w-5 h-5 accent-indigo-500 bg-slate-700' onChange={handleChange} checked={sidebardata.furnished} />
-                <span>Furnished</span>
+                <label htmlFor='furnished' className='cursor-pointer'>Furnished</label>
               </div>
               <div className='flex gap-2 items-center'>
                 <input type='checkbox' id='offer' className='w-5 h-5 accent-indigo-500 bg-slate-700' onChange={handleChange} checked={sidebardata.offer} />
-                <span>Offer</span>
+                <label htmlFor='offer' className='cursor-pointer'>Offer</label>
               </div>
             </div>
           </div>
@@ -210,8 +210,8 @@ export default function Search() {
             <button
               onClick={() => handleSortChange('created_at', 'desc')}
               className={`px-4 py-1.5 rounded-full transition-all border ${sidebardata.sort === 'created_at'
-                  ? 'bg-indigo-600 text-white border-indigo-500'
-                  : 'bg-slate-900 text-slate-300 border-slate-600 hover:bg-slate-700'
+                ? 'bg-indigo-600 text-white border-indigo-500'
+                : 'bg-slate-900 text-slate-300 border-slate-600 hover:bg-slate-700'
                 }`}
             >
               Latest
@@ -220,8 +220,8 @@ export default function Search() {
             <button
               onClick={() => handleSortChange('regularPrice', 'asc')}
               className={`px-4 py-1.5 rounded-full transition-all border ${sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc'
-                  ? 'bg-indigo-600 text-white border-indigo-500'
-                  : 'bg-slate-900 text-slate-300 border-slate-600 hover:bg-slate-700'
+                ? 'bg-indigo-600 text-white border-indigo-500'
+                : 'bg-slate-900 text-slate-300 border-slate-600 hover:bg-slate-700'
                 }`}
             >
               Price: Low to High
@@ -230,8 +230,8 @@ export default function Search() {
             <button
               onClick={() => handleSortChange('regularPrice', 'desc')}
               className={`px-4 py-1.5 rounded-full transition-all border ${sidebardata.sort === 'regularPrice' && sidebardata.order === 'desc'
-                  ? 'bg-indigo-600 text-white border-indigo-500'
-                  : 'bg-slate-900 text-slate-300 border-slate-600 hover:bg-slate-700'
+                ? 'bg-indigo-600 text-white border-indigo-500'
+                : 'bg-slate-900 text-slate-300 border-slate-600 hover:bg-slate-700'
                 }`}
             >
               Price: High to Low

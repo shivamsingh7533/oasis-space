@@ -123,6 +123,8 @@ export default function Home() {
           >
             <input
               type="text"
+              id="homeSearchTerm"
+              aria-label="Search address, city..."
               placeholder="Search address, city..."
               className="flex-grow px-5 py-3 text-gray-700 focus:outline-none text-sm sm:text-base bg-transparent placeholder-gray-500"
               value={searchTerm}
