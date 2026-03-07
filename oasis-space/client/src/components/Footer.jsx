@@ -124,7 +124,7 @@ export default function Footer() {
       {/* Bottom Section - Copyright & Credit */}
       <div className='bg-slate-950 py-6 px-4 border-t border-slate-800'>
         <div className='max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left'>
-          <p className='text-slate-500'>
+          <p className='text-slate-400'>
             © {new Date().getFullYear()} <span className='font-bold text-slate-200'>OasisSpace</span>. All rights reserved.
           </p>
           <p className='flex items-center gap-1 text-slate-400'>

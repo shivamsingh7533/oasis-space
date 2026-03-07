@@ -98,9 +98,9 @@ export default function Home() {
       {/* --- HERO SECTION --- */}
       <div className="relative w-full h-[550px] flex flex-col items-center justify-center overflow-hidden">
 
-        {/* LCP PRIORITY IMAGE (Replaces background-image for instant loading) */}
+        {/* LCP PRIORITY IMAGE (Replaces background-image for instant loading, WebP Compressed) */}
         <img
-          src="/home.jpg"
+          src="/home.webp"
           alt="Beautiful Home Exterior"
           className="absolute inset-0 w-full h-full object-cover z-0"
           fetchpriority="high"

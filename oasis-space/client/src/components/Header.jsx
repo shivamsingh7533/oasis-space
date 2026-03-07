@@ -175,12 +175,12 @@ export default function Header() {
                                             </div>
                                             <div className="max-h-64 overflow-y-auto custom-scrollbar">
                                                 {notifications.length === 0 ? (
-                                                    <p className="p-6 text-center text-slate-500 text-sm">No new notifications</p>
+                                                    <p className="p-6 text-center text-slate-400 text-sm">No new notifications</p>
                                                 ) : (
                                                     notifications.map((notif) => (
                                                         <div key={notif._id} className={`p-3 border-b border-slate-700/50 text-sm hover:bg-slate-700 transition ${notif.isRead ? 'text-slate-400' : 'bg-slate-700/30 text-white font-semibold'}`}>
                                                             <p>{notif.message}</p>
-                                                            <p className="text-[10px] text-slate-500 mt-1 text-right">
+                                                            <p className="text-[10px] text-slate-400 mt-1 text-right">
                                                                 {new Date(notif.createdAt).toLocaleDateString()}
                                                             </p>
                                                         </div>
@@ -291,10 +291,10 @@ export default function Header() {
 
                                 <div className="max-h-40 overflow-y-auto bg-slate-900 rounded-lg p-2">
                                     {notifications.length === 0 ? (
-                                        <p className="text-slate-500 text-xs text-center">No notifications</p>
+                                        <p className="text-slate-400 text-xs text-center">No notifications</p>
                                     ) : (
                                         notifications.slice(0, 5).map((notif) => (
-                                            <div key={notif._id} className={`text-xs p-2 mb-1 rounded ${notif.isRead ? 'text-slate-500' : 'bg-slate-800 text-white border border-slate-700'}`}>
+                                            <div key={notif._id} className={`text-xs p-2 mb-1 rounded ${notif.isRead ? 'text-slate-400' : 'bg-slate-800 text-white border border-slate-700'}`}>
                                                 {notif.message}
                                             </div>
                                         ))
