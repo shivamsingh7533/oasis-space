@@ -98,6 +98,8 @@ export default function Header() {
                             <img
                                 src="/icon-192.png"
                                 alt="logo"
+                                width="32"
+                                height="32"
                                 className="w-8 h-8 mr-2 object-cover rounded-full bg-white p-0.5"
                             />
                             <span className='text-slate-200'>Oasis</span>

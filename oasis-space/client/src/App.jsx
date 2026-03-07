@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
+import Home from './pages/Home'; // Synchronous for maximum LCP speed and avoiding Preloader flash
 import Header from './components/Header';
 import Footer from './components/Footer';
 import PrivateRoute from './components/PrivateRoute';
@@ -7,7 +8,6 @@ import AdminRoute from './components/AdminRoute';
 import Preloader from './components/Preloader';
 
 // --- DYNAMIC IMPORTS (Code Splitting) ---
-const Home = lazy(() => import('./pages/Home'));
 const ChatWidget = lazy(() => import('./components/ChatWidget'));
 const SignIn = lazy(() => import('./pages/SignIn'));
 const SignUp = lazy(() => import('./pages/SignUp'));
