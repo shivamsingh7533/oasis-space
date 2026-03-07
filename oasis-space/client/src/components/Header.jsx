@@ -210,6 +210,8 @@ export default function Header() {
                                             className='rounded-full h-9 w-9 object-cover border-2 border-slate-600 hover:border-slate-400 transition'
                                             src={currentUser.avatar}
                                             alt='profile'
+                                            width="36"
+                                            height="36"
                                         />
                                     </button>
                                 </li>
@@ -336,6 +338,8 @@ export default function Header() {
                                     className='rounded-full h-10 w-10 object-cover border-2 border-slate-600'
                                     src={currentUser.avatar}
                                     alt='profile'
+                                    width="40"
+                                    height="40"
                                 />
                                 <div>
                                     <p className='text-white font-bold text-sm'>{currentUser.username}</p>
