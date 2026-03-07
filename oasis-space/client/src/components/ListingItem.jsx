@@ -73,6 +73,8 @@ export default function ListingItem({ listing }) {
         <img
           src={imageError ? 'https://cdn.pixabay.com/photo/2016/11/18/17/46/house-1836070_1280.jpg' : (listing.imageUrls[0] ? `https://wsrv.nl/?url=${encodeURIComponent(listing.imageUrls[0])}&output=webp&w=600&q=80` : 'https://via.placeholder.com/500')}
           alt={`Cover image for ${listing.name || 'property'}`}
+          width="300"
+          height="180"
           loading="lazy"
           onLoad={() => setImageLoaded(true)}
           onError={() => { setImageError(true); setImageLoaded(true); }}

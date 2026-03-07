@@ -22,59 +22,32 @@ export default function Home() {
   SwiperCore.use([Navigation, Autoplay, Pagination]);
 
   useEffect(() => {
-    // 1. Fetch FEATURED (VIP) First
-    const fetchFeaturedListings = async () => {
+    const fetchAllListings = async () => {
       try {
-        // ✅ Limit increased to 9
-        const res = await fetch('/api/listing/get?featured=true&limit=9');
-        const data = await res.json();
-        setFeaturedListings(data);
-        fetchOfferListings(); // Chain next fetch
+        const [featuredRes, offerRes, rentRes, saleRes] = await Promise.allSettled([
+          fetch('/api/listing/get?featured=true&limit=9'),
+          fetch('/api/listing/get?offer=true&limit=9'),
+          fetch('/api/listing/get?type=rent&limit=9'),
+          fetch('/api/listing/get?type=sale&limit=9')
+        ]);
+
+        if (featuredRes.status === 'fulfilled' && featuredRes.value.ok) {
+          setFeaturedListings(await featuredRes.value.json());
+        }
+        if (offerRes.status === 'fulfilled' && offerRes.value.ok) {
+          setOfferListings(await offerRes.value.json());
+        }
+        if (rentRes.status === 'fulfilled' && rentRes.value.ok) {
+          setRentListings(await rentRes.value.json());
+        }
+        if (saleRes.status === 'fulfilled' && saleRes.value.ok) {
+          setSaleListings(await saleRes.value.json());
+        }
       } catch (error) {
-        console.log(error);
-        fetchOfferListings();
+        console.log('Error parallel fetching listings combinations:', error);
       }
     };
-
-    // 2. Fetch OFFERS
-    const fetchOfferListings = async () => {
-      try {
-        // ✅ Limit increased to 9
-        const res = await fetch('/api/listing/get?offer=true&limit=9');
-        const data = await res.json();
-        setOfferListings(data);
-        fetchRentListings();
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    // 3. Fetch RENT
-    const fetchRentListings = async () => {
-      try {
-        // ✅ Limit increased to 9
-        const res = await fetch('/api/listing/get?type=rent&limit=9');
-        const data = await res.json();
-        setRentListings(data);
-        fetchSaleListings();
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    // 4. Fetch SALE
-    const fetchSaleListings = async () => {
-      try {
-        // ✅ Limit increased to 9
-        const res = await fetch('/api/listing/get?type=sale&limit=9');
-        const data = await res.json();
-        setSaleListings(data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    fetchFeaturedListings();
+    fetchAllListings();
   }, []);
 
   const handleSubmit = (e) => {
@@ -97,6 +70,8 @@ export default function Home() {
         <img
           src="/home.webp"
           alt="Beautiful Home Exterior"
+          width="1280"
+          height="550"
           className="absolute inset-0 w-full h-full object-cover z-0"
           fetchpriority="high"
           decoding="async"
@@ -164,13 +139,15 @@ export default function Home() {
                 >
                   {/* EXPLICT LAZY LOAD IMAGE instead of CSS Background */}
                   <img
-                    src={listing.imageUrls[0]}
+                    src={`https://wsrv.nl/?url=${encodeURIComponent(listing.imageUrls[0])}&output=webp&w=600&q=80`}
                     alt={listing.name}
+                    width="600"
+                    height="400"
                     loading="lazy"
                     className="absolute inset-0 w-full h-full object-cover z-0"
                   />
                   <div className='absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent z-10'></div>
-                  <div className='absolute bottom-0 left-0 p-6 w-full z-20 bg-black/60 backdrop-blur-sm'>
+                  <div className='absolute bottom-0 left-0 p-6 w-full z-20 bg-black/80 backdrop-blur-sm'>
                     <p className='text-white text-2xl font-bold truncate drop-shadow-md'>{listing.name}</p>
                     <p className='text-[#8EA6C7] font-bold text-lg'>
                       ₹ {listing.offer ? listing.discountPrice.toLocaleString('en-IN') : listing.regularPrice.toLocaleString('en-IN')}

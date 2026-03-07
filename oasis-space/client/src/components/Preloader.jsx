@@ -7,6 +7,8 @@ export default function Preloader() {
       <img
         src='/logo.png'   // Make sure this matches your file path (or URL)
         alt='Oasis Space'
+        width="208"
+        height="208"
         // CHANGED: w-52 h-52 (Bigger), rounded-full (Circle), shadow-2xl (Pop)
         className='w-52 h-52 object-cover mb-6 animate-bounce rounded-full shadow-2xl border-4 border-white'
       />
