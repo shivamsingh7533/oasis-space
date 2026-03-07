@@ -96,18 +96,21 @@ export default function Home() {
     <div className='bg-slate-900 min-h-screen text-slate-200'>
 
       {/* --- HERO SECTION --- */}
-      <div
-        className="relative w-full h-[550px] flex flex-col items-center justify-center bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url('/home.jpg')` }}
-      >
+      <div className="relative w-full h-[550px] flex flex-col items-center justify-center overflow-hidden">
+
+        {/* LCP PRIORITY IMAGE (Replaces background-image for instant loading) */}
+        <img
+          src="/home.jpg"
+          alt="Beautiful Home Exterior"
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          fetchpriority="high"
+          decoding="async"
+          loading="eager"
+        />
+
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent z-10"></div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="relative z-20 flex flex-col items-center justify-center text-center px-4 w-full max-w-2xl mx-auto pt-16"
-        >
+        <div className="relative z-20 flex flex-col items-center justify-center text-center px-4 w-full max-w-2xl mx-auto pt-16">
           <h1 className="text-4xl sm:text-6xl font-extrabold text-white mb-4 drop-shadow-2xl leading-tight">
             Find Your Perfect
             <span className="text-[#8EA6C7] ml-3">Oasis</span>
@@ -139,7 +142,7 @@ export default function Home() {
             </button>
           </form>
 
-        </motion.div>
+        </div>
       </div>
 
       {/* --- FEATURED SLIDER (VIP) --- */}

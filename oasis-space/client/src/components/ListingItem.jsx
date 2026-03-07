@@ -50,91 +50,101 @@ export default function ListingItem({ listing }) {
 
   return (
     <div className='bg-slate-800 border border-slate-700 shadow-md hover:shadow-2xl transition-all overflow-hidden rounded-2xl w-full sm:w-[300px] group relative'>
-      <Link to={`/listing/${listing._id}`} aria-label={`View details for ${listing.name}`}>
+      {/* 🧠 ACCESSIBILITY FIX: The button is no longer inside the Link */}
 
-        {/* IMAGE SECTION (Enhanced) */}
-        <div className='relative overflow-hidden h-[180px] bg-slate-700'>
+      {/* 1. Global Link covering the entire card */}
+      <Link
+        to={`/listing/${listing._id}`}
+        aria-label={`View details for ${listing.name}`}
+        className="absolute inset-0 z-10 focus:outline-none ring-slate-500 focus-visible:ring-2 rounded-2xl"
+      />
 
-          {/* 1. BLUR SKELETON (Jab tak image load na ho) */}
-          {!imageLoaded && (
-            <div className="absolute inset-0 flex items-center justify-center bg-slate-700 animate-pulse z-0">
-              <FaImage className="text-slate-600 text-4xl" />
-            </div>
-          )}
+      {/* IMAGE SECTION (Enhanced) */}
+      <div className='relative overflow-hidden h-[180px] bg-slate-700 rounded-t-2xl z-0'>
 
-          {/* 2. MAIN IMAGE (Using .hd-image class) */}
-          <img
-            src={imageError ? 'https://cdn.pixabay.com/photo/2016/11/18/17/46/house-1836070_1280.jpg' : (listing.imageUrls[0] || 'https://via.placeholder.com/500')}
-            alt={`Cover image for ${listing.name || 'property'}`}
-            loading="lazy"
-            onLoad={() => setImageLoaded(true)}
-            onError={() => { setImageError(true); setImageLoaded(true); }}
-            // ✅ CHANGE: Added 'hd-image' class here
-            className={`h-full w-full object-cover transition-all duration-700 
-                ${imageLoaded ? 'opacity-100 group-hover:scale-110 hd-image' : 'opacity-0'}
-            `}
-          />
-
-          <div className='absolute top-3 left-3 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider border border-slate-600 shadow-sm z-10'>
-            {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
+        {/* 1. BLUR SKELETON (Jab tak image load na ho) */}
+        {!imageLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-700 animate-pulse z-0">
+            <FaImage className="text-slate-600 text-4xl" />
           </div>
+        )}
 
-          {listing.offer && (
-            <div className='absolute top-3 left-20 bg-green-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-sm z-10'>
-              Offer
-            </div>
-          )}
+        {/* 2. MAIN IMAGE (Using .hd-image class) */}
+        <img
+          src={imageError ? 'https://cdn.pixabay.com/photo/2016/11/18/17/46/house-1836070_1280.jpg' : (listing.imageUrls[0] || 'https://via.placeholder.com/500')}
+          alt={`Cover image for ${listing.name || 'property'}`}
+          loading="lazy"
+          onLoad={() => setImageLoaded(true)}
+          onError={() => { setImageError(true); setImageLoaded(true); }}
+          // ✅ CHANGE: Added 'hd-image' class here
+          className={`h-full w-full object-cover transition-all duration-700 
+              ${imageLoaded ? 'opacity-100 group-hover:scale-110 hd-image' : 'opacity-0'}
+          `}
+        />
 
-          {/* ❤️ WISHLIST BUTTON */}
-          <button
-            onClick={handleWishlist}
-            aria-label={isSaved ? "Remove from wishlist" : "Add to wishlist"}
-            className='absolute top-3 right-3 bg-white/90 p-1.5 rounded-full shadow-lg cursor-pointer hover:bg-white transition z-10'
-          >
-            {isSaved ? <FaHeart className='text-red-500 text-sm' /> : <FaRegHeart className='text-gray-500 text-sm' />}
-          </button>
+        <div className='absolute top-3 left-3 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider border border-slate-600 shadow-sm z-20'>
+          {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
         </div>
 
-        {/* CONTENT SECTION */}
-        <div className='p-4 flex flex-col gap-2 w-full'>
-
-          <h3 className='truncate text-lg font-bold text-slate-100 group-hover:text-blue-400 transition-colors'>
-            {listing.name}
-          </h3>
-
-          <div className='flex items-center gap-1.5'>
-            <MdLocationOn className='h-4 w-4 text-green-500' />
-            <p className='text-xs text-slate-400 truncate w-full font-medium'>
-              {listing.address}
-            </p>
+        {listing.offer && (
+          <div className='absolute top-3 left-20 bg-green-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-sm z-20'>
+            Offer
           </div>
+        )}
 
-          <p className='text-xs text-slate-400 line-clamp-2 leading-relaxed font-medium'>
-            {listing.description}
+        {/* ❤️ WISHLIST BUTTON (Independent Interactive Element sitting ON TOP of the link via higher z-index) */}
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleWishlist(e);
+          }}
+          aria-label={isSaved ? "Remove from wishlist" : "Add to wishlist"}
+          className='absolute top-3 right-3 bg-white/90 p-1.5 rounded-full shadow-lg cursor-pointer hover:bg-white transition z-30 focus:outline-none ring-slate-500 focus-visible:ring-2'
+        >
+          {isSaved ? <FaHeart className='text-red-500 text-sm' /> : <FaRegHeart className='text-gray-500 text-sm' />}
+        </button>
+      </div>
+
+      {/* CONTENT SECTION */}
+      <div className='p-4 flex flex-col gap-2 w-full z-0 relative pointer-events-none'>
+
+        <h3 className='truncate text-lg font-bold text-slate-100 group-hover:text-blue-400 transition-colors'>
+          {listing.name}
+        </h3>
+
+        <div className='flex items-center gap-1.5'>
+          <MdLocationOn className='h-4 w-4 text-green-500' />
+          <p className='text-xs text-slate-400 truncate w-full font-medium'>
+            {listing.address}
           </p>
-
-          <div className='flex items-center justify-between mt-1'>
-            <p className='text-white font-bold text-lg'>
-              ₹ {listing.offer
-                ? listing.discountPrice.toLocaleString('en-IN')
-                : listing.regularPrice.toLocaleString('en-IN')}
-              {listing.type === 'rent' && <span className='text-xs font-normal text-slate-400'> / mo</span>}
-            </p>
-          </div>
-
-          <div className='flex gap-4 text-slate-400 text-xs mt-1 border-t border-slate-700/50 pt-3'>
-            <div className='flex items-center gap-1.5'>
-              <FaBed className="text-blue-500" />
-              <span className="font-bold text-slate-300">{listing.bedrooms} Beds</span>
-            </div>
-            <div className='flex items-center gap-1.5'>
-              <FaBath className="text-blue-500" />
-              <span className="font-bold text-slate-300">{listing.bathrooms} Baths</span>
-            </div>
-          </div>
-
         </div>
-      </Link>
+
+        <p className='text-xs text-slate-400 line-clamp-2 leading-relaxed font-medium'>
+          {listing.description}
+        </p>
+
+        <div className='flex items-center justify-between mt-1'>
+          <p className='text-white font-bold text-lg'>
+            ₹ {listing.offer
+              ? listing.discountPrice.toLocaleString('en-IN')
+              : listing.regularPrice.toLocaleString('en-IN')}
+            {listing.type === 'rent' && <span className='text-xs font-normal text-slate-400'> / mo</span>}
+          </p>
+        </div>
+
+        <div className='flex gap-4 text-slate-400 text-xs mt-1 border-t border-slate-700/50 pt-3'>
+          <div className='flex items-center gap-1.5'>
+            <FaBed className="text-blue-500" />
+            <span className="font-bold text-slate-300">{listing.bedrooms} Beds</span>
+          </div>
+          <div className='flex items-center gap-1.5'>
+            <FaBath className="text-blue-500" />
+            <span className="font-bold text-slate-300">{listing.bathrooms} Baths</span>
+          </div>
+        </div>
+
+      </div>
     </div>
   );
 }
