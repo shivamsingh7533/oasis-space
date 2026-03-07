@@ -5,10 +5,10 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
-import ChatWidget from './components/ChatWidget';
 import Preloader from './components/Preloader';
 
 // --- DYNAMIC IMPORTS (Code Splitting) ---
+const ChatWidget = lazy(() => import('./components/ChatWidget'));
 const SignIn = lazy(() => import('./pages/SignIn'));
 const SignUp = lazy(() => import('./pages/SignUp'));
 const About = lazy(() => import('./pages/About'));
@@ -81,8 +81,10 @@ export default function App() {
           </Suspense>
         </main>
 
-        {/* CHATBOT */}
-        <ChatWidget />
+        {/* CHATBOT - Lazy Loaded */}
+        <Suspense fallback={null}>
+          <ChatWidget />
+        </Suspense>
 
         <Footer />
       </div>

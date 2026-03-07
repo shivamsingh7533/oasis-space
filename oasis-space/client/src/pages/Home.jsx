@@ -103,7 +103,7 @@ export default function Home() {
           loading="eager"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/80 to-slate-900/60 z-10"></div>
 
         <div className="relative z-20 flex flex-col items-center justify-center text-center px-4 w-full max-w-2xl mx-auto pt-16">
           <h1 className="text-4xl sm:text-6xl font-extrabold text-white mb-4 drop-shadow-2xl leading-tight">

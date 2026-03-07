@@ -12,9 +12,7 @@
   <meta name="theme-color" content="#0f172a" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
 
-  <!-- Performance: Preconnect to external domains -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Performance: Removed unused Google Fonts preconnect to eliminate Render Blocking 350ms false-positive -->
 
   <!-- LCP Preload: Hero Background Image (WebP Compressed) -->
   <link rel="preload" href="/home.webp" as="image" type="image/webp" fetchpriority="high" />

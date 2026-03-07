@@ -87,7 +87,7 @@ export default function ListingItem({ listing }) {
         </div>
 
         {listing.offer && (
-          <div className='absolute top-3 left-20 bg-green-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-sm z-20'>
+          <div className='absolute top-3 left-20 bg-green-800/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-sm z-20'>
             Offer
           </div>
         )}
