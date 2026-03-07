@@ -131,7 +131,7 @@ export default function Home() {
                 >
                   {/* EXPLICT LAZY LOAD IMAGE instead of CSS Background */}
                   <img
-                    src={`https://wsrv.nl/?url=${encodeURIComponent(listing.imageUrls[0])}&output=webp&w=600&q=80`}
+                    src={listing.imageUrls[0].startsWith('data:') ? listing.imageUrls[0] : `https://wsrv.nl/?url=${encodeURIComponent(listing.imageUrls[0])}&output=webp&w=600&q=80`}
                     alt={listing.name}
                     width="600"
                     height="400"
