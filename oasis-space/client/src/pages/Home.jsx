@@ -11,7 +11,9 @@ import Preloader from '../components/Preloader';
 // (Hero image is now loaded from /home.webp in public for LCP preloading)
 
 export default function Home() {
-  const [isPreloading, setIsPreloading] = useState(true);
+  // Start preloading ONLY if this is the first visit in the current session
+  const [isPreloading, setIsPreloading] = useState(() => !sessionStorage.getItem('homePreloaded'));
+
   const [offerListings, setOfferListings] = useState([]);
   const [saleListings, setSaleListings] = useState([]);
   const [rentListings, setRentListings] = useState([]);
@@ -38,11 +40,15 @@ export default function Home() {
       } catch (error) {
         console.log('Error fetching listings:', error);
       } finally {
-        setIsPreloading(false);
+        if (isPreloading) {
+          // Once data is fetched, stop preloading and mark as visited in this session
+          setIsPreloading(false);
+          sessionStorage.setItem('homePreloaded', 'true');
+        }
       }
     };
     fetchAllListings();
-  }, []);
+  }, [isPreloading]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
