@@ -102,6 +102,10 @@ export default function Listing() {
     const [showEMI, setShowEMI] = useState(false);
     const [showMap, setShowMap] = useState(false);
 
+    // Slider state for thumbnails
+    const [swiperInstance, setSwiperInstance] = useState(null);
+    const [activeIndex, setActiveIndex] = useState(0);
+
     const { currentUser } = useSelector((state) => state.user);
 
     useEffect(() => {
@@ -141,129 +145,70 @@ export default function Listing() {
             {listing && !loading && !error && (
                 <div className='max-w-6xl mx-auto px-4 pt-6'>
 
-                    {/* SLIDER SECTION */}
-                    <div className='relative w-full h-[300px] sm:h-[450px] bg-slate-800 rounded-3xl overflow-hidden shadow-2xl border border-slate-700 group'>
-                        <Swiper
-                            modules={[Navigation, Pagination]}
-                            spaceBetween={0}
-                            slidesPerView={1}
-                            navigation={{ clickable: true }}
-                            pagination={{ clickable: true, dynamicBullets: true }}
-                            loop={true}
-                            className="h-full w-full rounded-3xl"
-                        >
-                            {listing.imageUrls.map((url, index) => (
-                                <SwiperSlide key={index}>
-                                    {/* ✅ Using the new Enhanced Component */}
-                                    <EnhancedSwiperImage
-                                        url={url}
-                                        index={index}
-                                        label={listing.imageLabels ? listing.imageLabels[index] : null}
-                                    />
-                                </SwiperSlide>
-                            ))}
-                        </Swiper>
+                    {/* Main Content Layout container */}
+                    <div className='flex flex-col lg:flex-row gap-8 mt-6'>
 
-                        <div className='absolute top-4 right-4 z-20 border rounded-full w-10 h-10 flex justify-center items-center bg-slate-800/80 cursor-pointer hover:bg-slate-700 transition-all shadow-md'
-                            onClick={() => {
-                                navigator.clipboard.writeText(window.location.href);
-                                setCopied(true);
-                                setTimeout(() => setCopied(false), 2000);
-                            }}
-                        >
-                            <FaShare className='text-slate-200' />
-                        </div>
-                        {copied && (
-                            <p className='absolute top-16 right-4 z-20 rounded-md bg-green-600 text-white p-2 text-xs font-bold shadow-lg animate-bounce'>
-                                Link Copied!
-                            </p>
-                        )}
-                    </div>
+                        {/* LEFT SIDE: Image Gallery (60%) */}
+                        <div className="lg:w-3/5 w-full">
+                            <div className='relative w-full h-[300px] sm:h-[400px] md:h-[500px] z-10'>
+                                <Swiper
+                                    modules={[Navigation, Pagination]}
+                                    navigation={{ clickable: true }}
+                                    pagination={{ clickable: true, dynamicBullets: true }}
+                                    loop={true}
+                                    onSwiper={setSwiperInstance}
+                                    onSlideChange={(swiper) => setActiveIndex(swiper.realIndex)}
+                                    className="h-full w-full rounded-3xl shadow-lg border border-slate-700/50"
+                                >
+                                    {listing.imageUrls.map((url, index) => (
+                                        <SwiperSlide key={index}>
+                                            <EnhancedSwiperImage
+                                                url={url}
+                                                index={index}
+                                                label={listing.imageLabels ? listing.imageLabels[index] : null}
+                                            />
+                                        </SwiperSlide>
+                                    ))}
+                                </Swiper>
 
-                    <div className='flex flex-col md:flex-row gap-8 mt-8'>
-
-                        {/* LEFT SIDE */}
-                        <div className='flex-1'>
-                            <div className='flex items-center gap-4 mb-2'>
-                                <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wide ${listing.type === 'rent' ? 'bg-orange-500/20 text-orange-400' : 'bg-green-500/20 text-green-400'}`}>
-                                    For {listing.type === 'rent' ? 'Rent' : 'Sale'}
-                                </span>
-                                {listing.offer && (
-                                    <span className='px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wide bg-blue-500/20 text-blue-400'>
-                                        Special Offer
-                                    </span>
-                                )}
-                            </div>
-
-                            <h1 className='text-3xl font-bold mb-2 text-white'>
-                                {listing.name}
-                            </h1>
-
-                            <p className='flex items-center gap-2 text-slate-400 text-sm mb-6'>
-                                <FaMapMarkerAlt className='text-green-500' />
-                                {listing.address}
-                            </p>
-
-                            <div className='flex items-center gap-4 mb-6'>
-                                <p className='text-3xl font-bold text-blue-400'>
-                                    ₹{' '}
-                                    {listing.offer
-                                        ? listing.discountPrice.toLocaleString('en-IN')
-                                        : listing.regularPrice.toLocaleString('en-IN')}
-                                    {listing.type === 'rent' && <span className='text-lg text-slate-500 font-normal'> / month</span>}
-                                </p>
-                                {listing.offer && (
-                                    <p className='text-slate-500 line-through text-lg'>
-                                        ₹{listing.regularPrice.toLocaleString('en-IN')}
+                                {/* Share Button */}
+                                <div className='absolute top-4 right-4 z-20 border rounded-full w-10 h-10 flex justify-center items-center bg-slate-800/80 cursor-pointer hover:bg-slate-700 transition-all shadow-md'
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(window.location.href);
+                                        setCopied(true);
+                                        setTimeout(() => setCopied(false), 2000);
+                                    }}
+                                >
+                                    <FaShare className='text-slate-200' />
+                                </div>
+                                {copied && (
+                                    <p className='absolute top-16 right-4 z-20 rounded-md bg-green-600 text-white p-2 text-xs font-bold shadow-lg animate-bounce'>
+                                        Link Copied!
                                     </p>
                                 )}
                             </div>
 
-                            {/* ✅ ACTION BUTTONS (Map, EMI, Payment) */}
-                            <div className='flex flex-wrap gap-4 mb-6'>
-
-                                {/* 1. Map Button */}
-                                <button
-                                    onClick={() => setShowMap(!showMap)}
-                                    className='flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg'
-                                >
-                                    <FaMapMarkedAlt />
-                                    {showMap ? 'Hide Map' : 'View on Map'}
-                                </button>
-
-                                {/* 2. EMI Button (Only for Sale) */}
-                                {listing.type === 'sale' && (
-                                    <button
-                                        onClick={() => setShowEMI(!showEMI)}
-                                        className='flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg'
-                                    >
-                                        <FaCalculator />
-                                        {showEMI ? 'Hide Calculator' : 'Calculate EMI'}
-                                    </button>
-                                )}
-
-                                {/* 3. ✅ BOOK NOW BUTTON (Razorpay) */}
-                                {/* Sirf tab dikhega agar user Owner nahi hai */}
-                                {currentUser && listing.userRef !== currentUser._id && (
-                                    <RazorpayBtn
-                                        listing={listing}
-                                        btnText="Book Now (₹500)"
-                                        customStyle="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg"
-                                    />
-                                )}
-
-                            </div>
-
-                            {/* EMI CALCULATOR */}
-                            {showEMI && listing.type === 'sale' && (
-                                <div className="mb-6 animate-fadeIn">
-                                    <EMICalculator price={listing.offer ? listing.discountPrice : listing.regularPrice} />
+                            {/* THUMBNAIL GALLERY (like e-commerce sites) */}
+                            {listing.imageUrls.length > 1 && (
+                                <div className="flex gap-3 mt-4 overflow-x-auto pb-2 custom-scrollbar">
+                                    {listing.imageUrls.map((url, index) => (
+                                        <div
+                                            key={index}
+                                            onClick={() => swiperInstance?.slideToLoop(index)}
+                                            className={`flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden cursor-pointer transition-all border-2 ${activeIndex === index
+                                                    ? 'border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] opacity-100 scale-105'
+                                                    : 'border-transparent opacity-50 hover:opacity-100 hover:scale-95 bg-slate-800'
+                                                }`}
+                                        >
+                                            <img src={url} alt={`thumbnail-${index}`} className="w-full h-full object-cover" />
+                                        </div>
+                                    ))}
                                 </div>
                             )}
 
-                            {/* MAP SECTION */}
+                            {/* MAP SECTION moved under image gallery on desktop */}
                             {showMap && (
-                                <div className="h-[400px] w-full bg-slate-800 rounded-2xl mb-6 overflow-hidden border border-slate-700 shadow-xl z-10 relative">
+                                <div className="h-[400px] w-full bg-slate-800 rounded-2xl mt-6 overflow-hidden border border-slate-700 shadow-xl z-10 relative">
                                     <MapContainer
                                         center={[lat, lng]}
                                         zoom={13}
@@ -289,63 +234,142 @@ export default function Listing() {
                                 </div>
                             )}
 
-                            <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-sm mb-6'>
-                                <p className='text-slate-300 leading-relaxed'>
-                                    <span className='font-bold text-white block mb-2'>Description</span>
+                        </div>
+
+                        {/* RIGHT SIDE: Details & Contact (40%) */}
+                        <div className="lg:w-2/5 w-full flex flex-col gap-6">
+
+                            <div className='bg-slate-800/50 p-6 rounded-3xl border border-slate-700/50 shadow-md'>
+                                <div className='flex items-center gap-3 mb-4'>
+                                    <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wide ${listing.type === 'rent' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`}>
+                                        For {listing.type === 'rent' ? 'Rent' : 'Sale'}
+                                    </span>
+                                    {listing.offer && (
+                                        <span className='px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wide bg-blue-500/20 text-blue-400 border border-blue-500/30'>
+                                            Special Offer
+                                        </span>
+                                    )}
+                                </div>
+
+                                <h1 className='text-3xl lg:text-4xl font-extrabold mb-2 text-white leading-tight'>
+                                    {listing.name}
+                                </h1>
+
+                                <p className='flex items-center gap-2 text-slate-400 text-sm mb-6'>
+                                    <FaMapMarkerAlt className='text-green-500' />
+                                    {listing.address}
+                                </p>
+
+                                <div className='flex items-end gap-3 mb-6 bg-slate-900/50 p-4 rounded-2xl border border-slate-700/50'>
+                                    <p className='text-4xl font-black text-blue-400'>
+                                        ₹{' '}
+                                        {listing.offer
+                                            ? listing.discountPrice.toLocaleString('en-IN')
+                                            : listing.regularPrice.toLocaleString('en-IN')}
+                                        {listing.type === 'rent' && <span className='text-lg text-slate-500 font-normal'> / month</span>}
+                                    </p>
+                                    {listing.offer && (
+                                        <p className='text-slate-500 line-through text-lg font-semibold mb-1'>
+                                            ₹{listing.regularPrice.toLocaleString('en-IN')}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <ul className='grid grid-cols-2 gap-3 text-sm font-semibold text-slate-300 mb-6'>
+                                    <li className='flex items-center gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-700/50'>
+                                        <div className="bg-blue-500/10 p-2 rounded-lg"><FaBed className='text-blue-500 text-lg' /></div>
+                                        {listing.bedrooms > 1 ? `${listing.bedrooms} Beds` : `${listing.bedrooms} Bed`}
+                                    </li>
+                                    <li className='flex items-center gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-700/50'>
+                                        <div className="bg-blue-500/10 p-2 rounded-lg"><FaBath className='text-blue-500 text-lg' /></div>
+                                        {listing.bathrooms > 1 ? `${listing.bathrooms} Baths` : `${listing.bathrooms} Bath`}
+                                    </li>
+                                    <li className='flex items-center gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-700/50'>
+                                        <div className="bg-blue-500/10 p-2 rounded-lg"><FaParking className='text-blue-500 text-lg' /></div>
+                                        {listing.parking ? 'Parking' : 'No Parking'}
+                                    </li>
+                                    <li className='flex items-center gap-3 bg-slate-900/80 p-3 rounded-xl border border-slate-700/50'>
+                                        <div className="bg-blue-500/10 p-2 rounded-lg"><FaChair className='text-blue-500 text-lg' /></div>
+                                        {listing.furnished ? 'Furnished' : 'Unfurnished'}
+                                    </li>
+                                </ul>
+
+                                {/* ACTION BUTTONS */}
+                                <div className='flex flex-wrap gap-3 mb-2'>
+                                    <button
+                                        onClick={() => setShowMap(!showMap)}
+                                        className='flex-1 flex justify-center items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-xl font-bold transition-all border border-slate-600 hover:border-slate-500'
+                                    >
+                                        <FaMapMarkedAlt />
+                                        {showMap ? 'Hide Map' : 'View Map'}
+                                    </button>
+
+                                    {listing.type === 'sale' && (
+                                        <button
+                                            onClick={() => setShowEMI(!showEMI)}
+                                            className='flex-1 flex justify-center items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-4 py-3 rounded-xl font-bold transition-all border border-slate-600 hover:border-slate-500'
+                                        >
+                                            <FaCalculator />
+                                            {showEMI ? 'Hide EMI' : 'EMI Calc'}
+                                        </button>
+                                    )}
+                                </div>
+
+                                {currentUser && listing.userRef !== currentUser._id && (
+                                    <div className="mt-3">
+                                        <RazorpayBtn
+                                            listing={listing}
+                                            btnText="Book Now (₹500)"
+                                            customStyle="w-full justify-center flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3.5 rounded-xl font-bold transition-all shadow-lg shadow-indigo-900/30 border border-indigo-500/50"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* EMI CALCULATOR */}
+                            {showEMI && listing.type === 'sale' && (
+                                <div className="animate-fadeIn">
+                                    <EMICalculator price={listing.offer ? listing.discountPrice : listing.regularPrice} />
+                                </div>
+                            )}
+
+                            {/* DESCRIPTION */}
+                            <div className='bg-slate-800/50 p-6 rounded-3xl border border-slate-700/50 shadow-md'>
+                                <span className='font-bold text-lg text-white block mb-3 border-b border-slate-700/50 pb-2'>Description</span>
+                                <p className='text-slate-300 leading-relaxed text-sm'>
                                     {listing.description}
                                 </p>
                             </div>
 
-                            <ul className='grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm font-semibold text-slate-300'>
-                                <li className='flex items-center gap-2 bg-slate-800 p-3 rounded-xl border border-slate-700'>
-                                    <FaBed className='text-blue-500 text-lg' />
-                                    {listing.bedrooms > 1 ? `${listing.bedrooms} Beds` : `${listing.bedrooms} Bed`}
-                                </li>
-                                <li className='flex items-center gap-2 bg-slate-800 p-3 rounded-xl border border-slate-700'>
-                                    <FaBath className='text-blue-500 text-lg' />
-                                    {listing.bathrooms > 1 ? `${listing.bathrooms} Baths` : `${listing.bathrooms} Bath`}
-                                </li>
-                                <li className='flex items-center gap-2 bg-slate-800 p-3 rounded-xl border border-slate-700'>
-                                    <FaParking className='text-blue-500 text-lg' />
-                                    {listing.parking ? 'Parking Spot' : 'No Parking'}
-                                </li>
-                                <li className='flex items-center gap-2 bg-slate-800 p-3 rounded-xl border border-slate-700'>
-                                    <FaChair className='text-blue-500 text-lg' />
-                                    {listing.furnished ? 'Furnished' : 'Unfurnished'}
-                                </li>
-                            </ul>
-                        </div>
-
-                        {/* RIGHT SIDE: Contact */}
-                        <div className='md:w-[350px]'>
-                            <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 sticky top-24 shadow-xl'>
-                                <h3 className='text-xl font-bold mb-4 text-white border-b border-slate-700 pb-3'>Owner Details</h3>
+                            {/* CONTACT CARD */}
+                            <div className='bg-slate-800/50 p-6 rounded-3xl border border-slate-700/50 shadow-md sticky top-24'>
+                                <h3 className='text-lg font-bold mb-4 text-white border-b border-slate-700/50 pb-2'>Contact Owner</h3>
 
                                 {currentUser && listing.userRef !== currentUser._id && !contact && (
                                     <button
                                         onClick={() => setContact(true)}
-                                        className='bg-blue-600 hover:bg-blue-700 text-white rounded-xl uppercase hover:opacity-95 p-3 w-full font-bold transition-all shadow-lg shadow-blue-900/20'
+                                        className='bg-green-600 hover:bg-green-500 text-white rounded-xl uppercase p-3 w-full font-bold transition-all shadow-lg shadow-green-900/20 border border-green-500/50'
                                     >
-                                        Contact Landlord
+                                        Send Message
                                     </button>
                                 )}
 
                                 {contact && <Contact listing={listing} />}
 
                                 {!currentUser && (
-                                    <p className='text-sm text-red-400 mt-2 text-center bg-red-500/10 p-2 rounded-lg'>
+                                    <p className='text-sm text-red-400 mt-2 text-center bg-red-500/10 p-3 rounded-xl border border-red-500/20'>
                                         Please Login to contact the owner.
                                     </p>
                                 )}
 
                                 {listing.userRef === currentUser?._id && (
-                                    <p className='text-sm text-green-400 mt-2 text-center bg-green-500/10 p-2 rounded-lg font-bold'>
-                                        You own this property.
+                                    <p className='text-sm text-blue-400 mt-2 text-center bg-blue-500/10 p-3 rounded-xl font-bold border border-blue-500/20'>
+                                        You are the owner of this property.
                                     </p>
                                 )}
                             </div>
-                        </div>
 
+                        </div>
                     </div>
                 </div>
             )}
