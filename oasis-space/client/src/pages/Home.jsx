@@ -28,6 +28,8 @@ export default function Home() {
       }, 1500); // Minimum 1.5 seconds display time
     }
   };
+
+  const [offerListings, setOfferListings] = useState([]);
   const [saleListings, setSaleListings] = useState([]);
   const [rentListings, setRentListings] = useState([]);
   const [featuredListings, setFeaturedListings] = useState([]);
