@@ -12,9 +12,25 @@ import Preloader from '../components/Preloader';
 
 // (Hero image is now loaded from /home.webp in public for LCP preloading)
 
-export default function Home() {
+import Preloader from '../components/Preloader';
 
-  const [offerListings, setOfferListings] = useState([]);
+// (Hero image is now loaded from /home.webp in public for LCP preloading)
+
+export default function Home() {
+  // Start preloading ONLY if this is the first visit in the current session
+  const [isPreloading, setIsPreloading] = useState(() => !sessionStorage.getItem('homePreloaded'));
+  const [isFadingOut, setIsFadingOut] = useState(false);
+
+  // When hero image loads, we trigger the visual fade out
+  const handleHeroLoaded = () => {
+    if (isPreloading) {
+      setIsFadingOut(true);
+      setTimeout(() => {
+        setIsPreloading(false);
+        sessionStorage.setItem('homePreloaded', 'true');
+      }, 500); // 500ms fade transition
+    }
+  };
   const [saleListings, setSaleListings] = useState([]);
   const [rentListings, setRentListings] = useState([]);
   const [featuredListings, setFeaturedListings] = useState([]);
@@ -56,6 +72,13 @@ export default function Home() {
 
   return (
     <>
+      {/* 🔮 Non-blocking Preloader - Fades out smoothly without blocking LCP */}
+      {isPreloading && (
+        <div className={`fixed inset-0 z-50 transition-opacity duration-500 pointer-events-none ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}>
+          <Preloader />
+        </div>
+      )}
+
       <div className='bg-slate-900 min-h-screen text-slate-200'>
 
         {/* --- HERO SECTION --- */}
@@ -71,6 +94,7 @@ export default function Home() {
             fetchpriority="high"
             decoding="async"
             loading="eager"
+            onLoad={handleHeroLoaded}
           />
 
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent z-10"></div>
