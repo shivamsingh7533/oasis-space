@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay, Pagination } from 'swiper/modules';
 import SwiperCore from 'swiper';
-import 'swiper/css/bundle';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
 import ListingItem from '../components/ListingItem';
 import { FaSearch } from 'react-icons/fa';
 import Preloader from '../components/Preloader';
@@ -11,8 +13,6 @@ import Preloader from '../components/Preloader';
 // (Hero image is now loaded from /home.webp in public for LCP preloading)
 
 export default function Home() {
-  // Start preloading ONLY if this is the first visit in the current session
-  const [isPreloading, setIsPreloading] = useState(() => !sessionStorage.getItem('homePreloaded'));
 
   const [offerListings, setOfferListings] = useState([]);
   const [saleListings, setSaleListings] = useState([]);
@@ -39,16 +39,10 @@ export default function Home() {
         if (saleRes.ok) setSaleListings(await saleRes.json());
       } catch (error) {
         console.log('Error fetching listings:', error);
-      } finally {
-        if (isPreloading) {
-          // Once data is fetched, stop preloading and mark as visited in this session
-          setIsPreloading(false);
-          sessionStorage.setItem('homePreloaded', 'true');
-        }
       }
     };
     fetchAllListings();
-  }, [isPreloading]);
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -62,7 +56,6 @@ export default function Home() {
 
   return (
     <>
-      {isPreloading && <Preloader />}
       <div className='bg-slate-900 min-h-screen text-slate-200'>
 
         {/* --- HERO SECTION --- */}
