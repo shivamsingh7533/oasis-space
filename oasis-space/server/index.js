@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 
 // Import Routes
 import userRouter from './routes/user.route.js';
@@ -44,14 +45,43 @@ app.set('trust proxy', 1);
 app.use(express.json());
 app.use(cookieParser());
 
-// --- ROUTES ---
+// ✅ RATE LIMITERS
+// 1. Global API Limiter — 100 requests per 15 min per IP
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests, please try again after 15 minutes.' },
+});
 
-app.use('/api/user', userRouter);
-app.use('/api/auth', authRouter);
-app.use('/api/listing', listingRouter);
-app.use('/api/chat', chatRouter);
-app.use('/api/order', orderRouter);
-app.use('/api/notification', notificationRouter); // ✅ NEW NOTIFICATION ROUTE ADDED
+// 2. Auth Limiter — Strict 15 requests per 15 min (brute-force protection)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many login/signup attempts. Please try again after 15 minutes.' },
+});
+
+// 3. Contact Limiter — 5 requests per 15 min (spam protection)
+const contactLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many messages sent. Please try again later.' },
+});
+
+// --- ROUTES ---
+app.use('/api/auth', authLimiter, authRouter);                        // 🔒 Strict limit
+app.use('/api/user/contact-us', contactLimiter);                      // 🔒 Spam protection
+app.use('/api/user/contact', contactLimiter);                         // 🔒 Spam protection
+app.use('/api/user', globalLimiter, userRouter);
+app.use('/api/listing', globalLimiter, listingRouter);
+app.use('/api/chat', globalLimiter, chatRouter);
+app.use('/api/order', globalLimiter, orderRouter);
+app.use('/api/notification', globalLimiter, notificationRouter);
 
 // Health Check
 app.get('/ping', (req, res) => {
