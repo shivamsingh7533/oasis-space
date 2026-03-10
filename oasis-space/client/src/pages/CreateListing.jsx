@@ -3,6 +3,7 @@ import { supabase } from '../supabase';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { FaCloudUploadAlt, FaTrashAlt } from 'react-icons/fa';
+import { compressImage } from '../utils/compressImage';
 
 export default function CreateListing() {
   const { currentUser } = useSelector((state) => state.user);
@@ -37,9 +38,9 @@ export default function CreateListing() {
       setImageUploadError(false);
       const promises = [];
       for (let i = 0; i < files.length; i++) {
-        if (files[i].size > 20 * 1024 * 1024) {
+        if (files[i].size > 10 * 1024 * 1024) {
           setUploading(false);
-          setImageUploadError('File too large! Max 20MB per image.');
+          setImageUploadError('File too large! Max 10MB per image.');
           return;
         }
         promises.push(storeImage(files[i]));
@@ -57,8 +58,11 @@ export default function CreateListing() {
   };
 
   const storeImage = async (file) => {
-    const fileName = new Date().getTime() + '_' + file.name;
-    const { error: uploadErr } = await supabase.storage.from('images').upload(fileName, file, { cacheControl: '3600', upsert: false });
+    // 🗜️ Auto-compress to ≤2MB before upload
+    const compressed = await compressImage(file);
+    const ext = compressed.type === 'image/webp' ? '.webp' : '.jpg';
+    const fileName = new Date().getTime() + '_' + file.name.replace(/\.[^.]+$/, '') + ext;
+    const { error: uploadErr } = await supabase.storage.from('images').upload(fileName, compressed, { cacheControl: '3600', upsert: false });
     if (uploadErr) throw uploadErr;
     const { data: publicData } = supabase.storage.from('images').getPublicUrl(fileName);
     return publicData.publicUrl;

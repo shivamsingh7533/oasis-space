@@ -13,6 +13,7 @@
     "@reduxjs/toolkit": "^2.11.2",
     "@supabase/supabase-js": "^2.90.1",
     "@tailwindcss/postcss": "^4.1.18",
+    "browser-image-compression": "^2.0.2",
     "firebase": "^12.8.0",
     "leaflet": "^1.9.4",
     "react": "^19.2.0",
