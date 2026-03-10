@@ -60,7 +60,7 @@ export default function ListingItem({ listing }) {
       />
 
       {/* IMAGE SECTION (Enhanced) */}
-      <div className='relative overflow-hidden h-[180px] bg-slate-700 rounded-t-2xl z-0'>
+      <div className='relative overflow-hidden h-[180px] bg-slate-700 rounded-t-2xl z-20'>
 
         {/* 1. BLUR SKELETON (Jab tak image load na ho) */}
         {!imageLoaded && (

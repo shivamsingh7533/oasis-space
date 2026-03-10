@@ -173,10 +173,23 @@ export default function Listing() {
 
                                 {/* Share Button */}
                                 <div className='absolute top-4 right-4 z-20 border rounded-full w-10 h-10 flex justify-center items-center bg-slate-800/80 cursor-pointer hover:bg-slate-700 transition-all shadow-md'
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(window.location.href);
-                                        setCopied(true);
-                                        setTimeout(() => setCopied(false), 2000);
+                                    onClick={async () => {
+                                        const shareData = {
+                                            title: listing.name,
+                                            text: `Check out ${listing.name} on OasisSpace — ₹${(listing.offer ? listing.discountPrice : listing.regularPrice).toLocaleString('en-IN')}`,
+                                            url: window.location.href,
+                                        };
+                                        if (navigator.share) {
+                                            try {
+                                                await navigator.share(shareData);
+                                            } catch (err) {
+                                                // User cancelled or share failed — silently ignore
+                                            }
+                                        } else {
+                                            navigator.clipboard.writeText(window.location.href);
+                                            setCopied(true);
+                                            setTimeout(() => setCopied(false), 2000);
+                                        }
                                     }}
                                 >
                                     <FaShare className='text-slate-200' />
@@ -196,8 +209,8 @@ export default function Listing() {
                                             key={index}
                                             onClick={() => swiperInstance?.slideToLoop(index)}
                                             className={`flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-xl overflow-hidden cursor-pointer transition-all border-2 ${activeIndex === index
-                                                    ? 'border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] opacity-100 scale-105'
-                                                    : 'border-transparent opacity-50 hover:opacity-100 hover:scale-95 bg-slate-800'
+                                                ? 'border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] opacity-100 scale-105'
+                                                : 'border-transparent opacity-50 hover:opacity-100 hover:scale-95 bg-slate-800'
                                                 }`}
                                         >
                                             <img src={url} alt={`thumbnail-${index}`} className="w-full h-full object-cover" />
