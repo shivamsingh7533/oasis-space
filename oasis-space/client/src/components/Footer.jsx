@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useState } from 'react';
 import {
   FaFacebook,
   FaInstagram,
@@ -8,9 +9,42 @@ import {
   FaPhoneAlt,
   FaEnvelope,
   FaHeart,
+  FaTimes,
+  FaPaperPlane,
 } from 'react-icons/fa';
 
 export default function Footer() {
+  const [showContact, setShowContact] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const [sending, setSending] = useState(false);
+  const [status, setStatus] = useState(null); // 'success' | 'error'
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.message) return;
+
+    setSending(true);
+    setStatus(null);
+    try {
+      const res = await fetch('/api/user/contact-us', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setStatus('success');
+        setFormData({ name: '', email: '', message: '' });
+        setTimeout(() => { setShowContact(false); setStatus(null); }, 2500);
+      } else {
+        setStatus('error');
+      }
+    } catch {
+      setStatus('error');
+    }
+    setSending(false);
+  };
+
   return (
     <footer className='bg-slate-900 text-slate-300 text-sm mt-auto border-t border-slate-800'>
       {/* Top Section - 4 Columns */}
@@ -113,9 +147,12 @@ export default function Footer() {
             </li>
             <li className='flex items-center gap-3 group'>
               <FaEnvelope className='text-blue-500 text-lg group-hover:scale-110 transition-transform' />
-              <a href='mailto:oasisspace60@gmail.com' className='hover:text-white transition-colors break-all'>
+              <button
+                onClick={() => setShowContact(true)}
+                className='hover:text-white transition-colors break-all text-left cursor-pointer'
+              >
                 oasisspace60@gmail.com
-              </a>
+              </button>
             </li>
           </ul>
         </div>
@@ -140,6 +177,71 @@ export default function Footer() {
           </p>
         </div>
       </div>
+
+      {/* ✉️ CONTACT POPUP MODAL */}
+      {showContact && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4' onClick={() => setShowContact(false)}>
+          <div
+            className='bg-slate-800 rounded-3xl border border-slate-700 shadow-2xl w-full max-w-md p-6 relative animate-fadeIn'
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close */}
+            <button onClick={() => setShowContact(false)} className='absolute top-4 right-4 text-slate-400 hover:text-white transition'>
+              <FaTimes className='text-lg' />
+            </button>
+
+            <h3 className='text-xl font-bold text-white mb-1 flex items-center gap-2'>
+              <FaEnvelope className='text-blue-500' /> Contact Us
+            </h3>
+            <p className='text-slate-400 text-xs mb-5'>We'll get back to you at your email.</p>
+
+            <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
+              <input
+                type='text'
+                placeholder='Your Name'
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+                className='bg-slate-900 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-500'
+              />
+              <input
+                type='email'
+                placeholder='Your Email'
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+                className='bg-slate-900 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-500'
+              />
+              <textarea
+                placeholder='Your Message...'
+                rows={4}
+                value={formData.message}
+                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                required
+                className='bg-slate-900 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-500 resize-none'
+              />
+              <button
+                type='submit'
+                disabled={sending}
+                className='bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-900/30'
+              >
+                <FaPaperPlane /> {sending ? 'Sending...' : 'Send Message'}
+              </button>
+            </form>
+
+            {status === 'success' && (
+              <p className='mt-4 text-center text-green-400 font-semibold text-sm bg-green-500/10 p-3 rounded-xl border border-green-500/20'>
+                ✅ Message sent successfully!
+              </p>
+            )}
+            {status === 'error' && (
+              <p className='mt-4 text-center text-red-400 font-semibold text-sm bg-red-500/10 p-3 rounded-xl border border-red-500/20'>
+                ❌ Failed to send. Please try again.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </footer>
   );
 }

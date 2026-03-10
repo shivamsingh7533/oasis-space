@@ -363,3 +363,34 @@ export const contactLandlord = async (req, res, next) => {
     next(error);
   }
 };
+
+// ✅ CONTACT US (Public — Footer Form)
+export const contactUs = async (req, res, next) => {
+  try {
+    const { name, email, message } = req.body;
+    if (!name || !email || !message) return next(errorHandler(400, 'All fields are required.'));
+
+    const adminEmail = process.env.SENDER_EMAIL;
+
+    await sendEmail(
+      adminEmail,
+      `📩 New Contact Form Message from ${name}`,
+      `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; border: 1px solid #e2e8f0; max-width: 600px; border-radius: 16px; background: #f8fafc;">
+        <h2 style="color: #3b82f6; margin-bottom: 20px;">New Contact Us Message 📩</h2>
+        <div style="background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0;">
+          <p><strong>Name:</strong> ${name}</p>
+          <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+          <p><strong>Message:</strong></p>
+          <p style="font-style: italic; color: #555; background: #f1f5f9; padding: 12px; border-radius: 8px;">${message}</p>
+        </div>
+        <p style="font-size: 12px; color: #888; margin-top: 20px;">Sent from OasisSpace Contact Form</p>
+      </div>
+      `
+    );
+
+    res.status(200).json({ success: true, message: 'Message sent successfully!' });
+  } catch (error) {
+    next(error);
+  }
+};
