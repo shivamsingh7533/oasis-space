@@ -8,12 +8,6 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import ListingItem from '../components/ListingItem';
 import { FaSearch } from 'react-icons/fa';
-import Preloader from '../components/Preloader';
-
-// (Hero image is now loaded from /home.webp in public for LCP preloading)
-
-import Preloader from '../components/Preloader';
-
 // (Hero image is now loaded from /home.webp in public for LCP preloading)
 
 export default function Home() {
@@ -21,14 +15,16 @@ export default function Home() {
   const [isPreloading, setIsPreloading] = useState(() => !sessionStorage.getItem('homePreloaded'));
   const [isFadingOut, setIsFadingOut] = useState(false);
 
-  // When hero image loads, we trigger the visual fade out
+  // When hero image loads, we trigger the visual fade out (with a 1.5s minimum delay so it looks intentional)
   const handleHeroLoaded = () => {
     if (isPreloading) {
-      setIsFadingOut(true);
       setTimeout(() => {
-        setIsPreloading(false);
-        sessionStorage.setItem('homePreloaded', 'true');
-      }, 500); // 500ms fade transition
+        setIsFadingOut(true);
+        setTimeout(() => {
+          setIsPreloading(false);
+          sessionStorage.setItem('homePreloaded', 'true');
+        }, 800); // 800ms fade transition
+      }, 1500); // Minimum 1.5 seconds display time
     }
   };
   const [saleListings, setSaleListings] = useState([]);
@@ -74,7 +70,7 @@ export default function Home() {
     <>
       {/* 🔮 Non-blocking Preloader - Fades out smoothly without blocking LCP */}
       {isPreloading && (
-        <div className={`fixed inset-0 z-50 transition-opacity duration-500 pointer-events-none ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}>
+        <div className={`fixed inset-0 z-50 transition-opacity duration-700 pointer-events-none ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}>
           <Preloader />
         </div>
       )}
