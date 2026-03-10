@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { FaMoneyBillWave, FaChartLine, FaUsers, FaHome, FaTrash, FaEdit, FaUserShield, FaUserTag, FaUser, FaStar, FaRegStar, FaCheckCircle, FaTag } from 'react-icons/fa';
+import { FaMoneyBillWave, FaChartLine, FaUsers, FaHome, FaTrash, FaEdit, FaUserShield, FaUserTag, FaUser, FaStar, FaRegStar, FaCheckCircle, FaTag, FaClock, FaBuilding, FaUserCheck } from 'react-icons/fa';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export default function Dashboard() {
     const { currentUser } = useSelector((state) => state.user);
@@ -203,6 +204,148 @@ export default function Dashboard() {
                                 <div className='bg-slate-800 p-4 rounded-xl border border-slate-700 text-center'>
                                     <p className='text-2xl font-bold text-green-400'>{listings.filter(l => l.offer).length}</p><span className='text-xs uppercase text-green-400'>Active Offers</span>
                                 </div>
+                            </div>
+
+                            {/* --- CHARTS SECTION --- */}
+                            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
+                                {/* Pie Chart: Rent vs Sale */}
+                                <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl'>
+                                    <h3 className='text-white font-bold text-lg mb-4 flex items-center gap-2'>
+                                        <FaChartLine className='text-indigo-400' /> Property Distribution
+                                    </h3>
+                                    <ResponsiveContainer width='100%' height={300}>
+                                        <PieChart>
+                                            <Pie
+                                                data={[
+                                                    { name: 'For Sale', value: listings.filter(l => l.type === 'sale').length },
+                                                    { name: 'For Rent', value: listings.filter(l => l.type === 'rent').length },
+                                                ]}
+                                                cx='50%'
+                                                cy='50%'
+                                                innerRadius={55}
+                                                outerRadius={85}
+                                                paddingAngle={4}
+                                                dataKey='value'
+                                                label={({ name, value }) => `${name}: ${value}`}
+                                                labelLine={true}
+                                            >
+                                                <Cell fill='#10b981' />
+                                                <Cell fill='#3b82f6' />
+                                            </Pie>
+                                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#e2e8f0' }} />
+                                            <Legend wrapperStyle={{ color: '#94a3b8', fontSize: '13px' }} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+
+                                {/* Bar Chart: Status Breakdown */}
+                                <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl'>
+                                    <h3 className='text-white font-bold text-lg mb-4 flex items-center gap-2'>
+                                        <FaBuilding className='text-emerald-400' /> Status Breakdown
+                                    </h3>
+                                    <ResponsiveContainer width='100%' height={260}>
+                                        <BarChart data={[
+                                            { name: 'Available', count: listings.filter(l => l.status === 'available' || !l.status).length },
+                                            { name: 'Sold', count: soldCount },
+                                            { name: 'Rented', count: rentedCount },
+                                        ]} barSize={45}>
+                                            <XAxis dataKey='name' tick={{ fill: '#94a3b8', fontSize: 13 }} axisLine={false} tickLine={false} />
+                                            <YAxis tick={{ fill: '#94a3b8', fontSize: 13 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                            <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#e2e8f0' }} cursor={{ fill: 'rgba(99, 102, 241, 0.1)' }} />
+                                            <Bar dataKey='count' radius={[8, 8, 0, 0]}>
+                                                <Cell fill='#10b981' />
+                                                <Cell fill='#ef4444' />
+                                                <Cell fill='#f97316' />
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </div>
+
+                            {/* --- PLATFORM SUMMARY CARDS --- */}
+                            <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
+                                <div className='bg-gradient-to-br from-indigo-600/20 to-slate-800 p-5 rounded-2xl border border-indigo-500/30 shadow-lg'>
+                                    <FaUsers className='text-indigo-400 text-2xl mb-2' />
+                                    <p className='text-3xl font-bold text-white'>{users.length}</p>
+                                    <span className='text-xs uppercase text-indigo-300 font-semibold'>Total Users</span>
+                                </div>
+                                <div className='bg-gradient-to-br from-emerald-600/20 to-slate-800 p-5 rounded-2xl border border-emerald-500/30 shadow-lg'>
+                                    <FaHome className='text-emerald-400 text-2xl mb-2' />
+                                    <p className='text-3xl font-bold text-white'>{listings.length}</p>
+                                    <span className='text-xs uppercase text-emerald-300 font-semibold'>Total Properties</span>
+                                </div>
+                                <div className='bg-gradient-to-br from-amber-600/20 to-slate-800 p-5 rounded-2xl border border-amber-500/30 shadow-lg'>
+                                    <FaUserCheck className='text-amber-400 text-2xl mb-2' />
+                                    <p className='text-3xl font-bold text-white'>{users.filter(u => u.sellerStatus === 'approved').length}</p>
+                                    <span className='text-xs uppercase text-amber-300 font-semibold'>Approved Sellers</span>
+                                </div>
+                                <div className='bg-gradient-to-br from-cyan-600/20 to-slate-800 p-5 rounded-2xl border border-cyan-500/30 shadow-lg'>
+                                    <FaCheckCircle className='text-cyan-400 text-2xl mb-2' />
+                                    <p className='text-3xl font-bold text-white'>{users.filter(u => u.isVerified).length}</p>
+                                    <span className='text-xs uppercase text-cyan-300 font-semibold'>Verified Users</span>
+                                </div>
+                            </div>
+
+                            {/* --- RECENT LISTINGS TABLE --- */}
+                            <div className='bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden'>
+                                <div className='flex justify-between items-center p-5 border-b border-slate-700'>
+                                    <h3 className='text-white font-bold text-lg flex items-center gap-2'>
+                                        <FaClock className='text-violet-400' /> Recent Listings
+                                    </h3>
+                                    <button onClick={() => setActiveTab('listings')} className='text-indigo-400 hover:text-indigo-300 text-sm font-semibold transition'>
+                                        View All →
+                                    </button>
+                                </div>
+                                <table className='w-full text-left text-sm text-gray-400'>
+                                    <thead className='bg-slate-900/60 uppercase text-[11px] text-slate-500'>
+                                        <tr>
+                                            <th className='p-3 pl-5'>Property</th>
+                                            <th className='p-3'>Type</th>
+                                            <th className='p-3'>Price</th>
+                                            <th className='p-3'>Status</th>
+                                            <th className='p-3'>Listed On</th>
+                                            <th className='p-3 text-right pr-5'>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className='divide-y divide-slate-700/50'>
+                                        {listings.slice(0, 5).map((listing) => (
+                                            <tr key={listing._id} className='hover:bg-slate-700/30 transition'>
+                                                <td className='p-3 pl-5'>
+                                                    <div className='flex gap-3 items-center'>
+                                                        <img src={listing.imageUrls?.[0]} className='w-10 h-10 rounded-lg object-cover border border-slate-600' alt='' />
+                                                        <div>
+                                                            <p className='text-white font-semibold truncate w-32 md:w-44'>{listing.name}</p>
+                                                            <p className='text-[11px] text-slate-500 truncate w-32 md:w-44'>{listing.address}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className='p-3'>
+                                                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase ${listing.type === 'rent' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
+                                                        {listing.type}
+                                                    </span>
+                                                </td>
+                                                <td className='p-3 text-white font-medium'>₹ {listing.regularPrice?.toLocaleString('en-IN')}</td>
+                                                <td className='p-3'>
+                                                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase ${listing.status === 'sold' ? 'bg-red-500/20 text-red-400' :
+                                                        listing.status === 'rented' ? 'bg-orange-500/20 text-orange-400' :
+                                                            'bg-emerald-500/20 text-emerald-400'
+                                                        }`}>
+                                                        {listing.status || 'available'}
+                                                    </span>
+                                                </td>
+                                                <td className='p-3 text-slate-400 text-xs'>{new Date(listing.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                                <td className='p-3 text-right pr-5'>
+                                                    <Link to={`/listing/${listing._id}`} className='text-indigo-400 hover:text-indigo-300 text-xs font-semibold transition'>
+                                                        View →
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                {listings.length === 0 && (
+                                    <p className='text-center text-slate-500 py-8'>No listings found.</p>
+                                )}
                             </div>
                         </div>
                     )}

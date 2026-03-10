@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import {
   FaHome, FaEye, FaCheckCircle, FaEdit,
-  FaTrash, FaPlus, FaTag, FaRupeeSign, FaStar, FaRegStar, FaChartPie
+  FaTrash, FaPlus, FaTag, FaRupeeSign, FaStar, FaRegStar, FaChartPie, FaChartLine, FaBuilding, FaClock
 } from 'react-icons/fa';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export default function SellerDashboard() {
   const { currentUser } = useSelector((state) => state.user);
@@ -14,6 +15,7 @@ export default function SellerDashboard() {
   });
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const tableRef = useRef(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -141,7 +143,148 @@ export default function SellerDashboard() {
         </div>
       </div>
 
-      <div className='bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-2xl'>
+      {/* --- CHARTS SECTION --- */}
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10'>
+        {/* Pie Chart: Rent vs Sale */}
+        <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl'>
+          <h3 className='text-white font-bold text-lg mb-4 flex items-center gap-2'>
+            <FaChartLine className='text-blue-400' /> Property Distribution
+          </h3>
+          <ResponsiveContainer width='100%' height={300}>
+            <PieChart>
+              <Pie
+                data={[
+                  { name: 'For Sale', value: stats.saleListings || 0 },
+                  { name: 'For Rent', value: stats.rentListings || 0 },
+                ]}
+                cx='50%'
+                cy='50%'
+                innerRadius={55}
+                outerRadius={85}
+                paddingAngle={4}
+                dataKey='value'
+                label={({ name, value }) => `${name}: ${value}`}
+                labelLine={true}
+              >
+                <Cell fill='#10b981' />
+                <Cell fill='#3b82f6' />
+              </Pie>
+              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#e2e8f0' }} />
+              <Legend wrapperStyle={{ color: '#94a3b8', fontSize: '13px' }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Bar Chart: Status Breakdown */}
+        <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl'>
+          <h3 className='text-white font-bold text-lg mb-4 flex items-center gap-2'>
+            <FaBuilding className='text-emerald-400' /> Status Breakdown
+          </h3>
+          <ResponsiveContainer width='100%' height={300}>
+            <BarChart data={[
+              { name: 'Available', count: stats.activeListings || 0 },
+              { name: 'Sold', count: stats.soldCount || 0 },
+              { name: 'Rented', count: stats.rentedCount || 0 },
+            ]} barSize={45}>
+              <XAxis dataKey='name' tick={{ fill: '#94a3b8', fontSize: 13 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: '#94a3b8', fontSize: 13 }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#e2e8f0' }} cursor={{ fill: 'rgba(99, 102, 241, 0.1)' }} />
+              <Bar dataKey='count' radius={[8, 8, 0, 0]}>
+                <Cell fill='#10b981' />
+                <Cell fill='#ef4444' />
+                <Cell fill='#f97316' />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* --- STATUS SUMMARY CARDS --- */}
+      <div className='grid grid-cols-2 md:grid-cols-4 gap-4 mb-10'>
+        <div className='bg-gradient-to-br from-emerald-600/20 to-slate-800 p-5 rounded-2xl border border-emerald-500/30 shadow-lg'>
+          <FaHome className='text-emerald-400 text-2xl mb-2' />
+          <p className='text-3xl font-bold text-white'>{stats.activeListings}</p>
+          <span className='text-xs uppercase text-emerald-300 font-semibold'>Active Listings</span>
+        </div>
+        <div className='bg-gradient-to-br from-red-600/20 to-slate-800 p-5 rounded-2xl border border-red-500/30 shadow-lg'>
+          <FaCheckCircle className='text-red-400 text-2xl mb-2' />
+          <p className='text-3xl font-bold text-white'>{stats.soldCount}</p>
+          <span className='text-xs uppercase text-red-300 font-semibold'>Sold</span>
+        </div>
+        <div className='bg-gradient-to-br from-orange-600/20 to-slate-800 p-5 rounded-2xl border border-orange-500/30 shadow-lg'>
+          <FaTag className='text-orange-400 text-2xl mb-2' />
+          <p className='text-3xl font-bold text-white'>{stats.rentedCount}</p>
+          <span className='text-xs uppercase text-orange-300 font-semibold'>Rented</span>
+        </div>
+        <div className='bg-gradient-to-br from-purple-600/20 to-slate-800 p-5 rounded-2xl border border-purple-500/30 shadow-lg'>
+          <FaStar className='text-purple-400 text-2xl mb-2' />
+          <p className='text-3xl font-bold text-white'>{stats.offerListings}</p>
+          <span className='text-xs uppercase text-purple-300 font-semibold'>Active Offers</span>
+        </div>
+      </div>
+
+      {/* --- RECENT LISTINGS PREVIEW --- */}
+      {listings.length > 0 && (
+        <div className='bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden mb-10'>
+          <div className='flex justify-between items-center p-5 border-b border-slate-700'>
+            <h3 className='text-white font-bold text-lg flex items-center gap-2'>
+              <FaClock className='text-violet-400' /> Recent Listings
+            </h3>
+            <button onClick={() => tableRef.current?.scrollIntoView({ behavior: 'smooth' })} className='text-blue-400 hover:text-blue-300 text-sm font-semibold transition'>
+              View All →
+            </button>
+          </div>
+          <table className='w-full text-left text-sm text-gray-400'>
+            <thead className='bg-slate-900/60 uppercase text-[11px] text-slate-500'>
+              <tr>
+                <th className='p-3 pl-5'>Property</th>
+                <th className='p-3'>Type</th>
+                <th className='p-3'>Price</th>
+                <th className='p-3'>Status</th>
+                <th className='p-3'>Listed On</th>
+                <th className='p-3 text-right pr-5'>Action</th>
+              </tr>
+            </thead>
+            <tbody className='divide-y divide-slate-700/50'>
+              {listings.slice(0, 5).map((listing) => (
+                <tr key={listing._id} className='hover:bg-slate-700/30 transition'>
+                  <td className='p-3 pl-5'>
+                    <div className='flex gap-3 items-center'>
+                      <img src={listing.imageUrls?.[0]} className='w-10 h-10 rounded-lg object-cover border border-slate-600' alt='' />
+                      <div>
+                        <p className='text-white font-semibold truncate w-32 md:w-44'>{listing.name}</p>
+                        <p className='text-[11px] text-slate-500 truncate w-32 md:w-44'>{listing.address}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className='p-3'>
+                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase ${listing.type === 'rent' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>
+                      {listing.type}
+                    </span>
+                  </td>
+                  <td className='p-3 text-white font-medium'>₹ {listing.regularPrice?.toLocaleString('en-IN')}</td>
+                  <td className='p-3'>
+                    <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase ${listing.status === 'sold' ? 'bg-red-500/20 text-red-400' :
+                        listing.status === 'rented' ? 'bg-orange-500/20 text-orange-400' :
+                          'bg-emerald-500/20 text-emerald-400'
+                      }`}>
+                      {listing.status || 'available'}
+                    </span>
+                  </td>
+                  <td className='p-3 text-slate-400 text-xs'>{new Date(listing.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                  <td className='p-3 text-right pr-5'>
+                    <Link to={`/listing/${listing._id}`} className='text-blue-400 hover:text-blue-300 text-xs font-semibold transition'>
+                      View →
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div ref={tableRef} className='bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-2xl'>
         <div className='p-6 border-b border-slate-700 bg-slate-800/50'>
           <h2 className='text-xl font-bold flex items-center gap-2'>
             <FaCheckCircle className='text-blue-500' /> Property Management Center
