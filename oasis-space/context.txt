@@ -53,6 +53,8 @@ oasis-space
 │   │   │   ├── user
 │   │   │   │   └── userSlice.js
 │   │   │   └── store.js
+│   │   ├── utils
+│   │   │   └── compressImage.js
 │   │   ├── App.css
 │   │   ├── App.jsx
 │   │   ├── firebase.js
