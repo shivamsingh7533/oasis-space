@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { FaPaperPlane, FaUserCircle, FaSpinner, FaCheckCircle } from 'react-icons/fa';
+import { FaPaperPlane, FaUserCircle, FaSpinner, FaCheckCircle, FaWhatsapp } from 'react-icons/fa';
 
 export default function Contact({ listing }) {
   const { currentUser } = useSelector((state) => state.user);
@@ -94,10 +94,22 @@ export default function Contact({ listing }) {
             ) : (
               <FaUserCircle className='text-4xl text-slate-400' />
             )}
-            <div>
+            <div className='flex-1'>
               <p className='text-slate-400 text-xs uppercase font-bold tracking-wider'>Property Owner</p>
               <p className='text-white font-bold capitalize'>{landlord.username}</p>
             </div>
+            {/* WhatsApp Quick Button (Header) */}
+            {landlord.mobile && (
+              <a
+                href={`https://wa.me/${landlord.mobile.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in *${listing.name}* listed on OasisSpace. Is it still available?`)}`}
+                target='_blank'
+                rel='noopener noreferrer'
+                className='bg-green-600 hover:bg-green-500 text-white p-2.5 rounded-xl transition-all shadow-lg shadow-green-900/30 hover:scale-105'
+                title='Chat on WhatsApp'
+              >
+                <FaWhatsapp className='text-lg' />
+              </a>
+            )}
           </div>
 
           {/* SUCCESS MESSAGE */}
@@ -106,6 +118,17 @@ export default function Contact({ listing }) {
               <FaCheckCircle className='text-4xl mb-1' />
               <p className='font-bold text-lg'>Message Sent Successfully!</p>
               <p className='text-sm text-green-300/80'>The owner has been notified via email.</p>
+              {/* WhatsApp option after success */}
+              {landlord.mobile && (
+                <a
+                  href={`https://wa.me/${landlord.mobile.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in *${listing.name}* listed on OasisSpace. Is it still available?`)}`}
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='mt-3 bg-green-600 hover:bg-green-500 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-green-900/30 text-sm'
+                >
+                  <FaWhatsapp className='text-lg' /> Also chat on WhatsApp
+                </a>
+              )}
             </div>
           ) : (
             /* FORM */
@@ -124,17 +147,31 @@ export default function Contact({ listing }) {
                 className='w-full bg-slate-900 text-white border border-slate-600 p-3 rounded-lg focus:outline-none focus:border-indigo-500 placeholder-slate-500 resize-none transition focus:ring-1 focus:ring-indigo-500'
               ></textarea>
 
-              <button
-                onClick={handleSendMessage}
-                disabled={sending || !message.trim()}
-                className='bg-indigo-600 text-white text-center p-3 rounded-lg uppercase font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-900/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95'
-              >
-                {sending ? (
-                  <> <FaSpinner className='animate-spin' /> Sending... </>
-                ) : (
-                  <> <FaPaperPlane /> Send Message </>
+              {/* Action Buttons Row */}
+              <div className='flex gap-2'>
+                <button
+                  onClick={handleSendMessage}
+                  disabled={sending || !message.trim()}
+                  className='flex-1 bg-indigo-600 text-white text-center p-3 rounded-lg uppercase font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-900/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95 text-sm'
+                >
+                  {sending ? (
+                    <> <FaSpinner className='animate-spin' /> Sending... </>
+                  ) : (
+                    <> <FaPaperPlane /> Email </>
+                  )}
+                </button>
+
+                {landlord.mobile && (
+                  <a
+                    href={`https://wa.me/${landlord.mobile.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi, I'm interested in *${listing.name}* listed on OasisSpace.\n\nProperty: ${listing.name}\nLocation: ${listing.address}\nPrice: ₹${(listing.offer ? listing.discountPrice : listing.regularPrice).toLocaleString('en-IN')}\n\nIs it still available?`)}`}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='flex-1 bg-green-600 hover:bg-green-500 text-white p-3 rounded-lg uppercase font-bold transition shadow-lg shadow-green-900/30 flex items-center justify-center gap-2 text-sm transform active:scale-95'
+                  >
+                    <FaWhatsapp className='text-lg' /> WhatsApp
+                  </a>
                 )}
-              </button>
+              </div>
 
               {error && <p className='text-red-400 text-sm text-center bg-red-500/10 p-2 rounded border border-red-500/20'>{error}</p>}
 
