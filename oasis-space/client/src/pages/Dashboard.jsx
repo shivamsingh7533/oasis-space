@@ -126,15 +126,18 @@ export default function Dashboard() {
     };
 
     const calculateFinancials = () => {
-        // Calculate revenue based on actual status if marked sold/rented
         const soldItems = listings.filter(l => l.status === 'sold');
         const rentedItems = listings.filter(l => l.status === 'rented');
 
-        const totalSaleValue = listings.filter(l => l.type === 'sale').reduce((acc, curr) => acc + (+curr.regularPrice || 0), 0);
-        const totalRentVolume = listings.filter(l => l.type === 'rent').reduce((acc, curr) => acc + (+curr.regularPrice || 0), 0);
+        // Only Available properties should be counted in current Inventory and Est Revenue
+        const availableItems = listings.filter(l => l.status !== 'sold' && l.status !== 'rented');
 
-        // Rough estimate revenue calculation
+        const totalSaleValue = availableItems.filter(l => l.type === 'sale').reduce((acc, curr) => acc + (+curr.regularPrice || 0), 0);
+        const totalRentVolume = availableItems.filter(l => l.type === 'rent').reduce((acc, curr) => acc + (+curr.regularPrice || 0), 0);
+
+        // Rough estimate revenue calculation (2% on sales, 10% on rent purely as an example)
         const estimatedRevenue = (totalSaleValue * 0.02) + (totalRentVolume * 0.10);
+
         return { totalSaleValue, totalRentVolume, estimatedRevenue, soldCount: soldItems.length, rentedCount: rentedItems.length };
     };
     const { totalSaleValue, totalRentVolume, estimatedRevenue, soldCount, rentedCount } = calculateFinancials();
@@ -248,8 +251,8 @@ export default function Dashboard() {
                                                             listing.status === 'rented' ? 'text-orange-400 border-orange-900' : 'text-green-400'}`}
                                                 >
                                                     <option value="available">Available</option>
-                                                    <option value="sold">Sold</option>
-                                                    <option value="rented">Rented</option>
+                                                    {listing.type === 'sale' && <option value="sold">Sold</option>}
+                                                    {listing.type === 'rent' && <option value="rented">Rented</option>}
                                                 </select>
                                             </td>
 

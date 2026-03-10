@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import { 
-  FaHome, FaEye, FaCheckCircle, FaEdit, 
-  FaTrash, FaPlus, FaTag, FaRupeeSign, FaStar, FaRegStar, FaChartPie 
+import {
+  FaHome, FaEye, FaCheckCircle, FaEdit,
+  FaTrash, FaPlus, FaTag, FaRupeeSign, FaStar, FaRegStar, FaChartPie
 } from 'react-icons/fa';
 
 export default function SellerDashboard() {
@@ -19,11 +19,11 @@ export default function SellerDashboard() {
     const fetchDashboardData = async () => {
       try {
         const res = await fetch(`/api/user/dashboard/${currentUser._id}`);
-        
+
         // Handle Session Timeout (401)
         if (res.status === 401) {
-            setLoading(false);
-            return; // Data won't load, Profile component will handle logout
+          setLoading(false);
+          return; // Data won't load, Profile component will handle logout
         }
 
         const data = await res.json();
@@ -54,39 +54,39 @@ export default function SellerDashboard() {
 
   const handleFeaturedToggle = async (listingId, currentStatus) => {
     try {
-        const res = await fetch(`/api/listing/update/${listingId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                featured: !currentStatus,
-                userRef: currentUser._id 
-            }),
-        });
-        const data = await res.json();
-        if (data.success === false) return;
-        setListings((prev) => prev.map((item) => 
-            item._id === listingId ? { ...item, featured: !currentStatus } : item
-        ));
+      const res = await fetch(`/api/listing/update/${listingId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          featured: !currentStatus,
+          userRef: currentUser._id
+        }),
+      });
+      const data = await res.json();
+      if (data.success === false) return;
+      setListings((prev) => prev.map((item) =>
+        item._id === listingId ? { ...item, featured: !currentStatus } : item
+      ));
     } catch (error) {
-        console.log(error);
+      console.log(error);
     }
   };
 
   const handleStatusChange = async (listingId, newStatus) => {
     try {
-        const res = await fetch(`/api/listing/update/${listingId}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus, userRef: currentUser._id }),
-        });
-        const data = await res.json();
-        if (data.success === false) return;
-        setListings((prev) => prev.map((item) => 
-            item._id === listingId ? { ...item, status: newStatus } : item
-        ));
-        window.location.reload(); 
+      const res = await fetch(`/api/listing/update/${listingId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus, userRef: currentUser._id }),
+      });
+      const data = await res.json();
+      if (data.success === false) return;
+      setListings((prev) => prev.map((item) =>
+        item._id === listingId ? { ...item, status: newStatus } : item
+      ));
+      window.location.reload();
     } catch (error) {
-        console.log(error);
+      console.log(error);
     }
   };
 
@@ -98,7 +98,7 @@ export default function SellerDashboard() {
 
   return (
     <div className='p-6 max-w-7xl mx-auto min-h-screen bg-slate-900 text-slate-200'>
-      
+
       <div className='flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4'>
         <div>
           <h1 className='text-3xl font-bold'>Seller <span className='text-blue-500'>Dashboard</span></h1>
@@ -123,8 +123,8 @@ export default function SellerDashboard() {
           <div className='p-3 bg-blue-500/10 text-blue-400 rounded-lg w-fit'><FaChartPie className='text-xl' /></div>
           <p className='text-slate-400 text-sm mt-4 font-medium'>Deals Closed</p>
           <div className='flex items-baseline gap-2 mt-1'>
-             <h3 className='text-3xl font-bold'>{stats.soldCount + stats.rentedCount}</h3>
-             <span className='text-xs text-slate-500'>({stats.soldCount} Sold, {stats.rentedCount} Rented)</span>
+            <h3 className='text-3xl font-bold'>{stats.soldCount + stats.rentedCount}</h3>
+            <span className='text-xs text-slate-500'>({stats.soldCount} Sold, {stats.rentedCount} Rented)</span>
           </div>
         </div>
 
@@ -147,7 +147,7 @@ export default function SellerDashboard() {
             <FaCheckCircle className='text-blue-500' /> Property Management Center
           </h2>
         </div>
-        
+
         <div className='overflow-x-auto'>
           <table className='w-full text-left border-collapse'>
             <thead>
@@ -165,7 +165,7 @@ export default function SellerDashboard() {
                 <tr key={listing._id} className='hover:bg-slate-700/20 transition-all'>
                   <td className='p-5 text-center'>
                     <button onClick={() => handleFeaturedToggle(listing._id, listing.featured)} className={`text-2xl transition-transform hover:scale-110 ${listing.featured ? 'text-yellow-400' : 'text-slate-600 hover:text-yellow-200'}`} title='Toggle Featured'>
-                        {listing.featured ? <FaStar /> : <FaRegStar />}
+                      {listing.featured ? <FaStar /> : <FaRegStar />}
                     </button>
                   </td>
                   <td className='p-5'>
@@ -182,9 +182,9 @@ export default function SellerDashboard() {
                   </td>
                   <td className='p-5'>
                     <select value={listing.status || 'available'} onChange={(e) => handleStatusChange(listing._id, e.target.value)} className={`text-xs font-bold uppercase px-2 py-1.5 rounded-lg border bg-slate-900 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${listing.status === 'sold' ? 'text-green-500 border-green-500/50' : listing.status === 'rented' ? 'text-orange-500 border-orange-500/50' : 'text-blue-400 border-blue-500/50'}`}>
-                        <option value="available">Available</option>
-                        <option value="sold">Mark as Sold</option>
-                        <option value="rented">Mark as Rented</option>
+                      <option value="available">Available</option>
+                      {listing.type === 'sale' && <option value="sold">Mark as Sold</option>}
+                      {listing.type === 'rent' && <option value="rented">Mark as Rented</option>}
                     </select>
                   </td>
                   <td className='p-5'>
