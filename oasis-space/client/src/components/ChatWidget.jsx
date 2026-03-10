@@ -52,7 +52,7 @@ export default function ChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
+    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end">
 
       {/* CHAT WINDOW */}
       {isOpen && (
@@ -74,8 +74,8 @@ export default function ChatWidget() {
             {messages.map((msg, index) => (
               <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] p-3 rounded-lg text-sm leading-relaxed ${msg.role === 'user'
-                    ? 'bg-indigo-600 text-white rounded-br-none'
-                    : 'bg-slate-700 text-slate-200 rounded-bl-none'
+                  ? 'bg-indigo-600 text-white rounded-br-none'
+                  : 'bg-slate-700 text-slate-200 rounded-bl-none'
                   }`}>
                   {msg.content}
                 </div>

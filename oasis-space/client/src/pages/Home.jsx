@@ -74,15 +74,15 @@ export default function Home() {
             loading="eager"
           />
 
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/80 to-slate-900/60 z-10"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/20 to-transparent z-10"></div>
 
           <div className="relative z-20 flex flex-col items-center justify-center text-center px-4 w-full max-w-2xl mx-auto pt-16">
-            <h1 className="text-4xl sm:text-6xl font-extrabold text-white mb-4 drop-shadow-2xl leading-tight">
+            <h1 className="text-4xl sm:text-6xl font-extrabold text-white mb-4 drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] leading-tight">
               Find Your Perfect
               <span className="text-[#8EA6C7] ml-3">Oasis</span>
             </h1>
 
-            <p className="text-gray-200 text-sm sm:text-lg mb-8 font-medium drop-shadow-md">
+            <p className="text-gray-100 text-sm sm:text-lg mb-8 font-medium drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
               Discover the best properties for sale and rent in your dream location.
             </p>
 

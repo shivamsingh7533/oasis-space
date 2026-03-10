@@ -1,5 +1,5 @@
 import Listing from '../models/listing.model.js';
-import User from '../models/user.model.js'; 
+import User from '../models/user.model.js';
 import { errorHandler } from '../utils/error.js';
 import { GoogleGenerativeAI } from "@google/generative-ai"; // ✅ AI Import
 
@@ -7,14 +7,14 @@ import { GoogleGenerativeAI } from "@google/generative-ai"; // ✅ AI Import
 export const createListing = async (req, res, next) => {
   try {
     if (req.body.type === 'sale') {
-        const user = await User.findById(req.user.id);
-        if (user.sellerStatus !== 'approved' && user.role !== 'admin') {
-            return next(errorHandler(403, 'Permission Denied! Only Approved Sellers can list properties for SALE.'));
-        }
+      const user = await User.findById(req.user.id);
+      if (user.sellerStatus !== 'approved' && user.role !== 'admin') {
+        return next(errorHandler(403, 'Permission Denied! Only Approved Sellers can list properties for SALE.'));
+      }
     }
     const newListingData = {
-        ...req.body,
-        status: req.body.status || 'available' 
+      ...req.body,
+      status: req.body.status || 'available'
     };
     const listing = await Listing.create(newListingData);
     return res.status(201).json(listing);
@@ -48,12 +48,12 @@ export const updateListing = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
     if (req.user.id !== listing.userRef && user.role !== 'admin') {
-        return next(errorHandler(401, 'You can only update your own listings!'));
+      return next(errorHandler(401, 'You can only update your own listings!'));
     }
     const { userRef, ...rest } = req.body;
     const updatedListing = await Listing.findByIdAndUpdate(
       req.params.id,
-      rest, 
+      rest,
       { new: true }
     );
     res.status(200).json(updatedListing);
@@ -78,7 +78,7 @@ export const getListings = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 9;
     const startIndex = parseInt(req.query.startIndex) || 0;
-    
+
     let offer = req.query.offer;
     if (offer === undefined || offer === 'false') offer = { $in: [false, true] };
 
@@ -93,26 +93,43 @@ export const getListings = async (req, res, next) => {
 
     let featured = req.query.featured;
     if (featured === undefined || featured === 'false') {
-        featured = { $in: [false, true] };
+      featured = { $in: [false, true] };
     } else {
-        featured = true;
+      featured = true;
     }
 
     const searchTerm = req.query.searchTerm || '';
+
+    // Split search term by spaces
+    const words = searchTerm.split(/\s+/).filter(Boolean);
+
+    // Build an AND regex using lookaheads for each word, allowing 'v' and 'w' interchangeably.
+    // Example: "shanti bhavan" -> /(?=.*shanti)(?=.*bha(v|w)an)/i
+    let searchRegexPattern = '';
+    if (words.length > 0) {
+      const lookaheads = words.map(word => {
+        const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const vwTolerantWord = escapedWord.replace(/[vw]/gi, '(v|w)');
+        return `(?=.*${vwTolerantWord})`;
+      });
+      searchRegexPattern = lookaheads.join('');
+    }
+    const searchRegex = searchRegexPattern ? new RegExp(searchRegexPattern, 'i') : new RegExp('', 'i');
+
     const sort = req.query.sort || 'createdAt';
     const order = req.query.order || 'desc';
 
     const listings = await Listing.find({
       $or: [
-        { name: { $regex: searchTerm, $options: 'i' } },
-        { address: { $regex: searchTerm, $options: 'i' } },
+        { name: { $regex: searchRegex } },
+        { address: { $regex: searchRegex } },
       ],
       offer,
       furnished,
       parking,
       type,
       featured,
-      status: { $nin: ['sold', 'rented'] } 
+      status: { $nin: ['sold', 'rented'] }
     })
       .sort({ [sort]: order })
       .limit(limit)
@@ -128,12 +145,12 @@ export const getListings = async (req, res, next) => {
 export const getAdminListings = async (req, res, next) => {
   try {
     if (!req.user || !req.user.id) {
-        return next(errorHandler(401, 'User not authenticated!'));
+      return next(errorHandler(401, 'User not authenticated!'));
     }
 
     const user = await User.findById(req.user.id);
     if (!user || user.role !== 'admin') {
-         return next(errorHandler(403, 'Admins only.'));
+      return next(errorHandler(403, 'Admins only.'));
     }
 
     const listings = await Listing.find().sort({ createdAt: -1 });
@@ -192,7 +209,7 @@ export const generateDescription = async (req, res, next) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    
+
     // ✅ Using the model confirmed by your check-models.js
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
