@@ -231,7 +231,7 @@ export default function Profile({ onClose }) {
             <div className='fixed inset-0' onClick={onClose}></div>
 
             {/* Main Card */}
-            <div className='relative bg-[#1e293b] text-slate-200 rounded-3xl shadow-2xl border border-slate-700 w-full max-w-[380px] max-h-[85vh] overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-5 duration-200'>
+            <div className='relative rounded-3xl shadow-2xl border w-full max-w-[380px] max-h-[85vh] overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-5 duration-200' style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', borderColor: 'var(--border-primary)' }}>
 
                 <button onClick={onClose} className='absolute top-3 right-3 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-700 transition z-10'>
                     <FaTimes />
