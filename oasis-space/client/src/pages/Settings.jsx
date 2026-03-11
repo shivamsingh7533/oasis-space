@@ -8,9 +8,13 @@ import {
     deleteUserFailure, deleteUserStart, deleteUserSuccess,
     signOutUserStart 
 } from '../redux/user/userSlice';
+import { setTheme } from '../redux/theme/themeSlice';
+import { setCurrency } from '../redux/currency/currencySlice';
 
 export default function Settings() {
     const { currentUser, loading } = useSelector((state) => state.user);
+    const { theme } = useSelector((state) => state.theme);
+    const { currency } = useSelector((state) => state.currency);
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
@@ -147,10 +151,48 @@ export default function Settings() {
             title: 'Preferences',
             subtitle: 'App appearance and region (Coming Soon)',
             content: (
-                <div className="space-y-6">
-                    <p className="text-slate-400 text-sm">
-                        More personalization options like Theme (Dark/Light) and Regional Currency displays are currently under development.
-                    </p>
+                <div className="space-y-8">
+                    {/* Theme Selection */}
+                    <div>
+                        <h3 className="text-lg font-bold text-white mb-2">Display Theme</h3>
+                        <p className="text-sm text-slate-400 mb-4">Choose how OasisSpace looks to you.</p>
+                        <div className="flex bg-slate-800 rounded-xl p-1 w-full max-w-sm border border-slate-700">
+                            {['system', 'light', 'dark'].map((mode) => (
+                                <button
+                                    key={mode}
+                                    onClick={() => dispatch(setTheme(mode))}
+                                    className={`flex-1 capitalize py-2 rounded-lg text-sm font-bold transition ${
+                                        theme === mode 
+                                            ? 'bg-blue-600 text-white shadow' 
+                                            : 'text-slate-400 hover:text-white hover:bg-slate-700/50'
+                                    }`}
+                                >
+                                    {mode}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <hr className="border-slate-700/50" />
+
+                    {/* Currency Selection */}
+                    <div>
+                        <h3 className="text-lg font-bold text-white mb-2">Regional Currency</h3>
+                        <p className="text-sm text-slate-400 mb-4">Select your preferred currency for viewing property prices.</p>
+                        <select
+                            value={currency}
+                            onChange={(e) => dispatch(setCurrency(e.target.value))}
+                            className="bg-slate-800 border border-slate-700 text-white text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full max-w-xs p-3 appearance-none outline-none"
+                        >
+                            <option value="INR">🇮🇳 INR - Indian Rupee (Default)</option>
+                            <option value="USD">🇺🇸 USD - US Dollar</option>
+                            <option value="EUR">🇪🇺 EUR - Euro</option>
+                            <option value="GBP">🇬🇧 GBP - British Pound</option>
+                            <option value="AED">🇦🇪 AED - UAE Dirham</option>
+                            <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
+                            <option value="AUD">🇦🇺 AUD - Australian Dollar</option>
+                        </select>
+                    </div>
                 </div>
             )
         },

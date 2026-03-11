@@ -4,9 +4,11 @@ import { FaBed, FaBath, FaHeart, FaRegHeart, FaImage } from 'react-icons/fa';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateUserSuccess } from '../redux/user/userSlice';
 import { useState } from 'react';
+import { formatPrice } from '../utils/currencyFormatter';
 
 export default function ListingItem({ listing }) {
   const { currentUser } = useSelector((state) => state.user);
+  const { currency, rates } = useSelector((state) => state.currency); // Get Global Currency State
   const dispatch = useDispatch();
 
   // IMAGE ENHANCER STATES
@@ -129,9 +131,7 @@ export default function ListingItem({ listing }) {
 
         <div className='flex items-center justify-between mt-1'>
           <p className='text-white font-bold text-lg'>
-            ₹ {listing.offer
-              ? listing.discountPrice.toLocaleString('en-IN')
-              : listing.regularPrice.toLocaleString('en-IN')}
+            {formatPrice(listing.offer ? listing.discountPrice : listing.regularPrice, currency, rates)}
             {listing.type === 'rent' && <span className='text-xs font-normal text-slate-400'> / mo</span>}
           </p>
         </div>

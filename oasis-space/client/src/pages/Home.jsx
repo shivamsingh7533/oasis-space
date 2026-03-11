@@ -10,7 +10,8 @@ import ListingItem from '../components/ListingItem';
 import { FaSearch } from 'react-icons/fa';
 import Preloader from '../components/Preloader';
 import NotificationPrompt from '../components/NotificationPrompt'; // ✅ Push Prompt Injection
-// (Hero image is now loaded from /home.webp in public for LCP preloading)
+import { useSelector } from 'react-redux';
+import { formatPrice } from '../utils/currencyFormatter';
 
 export default function Home() {
   // Start preloading ONLY if this is the first visit in the current session
@@ -35,6 +36,10 @@ export default function Home() {
   const [rentListings, setRentListings] = useState([]);
   const [featuredListings, setFeaturedListings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Get global currency settings
+  const { currency, rates } = useSelector((state) => state.currency);
+  
   const navigate = useNavigate();
 
   SwiperCore.use([Navigation, Autoplay, Pagination]);
@@ -173,7 +178,7 @@ export default function Home() {
                     <div className='absolute bottom-0 left-0 p-6 w-full z-20 bg-black/90'>
                       <p className='text-white text-2xl font-bold truncate drop-shadow-md'>{listing.name}</p>
                       <p className='text-[#8EA6C7] font-bold text-lg'>
-                        ₹ {listing.offer ? listing.discountPrice.toLocaleString('en-IN') : listing.regularPrice.toLocaleString('en-IN')}
+                        {formatPrice(listing.offer ? listing.discountPrice : listing.regularPrice, currency, rates)}
                         {listing.type === 'rent' && <span className='text-xs text-gray-300'> / month</span>}
                       </p>
                     </div>

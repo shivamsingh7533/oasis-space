@@ -8,6 +8,7 @@ import {
 import Contact from '../components/Contact';
 import EMICalculator from '../components/EMICalculator';
 import RazorpayBtn from '../components/RazorpayBtn';
+import { formatPrice } from '../utils/currencyFormatter';
 
 // IMPORTS FOR SLIDER
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -107,6 +108,7 @@ export default function Listing() {
     const [activeIndex, setActiveIndex] = useState(0);
 
     const { currentUser } = useSelector((state) => state.user);
+    const { currency, rates } = useSelector((state) => state.currency); // Get global currency state
 
     useEffect(() => {
         const fetchListing = async () => {
@@ -176,7 +178,7 @@ export default function Listing() {
                                     onClick={async () => {
                                         const shareData = {
                                             title: listing.name,
-                                            text: `Check out ${listing.name} on OasisSpace — ₹${(listing.offer ? listing.discountPrice : listing.regularPrice).toLocaleString('en-IN')}`,
+                                            text: `Check out ${listing.name} on OasisSpace — ${formatPrice(listing.offer ? listing.discountPrice : listing.regularPrice, currency, rates)}`,
                                             url: window.location.href,
                                         };
                                         if (navigator.share) {
@@ -275,15 +277,12 @@ export default function Listing() {
 
                                 <div className='flex items-end gap-3 mb-6 bg-slate-900/50 p-4 rounded-2xl border border-slate-700/50'>
                                     <p className='text-4xl font-black text-blue-400'>
-                                        ₹{' '}
-                                        {listing.offer
-                                            ? listing.discountPrice.toLocaleString('en-IN')
-                                            : listing.regularPrice.toLocaleString('en-IN')}
+                                        {formatPrice(listing.offer ? listing.discountPrice : listing.regularPrice, currency, rates)}
                                         {listing.type === 'rent' && <span className='text-lg text-slate-500 font-normal'> / month</span>}
                                     </p>
                                     {listing.offer && (
                                         <p className='text-slate-500 line-through text-lg font-semibold mb-1'>
-                                            ₹{listing.regularPrice.toLocaleString('en-IN')}
+                                            {formatPrice(listing.regularPrice, currency, rates)}
                                         </p>
                                     )}
                                 </div>
