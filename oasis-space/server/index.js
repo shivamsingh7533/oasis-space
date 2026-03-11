@@ -18,8 +18,8 @@ import webpush from 'web-push';
 dotenv.config();
 
 // Initialize Web Push
-const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY;
-const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
+const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY?.trim().replace(/=+$/, '');
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY?.trim().replace(/=+$/, '');
 if (VAPID_PUBLIC && VAPID_PRIVATE) {
   webpush.setVapidDetails(
     'mailto:support@oasisspace.com',
