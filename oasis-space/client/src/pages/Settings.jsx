@@ -252,7 +252,7 @@ export default function Settings() {
                                 }`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <span className={`text-xl flex-shrink-0 transition-transform ${tab.headerClass || (activeTab === tab.id ? 'text-blue-400 scale-110' : 'text-slate-500')}`}>
+                                    <span className={`flex justify-center flex-shrink-0 w-6 h-6 text-xl transition-transform ${tab.headerClass || (activeTab === tab.id ? 'text-blue-400 scale-110' : 'text-slate-500')}`}>
                                         {tab.icon}
                                     </span>
                                     <div>

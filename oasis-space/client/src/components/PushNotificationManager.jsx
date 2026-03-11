@@ -59,7 +59,6 @@ export default function PushNotificationManager() {
       });
 
       setIsSubscribed(true);
-      alert('Push notifications enabled successfully! 🎉');
     } catch (err) {
       console.log('Push subscription failed:', err);
       if (Notification.permission === 'denied') {
