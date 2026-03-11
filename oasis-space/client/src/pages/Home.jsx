@@ -9,6 +9,7 @@ import 'swiper/css/pagination';
 import ListingItem from '../components/ListingItem';
 import { FaSearch } from 'react-icons/fa';
 import Preloader from '../components/Preloader';
+import NotificationPrompt from '../components/NotificationPrompt'; // ✅ Push Prompt Injection
 // (Hero image is now loaded from /home.webp in public for LCP preloading)
 
 export default function Home() {
@@ -77,6 +78,9 @@ export default function Home() {
           <Preloader />
         </div>
       )}
+
+      {/* 🛎️ Native-style Push Notification Prompt */}
+      <NotificationPrompt />
 
       <div className='bg-slate-900 min-h-screen text-slate-200'>
 
