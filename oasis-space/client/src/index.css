@@ -30,29 +30,29 @@
   --scrollbar-track: #1e293b;
 }
 
-/* --- LIGHT THEME --- */
+/* --- LIGHT THEME (Brand Blue-Tinted) --- */
 .light {
-  --bg-primary: #f8fafc;       /* slate-50 */
-  --bg-secondary: #ffffff;     /* white */
-  --bg-tertiary: #e2e8f0;      /* slate-200 */
-  --bg-card: rgba(255, 255, 255, 0.8);
-  --bg-input: #f1f5f9;         /* slate-100 */
-  --bg-hover: #f1f5f9;         /* slate-100 */
+  --bg-primary: #f0f4ff;       /* soft blue-white */
+  --bg-secondary: #ffffff;     /* clean white */
+  --bg-tertiary: #dbeafe;      /* light blue (blue-100) */
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-input: #eff6ff;         /* ice blue (blue-50) */
+  --bg-hover: #eff6ff;         /* ice blue */
   --bg-accent: rgba(37, 99, 235, 0.1);
 
-  --text-primary: #1e293b;     /* slate-800 */
+  --text-primary: #1e293b;     /* navy (slate-800) */
   --text-secondary: #475569;   /* slate-600 */
   --text-muted: #94a3b8;       /* slate-400 */
-  --text-heading: #0f172a;     /* slate-900 */
-  --text-link: #2563eb;        /* blue-600 */
+  --text-heading: #0f172a;     /* deep navy (slate-900) */
+  --text-link: #2563eb;        /* brand blue */
 
-  --border-primary: #e2e8f0;   /* slate-200 */
-  --border-secondary: rgba(226, 232, 240, 0.7);
+  --border-primary: #dbeafe;   /* light blue border */
+  --border-secondary: rgba(219, 234, 254, 0.7);
 
-  --shadow-color: rgba(0, 0, 0, 0.08);
-  --overlay-bg: rgba(0, 0, 0, 0.3);
-  --scrollbar-thumb: #cbd5e1;
-  --scrollbar-track: #f1f5f9;
+  --shadow-color: rgba(37, 99, 235, 0.06);
+  --overlay-bg: rgba(15, 23, 42, 0.3);
+  --scrollbar-thumb: #93c5fd;  /* blue-300 */
+  --scrollbar-track: #eff6ff;
 }
 
 /* ============================================================
