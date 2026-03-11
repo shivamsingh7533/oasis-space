@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function Privacy() {
   return (
-    <div className='min-h-screen bg-slate-900 text-slate-200 py-16 px-4'>
+    <div className='min-h-screen py-16 px-4' style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       <div className='max-w-4xl mx-auto space-y-8'>
         
         {/* Header */}

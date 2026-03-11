@@ -53,7 +53,7 @@ export default function SignIn() {
   };
 
   return (
-    <div className='bg-slate-900 min-h-screen flex items-center justify-center p-3'>
+    <div className='min-h-screen flex items-center justify-center p-3' style={{ backgroundColor: 'var(--bg-primary)' }}>
       
       <div className='bg-slate-800 p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-sm border border-slate-700'>
         

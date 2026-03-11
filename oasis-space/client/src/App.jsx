@@ -35,7 +35,7 @@ export default function App() {
   return (
     <BrowserRouter>
       {/* ✅ FIX: Added 'w-full' and 'overflow-x-hidden' to force full width */}
-      <div className="flex flex-col min-h-screen w-full overflow-x-hidden relative bg-slate-900">
+      <div className="flex flex-col min-h-screen w-full overflow-x-hidden relative" style={{ backgroundColor: 'var(--bg-primary)' }}>
 
         {/* Header (Ab ye bhi full width container ke andar hoga) */}
         <Header />

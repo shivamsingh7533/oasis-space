@@ -73,7 +73,7 @@ export default function SavedListings() {
   };
 
   return (
-    <div className='min-h-screen bg-slate-900'>
+    <div className='min-h-screen' style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className='max-w-6xl mx-auto p-4 flex flex-col gap-8 py-10'>
         
         <div className="bg-gradient-to-r from-indigo-700 via-purple-700 to-pink-700 p-6 rounded-2xl shadow-lg text-center">

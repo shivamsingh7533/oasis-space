@@ -3,7 +3,7 @@ import React from 'react';
 export default function About() {
   return (
     // 1. FIX: 'min-h-screen' aur 'bg-slate-900' yahan lagayein taaki poora page dark ho jaye
-    <div className="w-full min-h-screen bg-slate-900 text-white py-12">
+    <div className="w-full min-h-screen py-12" style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
       
       {/* 2. RESPONSIVE CONTAINER: 
           - 'max-w-6xl': Content ko zyada failne se rokega (PC ke liye)

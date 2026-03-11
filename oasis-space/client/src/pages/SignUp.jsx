@@ -104,7 +104,7 @@ export default function SignUp() {
   const dropdownStyle = { backgroundColor: '#1e293b', border: '1px solid #475569', color: '#cbd5e1' };
 
   return (
-    <div className='bg-slate-900 h-screen w-full flex items-center justify-center p-3 overflow-hidden relative'>
+    <div className='h-screen w-full flex items-center justify-center p-3 overflow-hidden relative' style={{ backgroundColor: 'var(--bg-primary)' }}>
       
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }

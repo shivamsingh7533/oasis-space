@@ -87,7 +87,7 @@ export default function Home() {
       {/* 🛎️ Native-style Push Notification Prompt */}
       <NotificationPrompt />
 
-      <div className='bg-slate-900 min-h-screen text-slate-200'>
+      <div className='min-h-screen' style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
 
         {/* --- HERO SECTION --- */}
         <div className="relative w-full h-[550px] flex flex-col items-center justify-center overflow-hidden">
@@ -148,7 +148,7 @@ export default function Home() {
             className='max-w-6xl mx-auto pt-10 px-4'
           >
             <div className='my-3 flex items-center gap-2 mb-5'>
-              <h2 className='text-2xl font-bold text-slate-100'>Featured Properties</h2>
+              <h2 className='text-2xl font-bold' style={{ color: 'var(--text-heading)' }}>Featured Properties</h2>
               <span className='text-[10px] bg-yellow-500 text-black px-2 py-0.5 rounded-full font-extrabold tracking-wider'>VIP</span>
             </div>
 
@@ -156,7 +156,8 @@ export default function Home() {
               navigation
               autoplay={{ delay: 4000, disableOnInteraction: false }}
               pagination={{ clickable: true }}
-              className='h-[280px] sm:h-[400px] rounded-2xl overflow-hidden shadow-2xl border border-slate-700'
+              className='h-[280px] sm:h-[400px] rounded-2xl overflow-hidden shadow-2xl border'
+              style={{ borderColor: 'var(--border-primary)' }}
             >
               {featuredListings.map((listing) => (
                 <SwiperSlide key={listing._id}>
@@ -196,7 +197,7 @@ export default function Home() {
           {offerListings && offerListings.length > 0 && (
             <div>
               <div className='my-3 flex justify-between items-end'>
-                <h2 className='text-xl sm:text-2xl font-semibold text-slate-200'>Recent Offers</h2>
+                <h2 className='text-xl sm:text-2xl font-semibold' style={{ color: 'var(--text-primary)' }}>Recent Offers</h2>
                 <Link className='text-sm text-[#8EA6C7] hover:text-[#7a92b3] hover:underline' to={'/search?offer=true'}>View All</Link>
               </div>
               <div className='flex flex-wrap gap-6'>
@@ -211,7 +212,7 @@ export default function Home() {
           {rentListings && rentListings.length > 0 && (
             <div>
               <div className='my-3 flex justify-between items-end'>
-                <h2 className='text-xl sm:text-2xl font-semibold text-slate-200'>Places for Rent</h2>
+                <h2 className='text-xl sm:text-2xl font-semibold' style={{ color: 'var(--text-primary)' }}>Places for Rent</h2>
                 <Link className='text-sm text-[#8EA6C7] hover:text-[#7a92b3] hover:underline' to={'/search?type=rent'}>View All</Link>
               </div>
               <div className='flex flex-wrap gap-6'>
@@ -226,7 +227,7 @@ export default function Home() {
           {saleListings && saleListings.length > 0 && (
             <div>
               <div className='my-3 flex justify-between items-end'>
-                <h2 className='text-xl sm:text-2xl font-semibold text-slate-200'>Places for Sale</h2>
+                <h2 className='text-xl sm:text-2xl font-semibold' style={{ color: 'var(--text-primary)' }}>Places for Sale</h2>
                 <Link className='text-sm text-[#8EA6C7] hover:text-[#7a92b3] hover:underline' to={'/search?type=sale'}>View All</Link>
               </div>
               <div className='flex flex-wrap gap-6'>

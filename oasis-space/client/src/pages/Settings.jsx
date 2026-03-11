@@ -232,7 +232,7 @@ export default function Settings() {
     if (!currentUser) return null;
 
     return (
-        <div className="min-h-[85vh] bg-slate-900 py-8 px-4 sm:px-6 lg:px-8 animate-in fade-in duration-500">
+        <div className="min-h-[85vh] py-8 px-4 sm:px-6 lg:px-8 animate-in fade-in duration-500" style={{ backgroundColor: 'var(--bg-primary)' }}>
             <div className="max-w-6xl mx-auto">
                 <h1 className="text-3xl font-extrabold text-white mb-2">Settings</h1>
                 <p className="text-slate-400 mb-8">Manage your account preferences and configurations.</p>

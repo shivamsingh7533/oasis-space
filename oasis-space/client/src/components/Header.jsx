@@ -90,7 +90,7 @@ export default function Header() {
 
     return (
         <>
-            <header className='bg-slate-900 shadow-md sticky top-0 z-40'>
+            <header className='shadow-md sticky top-0 z-40' style={{ backgroundColor: 'var(--bg-primary)' }}>
                 <div className='flex justify-between items-center max-w-6xl mx-auto p-3'>
 
                     {/* --- LOGO --- */}
@@ -103,8 +103,8 @@ export default function Header() {
                                 height="32"
                                 className="w-8 h-8 mr-2 object-cover rounded-full bg-white p-0.5"
                             />
-                            <span className='text-slate-200'>Oasis</span>
-                            <span className='text-slate-400'>Space</span>
+                            <span style={{ color: 'var(--text-primary)' }}>Oasis</span>
+                            <span style={{ color: 'var(--text-secondary)' }}>Space</span>
                         </h1>
                     </Link>
 
@@ -115,15 +115,16 @@ export default function Header() {
                             <li>
                                 <button
                                     onClick={handleInstallClick}
-                                    className='bg-slate-700 hover:bg-slate-600 text-blue-400 border border-slate-600 px-3 py-1 rounded-lg text-sm font-semibold transition-all shadow-lg animate-pulse'
+                                    className='text-blue-400 border px-3 py-1 rounded-lg text-sm font-semibold transition-all shadow-lg animate-pulse'
+                                    style={{ backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}
                                 >
                                     Install App
                                 </button>
                             </li>
                         )}
 
-                        <li><Link to='/' className='text-slate-300 hover:text-white transition-colors'>Home</Link></li>
-                        <li><Link to='/about' className='text-slate-300 hover:text-white transition-colors'>About</Link></li>
+                        <li><Link to='/' className='hover:opacity-80 transition-colors' style={{ color: 'var(--text-primary)' }}>Home</Link></li>
+                        <li><Link to='/about' className='hover:opacity-80 transition-colors' style={{ color: 'var(--text-primary)' }}>About</Link></li>
 
                         {currentUser ? (
                             <>
@@ -162,7 +163,7 @@ export default function Header() {
                                 <li>
                                     <button aria-label="Notifications" className="relative cursor-pointer focus:outline-none" onClick={handleRead}>
                                         <div className="relative">
-                                            <FaBell className="text-xl text-slate-300 hover:text-white transition mt-1" />
+                                            <FaBell className="text-xl transition mt-1" style={{ color: 'var(--text-primary)' }} />
                                             {unreadCount > 0 && (
                                                 <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full animate-pulse shadow-sm">
                                                     {unreadCount}
@@ -172,8 +173,8 @@ export default function Header() {
 
                                         {/* DROPDOWN MENU */}
                                         {showNotif && (
-                                            <div className="absolute right-0 top-10 w-72 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 z-50 cursor-default" onClick={(e) => e.stopPropagation()}>
-                                                <div className="p-3 bg-slate-900 border-b border-slate-700 font-bold text-slate-200 flex justify-between items-center">
+                                            <div className="absolute right-0 top-10 w-72 border rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 z-50 cursor-default" style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }} onClick={(e) => e.stopPropagation()}>
+                                                <div className="p-3 border-b font-bold flex justify-between items-center" style={{ backgroundColor: 'var(--bg-primary)', borderColor: 'var(--border-primary)', color: 'var(--text-primary)' }}>
                                                     <span>Notifications</span>
                                                     <div className="flex gap-3">
                                                         {/* ✅ Clear All Button */}
@@ -207,7 +208,7 @@ export default function Header() {
                                 {/* SETTINGS GEAR */}
                                 <li>
                                     <Link to='/settings' className="relative cursor-pointer focus:outline-none block mt-1" title="Settings">
-                                        <FaCog className="text-xl text-slate-300 hover:text-white transition" />
+                                        <FaCog className="text-xl transition" style={{ color: 'var(--text-primary)' }} />
                                     </Link>
                                 </li>
 
@@ -215,7 +216,8 @@ export default function Header() {
                                 <li>
                                     <button aria-label="User Profile" className='relative cursor-pointer focus:outline-none' onClick={() => setShowProfile(true)}>
                                         <img
-                                            className='rounded-full h-9 w-9 object-cover border-2 border-slate-600 hover:border-slate-400 transition'
+                                            className='rounded-full h-9 w-9 object-cover border-2 hover:opacity-80 transition'
+                                            style={{ borderColor: 'var(--border-primary)' }}
                                             src={currentUser.avatar}
                                             alt='profile'
                                             width="36"
@@ -225,7 +227,7 @@ export default function Header() {
                                 </li>
                             </>
                         ) : (
-                            <li><Link to='/sign-in' className='text-slate-300 hover:text-white'>Sign in</Link></li>
+                            <li><Link to='/sign-in' className='hover:opacity-80 transition' style={{ color: 'var(--text-primary)' }}>Sign in</Link></li>
                         )}
                     </ul>
 
@@ -233,7 +235,7 @@ export default function Header() {
                     <div className='md:hidden flex items-center gap-4'>
                         {currentUser && (
                             <button aria-label="Mobile Notifications" className="relative cursor-pointer focus:outline-none" onClick={() => setIsSidebarOpen(true)}>
-                                <FaBell className="text-xl text-slate-200" />
+                                <FaBell className="text-xl" style={{ color: 'var(--text-primary)' }} />
                                 {unreadCount > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[9px] font-bold w-3 h-3 flex items-center justify-center rounded-full">
                                         {unreadCount}
@@ -245,13 +247,14 @@ export default function Header() {
                         {deferredPrompt && (
                             <button
                                 onClick={handleInstallClick}
-                                className='bg-slate-700 text-blue-400 border border-slate-600 px-2 py-1 rounded text-xs font-semibold'
+                                className='text-blue-400 border px-2 py-1 rounded text-xs font-semibold'
+                                style={{ backgroundColor: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}
                             >
                                 Install
                             </button>
                         )}
 
-                        <button onClick={toggleSidebar} aria-label="Open mobile menu" className='text-slate-200 text-2xl focus:outline-none p-1'>
+                        <button onClick={toggleSidebar} aria-label="Open mobile menu" className='text-2xl focus:outline-none p-1' style={{ color: 'var(--text-primary)' }}>
                             <FaBars />
                         </button>
                     </div>
@@ -264,11 +267,11 @@ export default function Header() {
                 onClick={toggleSidebar}
             ></div>
 
-            <div className={`fixed top-0 right-0 h-full w-64 bg-slate-800 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto`}>
+            <div className={`fixed top-0 right-0 h-full w-64 shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'} overflow-y-auto`} style={{ backgroundColor: 'var(--bg-secondary)' }}>
 
-                <div className='flex justify-between items-center p-4 border-b border-slate-700'>
-                    <span className='text-lg font-bold text-slate-200'>Menu</span>
-                    <button onClick={toggleSidebar} aria-label="Close mobile menu" className='text-slate-400 hover:text-white text-2xl'>
+                <div className='flex justify-between items-center p-4 border-b' style={{ borderColor: 'var(--border-primary)' }}>
+                    <span className='text-lg font-bold' style={{ color: 'var(--text-primary)' }}>Menu</span>
+                    <button onClick={toggleSidebar} aria-label="Close mobile menu" className='text-2xl hover:opacity-80' style={{ color: 'var(--text-secondary)' }}>
                         <FaTimes />
                     </button>
                 </div>
@@ -286,10 +289,10 @@ export default function Header() {
                         </Link>
                     )}
 
-                    <Link to='/' className='text-slate-300 hover:text-white text-lg font-medium p-2 hover:bg-slate-700 rounded transition' onClick={toggleSidebar}>
+                    <Link to='/' className='text-lg font-medium p-2 rounded transition hover:opacity-80' style={{ color: 'var(--text-primary)' }} onClick={toggleSidebar}>
                         Home
                     </Link>
-                    <Link to='/about' className='text-slate-300 hover:text-white text-lg font-medium p-2 hover:bg-slate-700 rounded transition' onClick={toggleSidebar}>
+                    <Link to='/about' className='text-lg font-medium p-2 rounded transition hover:opacity-80' style={{ color: 'var(--text-primary)' }} onClick={toggleSidebar}>
                         About
                     </Link>
 
@@ -300,7 +303,7 @@ export default function Header() {
                             </Link>
 
                             {/* ✅ Mobile Notifications Section */}
-                            <div className="border-t border-slate-700 pt-4 mt-2">
+                            <div className="border-t pt-4 mt-2" style={{ borderColor: 'var(--border-primary)' }}>
                                 <div className="flex justify-between items-center mb-2 px-2">
                                     <p className="text-slate-400 text-sm uppercase font-bold flex items-center gap-2">
                                         <FaBell /> Notifications ({unreadCount})
@@ -313,7 +316,7 @@ export default function Header() {
                                     )}
                                 </div>
 
-                                <div className="max-h-40 overflow-y-auto bg-slate-900 rounded-lg p-2">
+                                <div className="max-h-40 overflow-y-auto rounded-lg p-2" style={{ backgroundColor: 'var(--bg-primary)' }}>
                                     {notifications.length === 0 ? (
                                         <p className="text-slate-400 text-xs text-center">No notifications</p>
                                     ) : (
@@ -332,23 +335,25 @@ export default function Header() {
                             </div>
 
                             {/* ✅ Mobile Settings Link */}
-                            <Link to='/settings' className='text-slate-300 hover:text-white text-lg font-medium p-2 hover:bg-slate-700 rounded transition flex items-center gap-2 mt-2' onClick={toggleSidebar}>
+                            <Link to='/settings' className='text-lg font-medium p-2 rounded transition flex items-center gap-2 mt-2 hover:opacity-80' style={{ color: 'var(--text-primary)' }} onClick={toggleSidebar}>
                                 <FaCog /> Settings
                             </Link>
 
-                            <Link to='/create-listing' className='text-slate-300 hover:text-white text-lg font-medium p-2 hover:bg-slate-700 rounded transition' onClick={toggleSidebar}>
+                            <Link to='/create-listing' className='text-lg font-medium p-2 rounded transition hover:opacity-80' style={{ color: 'var(--text-primary)' }} onClick={toggleSidebar}>
                                 Create Listing
                             </Link>
 
                             <div
-                                className='flex items-center gap-3 p-2 hover:bg-slate-700 rounded transition cursor-pointer mt-4 border-t border-slate-700 pt-4'
+                                className='flex items-center gap-3 p-2 rounded transition cursor-pointer mt-4 border-t pt-4 hover:opacity-80'
+                                style={{ borderColor: 'var(--border-primary)' }}
                                 onClick={() => {
                                     toggleSidebar();
                                     setShowProfile(true);
                                 }}
                             >
                                 <img
-                                    className='rounded-full h-10 w-10 object-cover border-2 border-slate-600'
+                                    className='rounded-full h-10 w-10 object-cover border-2'
+                                    style={{ borderColor: 'var(--border-primary)' }}
                                     src={currentUser.avatar}
                                     alt='profile'
                                     width="40"
@@ -361,7 +366,7 @@ export default function Header() {
                             </div>
                         </>
                     ) : (
-                        <Link to='/sign-in' className='bg-slate-700 text-center text-white p-3 rounded-lg mt-4 hover:bg-slate-600 transition font-bold' onClick={toggleSidebar}>
+                        <Link to='/sign-in' className='text-center p-3 rounded-lg mt-4 transition font-bold hover:opacity-80' style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-heading)' }} onClick={toggleSidebar}>
                             Sign In
                         </Link>
                     )}

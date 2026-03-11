@@ -138,7 +138,7 @@ export default function Listing() {
     const lng = listing?.geolocation?.lng || 78.9629;
 
     return (
-        <main className='bg-slate-900 min-h-screen text-slate-200 pb-10'>
+        <main className='min-h-screen pb-10' style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
             {loading && <p className='text-center my-7 text-2xl'>Loading...</p>}
             {error && (
                 <p className='text-center my-7 text-2xl text-red-500'>Something went wrong!</p>

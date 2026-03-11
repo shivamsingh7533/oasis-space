@@ -227,7 +227,7 @@ export default function UpdateListing() {
   const labelClass = "text-slate-300 font-semibold mb-2 block";
 
   return (
-    <div className='min-h-screen bg-slate-900 flex items-center justify-center p-4 py-10'>
+    <div className='min-h-screen flex items-center justify-center p-4 py-10' style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className='max-w-4xl w-full bg-slate-800 rounded-lg shadow-2xl p-8 border border-slate-700'>
         <h1 className='text-3xl font-bold text-center text-white mb-8'>Update Listing</h1>
 

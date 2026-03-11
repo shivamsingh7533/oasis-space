@@ -120,7 +120,7 @@ export default function Search() {
   };
 
   return (
-    <div className='flex flex-col md:flex-row min-h-screen bg-slate-900 text-slate-200'>
+    <div className='flex flex-col md:flex-row min-h-screen' style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
 
       {/* --- SIDEBAR FILTERS --- */}
       <div

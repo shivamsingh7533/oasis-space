@@ -1,22 +1,102 @@
 @import "tailwindcss";
 
-/* --- 🖼️ SMART IMAGE ENHANCER DRIVER --- */
-/* Is class ko hum ListingItem aur Listing page ki images par lagayenge */
-.hd-image {
-  /* 1. SVG Filter (Sharpening Logic from index.html) + Contrast/Saturation Boost */
-  filter: url('#smart-sharpen') contrast(1.05) saturate(1.05);
+/* ============================================================
+   🎨 GLOBAL THEME SYSTEM — CSS Custom Properties
+   The .dark / .light class is applied to <html> by ThemeProvider.
+   ============================================================ */
 
-  /* 2. Hardware Acceleration (Taaki scroll karte waqt lag na ho) */
+/* --- DARK THEME (Default) --- */
+.dark {
+  --bg-primary: #0f172a;       /* slate-900 */
+  --bg-secondary: #1e293b;     /* slate-800 */
+  --bg-tertiary: #334155;      /* slate-700 */
+  --bg-card: rgba(30, 41, 59, 0.5);  /* slate-800/50 */
+  --bg-input: #0f172a;         /* slate-900 */
+  --bg-hover: #334155;         /* slate-700 */
+  --bg-accent: rgba(37, 99, 235, 0.2); /* blue-600/20 */
+
+  --text-primary: #e2e8f0;     /* slate-200 */
+  --text-secondary: #94a3b8;   /* slate-400 */
+  --text-muted: #64748b;       /* slate-500 */
+  --text-heading: #ffffff;     /* white */
+  --text-link: #60a5fa;        /* blue-400 */
+
+  --border-primary: #334155;   /* slate-700 */
+  --border-secondary: rgba(51, 65, 85, 0.5); /* slate-700/50 */
+
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --overlay-bg: rgba(0, 0, 0, 0.7);
+  --scrollbar-thumb: #475569;
+  --scrollbar-track: #1e293b;
+}
+
+/* --- LIGHT THEME --- */
+.light {
+  --bg-primary: #f8fafc;       /* slate-50 */
+  --bg-secondary: #ffffff;     /* white */
+  --bg-tertiary: #e2e8f0;      /* slate-200 */
+  --bg-card: rgba(255, 255, 255, 0.8);
+  --bg-input: #f1f5f9;         /* slate-100 */
+  --bg-hover: #f1f5f9;         /* slate-100 */
+  --bg-accent: rgba(37, 99, 235, 0.1);
+
+  --text-primary: #1e293b;     /* slate-800 */
+  --text-secondary: #475569;   /* slate-600 */
+  --text-muted: #94a3b8;       /* slate-400 */
+  --text-heading: #0f172a;     /* slate-900 */
+  --text-link: #2563eb;        /* blue-600 */
+
+  --border-primary: #e2e8f0;   /* slate-200 */
+  --border-secondary: rgba(226, 232, 240, 0.7);
+
+  --shadow-color: rgba(0, 0, 0, 0.08);
+  --overlay-bg: rgba(0, 0, 0, 0.3);
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-track: #f1f5f9;
+}
+
+/* ============================================================
+   🧩 THEME UTILITY CLASSES
+   Apply theme colors without touching individual Tailwind classes.
+   ============================================================ */
+
+/* — Backgrounds — */
+.theme-bg          { background-color: var(--bg-primary); }
+.theme-bg-s        { background-color: var(--bg-secondary); }
+.theme-bg-t        { background-color: var(--bg-tertiary); }
+.theme-bg-card     { background-color: var(--bg-card); }
+.theme-bg-input    { background-color: var(--bg-input); }
+.theme-bg-hover    { background-color: var(--bg-hover); }
+
+/* — Text — */
+.theme-text        { color: var(--text-primary); }
+.theme-text-s      { color: var(--text-secondary); }
+.theme-text-m      { color: var(--text-muted); }
+.theme-text-h      { color: var(--text-heading); }
+
+/* — Borders — */
+.theme-border      { border-color: var(--border-primary); }
+.theme-border-s    { border-color: var(--border-secondary); }
+
+/* ============================================================
+   🖼️ SMART IMAGE ENHANCER DRIVER
+   ============================================================ */
+.hd-image {
+  filter: url('#smart-sharpen') contrast(1.05) saturate(1.05);
   transform: translateZ(0);
   backface-visibility: hidden;
   will-change: filter;
-
-  /* 3. Rendering Optimization for Chrome/Edge */
   image-rendering: -webkit-optimize-contrast;
 }
 
-/* Hover karne par thoda aur Crystal Clear effect */
 .hd-image:hover {
   filter: url('#smart-sharpen') contrast(1.08) saturate(1.1);
   transition: filter 0.3s ease-in-out;
+}
+
+/* ============================================================
+   ✨ SMOOTH THEME TRANSITION
+   ============================================================ */
+html.dark, html.light {
+  transition: background-color 0.3s ease, color 0.3s ease;
 }

@@ -46,7 +46,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className='bg-slate-900 text-slate-300 text-sm mt-auto border-t border-slate-800'>
+    <footer className='text-sm mt-auto border-t' style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-secondary)', borderColor: 'var(--border-primary)' }}>
       {/* Top Section - 4 Columns */}
       <div className='max-w-6xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8'>
 
@@ -54,12 +54,12 @@ export default function Footer() {
         <div className='flex flex-col gap-4'>
           <Link to='/' className='flex items-center gap-1'>
             <h1 className='font-bold text-2xl flex flex-wrap'>
-              <span className='text-slate-200'>Oasis</span>
-              <span className='text-slate-100'>Space</span>
+              <span style={{ color: 'var(--text-primary)' }}>Oasis</span>
+              <span style={{ color: 'var(--text-heading)' }}>Space</span>
               <span className='text-blue-500 text-2xl'>.</span>
             </h1>
           </Link>
-          <p className='text-slate-400 leading-relaxed text-sm'>
+          <p className='leading-relaxed text-sm' style={{ color: 'var(--text-secondary)' }}>
             Experience the best property finding service in town. Find your next perfect place with ease, comfort, and trust.
           </p>
 
@@ -70,7 +70,7 @@ export default function Footer() {
               target='_blank'
               rel='noopener noreferrer'
               aria-label='Follow us on Facebook'
-              className='bg-slate-800 p-2 rounded-full hover:bg-blue-600 hover:text-white transition-all duration-300'
+              className='p-2 rounded-full transition-all duration-300' style={{ backgroundColor: 'var(--bg-secondary)' }}
             >
               <FaFacebook className="text-lg" />
             </a>
@@ -106,7 +106,7 @@ export default function Footer() {
 
         {/* Column 2: Quick Links */}
         <div>
-          <h2 className='font-bold text-white mb-4 uppercase tracking-wider text-sm border-b-2 border-blue-500 inline-block pb-1'>Quick Links</h2>
+          <h2 className='font-bold mb-4 uppercase tracking-wider text-sm border-b-2 border-blue-500 inline-block pb-1' style={{ color: 'var(--text-heading)' }}>Quick Links</h2>
           <ul className='flex flex-col gap-3'>
             <li><Link to='/' className='hover:text-blue-400 transition-colors flex items-center gap-2'>Home</Link></li>
             <li><Link to='/search' className='hover:text-blue-400 transition-colors flex items-center gap-2'>Listings</Link></li>
@@ -117,7 +117,7 @@ export default function Footer() {
 
         {/* Column 3: Support */}
         <div>
-          <h2 className='font-bold text-white mb-4 uppercase tracking-wider text-sm border-b-2 border-blue-500 inline-block pb-1'>Support</h2>
+          <h2 className='font-bold mb-4 uppercase tracking-wider text-sm border-b-2 border-blue-500 inline-block pb-1' style={{ color: 'var(--text-heading)' }}>Support</h2>
           <ul className='flex flex-col gap-3'>
             <li><Link to='/profile' className='hover:text-blue-400 transition-colors'>My Account</Link></li>
             <li><Link to='/faq' className='hover:text-blue-400 transition-colors'>FAQ</Link></li>
@@ -128,7 +128,7 @@ export default function Footer() {
 
         {/* Column 4: Contact Us */}
         <div>
-          <h2 className='font-bold text-white mb-4 uppercase tracking-wider text-sm border-b-2 border-blue-500 inline-block pb-1'>Contact Us</h2>
+          <h2 className='font-bold mb-4 uppercase tracking-wider text-sm border-b-2 border-blue-500 inline-block pb-1' style={{ color: 'var(--text-heading)' }}>Contact Us</h2>
           <ul className='flex flex-col gap-4'>
             <li className='flex items-start gap-3 group'>
               <FaMapMarkerAlt className='text-blue-500 mt-1 text-lg group-hover:animate-bounce' />
@@ -159,10 +159,10 @@ export default function Footer() {
       </div>
 
       {/* Bottom Section - Copyright & Credit */}
-      <div className='bg-slate-950 py-6 px-4 border-t border-slate-800'>
+      <div className='py-6 px-4 border-t' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
         <div className='max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left'>
           <p className='text-slate-400'>
-            © {new Date().getFullYear()} <span className='font-bold text-slate-200'>OasisSpace</span>. All rights reserved.
+            © {new Date().getFullYear()} <span className='font-bold' style={{ color: 'var(--text-primary)' }}>OasisSpace</span>. All rights reserved.
           </p>
           <p className='flex items-center gap-1 text-slate-400'>
             Made with <FaHeart className='text-red-500 animate-pulse mx-1' /> by
@@ -182,7 +182,8 @@ export default function Footer() {
       {showContact && (
         <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4' onClick={() => setShowContact(false)}>
           <div
-            className='bg-slate-800 rounded-3xl border border-slate-700 shadow-2xl w-full max-w-md p-6 relative animate-fadeIn'
+            className='rounded-3xl border shadow-2xl w-full max-w-md p-6 relative animate-fadeIn'
+            style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close */}
@@ -202,7 +203,8 @@ export default function Footer() {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required
-                className='bg-slate-900 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-500'
+                className='border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+                style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-primary)', color: 'var(--text-primary)' }}
               />
               <input
                 type='email'
@@ -210,7 +212,8 @@ export default function Footer() {
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 required
-                className='bg-slate-900 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-500'
+                className='border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
+                style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-primary)', color: 'var(--text-primary)' }}
               />
               <textarea
                 placeholder='Your Message...'
@@ -218,7 +221,8 @@ export default function Footer() {
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 required
-                className='bg-slate-900 border border-slate-700 text-white rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-500 resize-none'
+                className='border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none'
+                style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-primary)', color: 'var(--text-primary)' }}
               />
               <button
                 type='submit'

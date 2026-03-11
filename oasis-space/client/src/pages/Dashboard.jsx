@@ -146,7 +146,7 @@ export default function Dashboard() {
     if (!currentUser || currentUser.role !== 'admin') return <div className='p-10 text-center text-white'>Access Denied</div>;
 
     return (
-        <div className='min-h-screen bg-slate-900 text-slate-200 p-4 sm:p-6'>
+        <div className='min-h-screen p-4 sm:p-6' style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
 
             {/* HEADER & TABS */}
             <div className='max-w-7xl mx-auto mb-8'>
