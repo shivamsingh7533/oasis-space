@@ -4,6 +4,7 @@ import Listing from '../models/listing.model.js';
 import { errorHandler } from '../utils/error.js';
 import jwt from 'jsonwebtoken';
 import sendEmail from '../utils/sendEmail.js'; // ✅ Using Brevo API
+import { sendPushNotification } from '../utils/sendPush.js';
 
 // TEST ROUTE
 export const test = (req, res) => {
@@ -219,6 +220,13 @@ export const respondSellerViaEmail = async (req, res, next) => {
              </div>`
     );
 
+    // Web Push Notification to User
+    await sendPushNotification(user._id, {
+      title: `Seller Request ${action.toUpperCase()}`,
+      body: `Your request to become a seller has been ${action}.`,
+      icon: '/icon-192.png'
+    });
+
     res.send(`
             <div style="font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background-color: #f3f4f6;">
                 <h1 style="color: ${color};">Success! 🎉</h1>
@@ -253,6 +261,13 @@ export const verifySeller = async (req, res, next) => {
                <p>Hello ${updatedUser.username}, your request has been <strong>${status}</strong>.</p>
              </div>`
     );
+
+    // Web Push Notification to User
+    await sendPushNotification(updatedUser._id, {
+      title: `Seller Account ${status.toUpperCase()}`,
+      body: `Your seller account status is now: ${status}.`,
+      icon: '/icon-192.png'
+    });
 
     const { password, ...rest } = updatedUser._doc;
     res.status(200).json(rest);

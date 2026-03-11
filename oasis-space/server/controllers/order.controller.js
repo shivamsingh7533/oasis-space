@@ -6,6 +6,7 @@ import Notification from '../models/notification.model.js';
 import crypto from 'crypto';
 import { errorHandler } from '../utils/error.js';
 import sendEmail from '../utils/sendEmail.js'; 
+import { sendPushNotification } from '../utils/sendPush.js';
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
@@ -117,6 +118,13 @@ export const verifyPayment = async (req, res, next) => {
           const msg = `🚀 New Booking! ${buyer.username} booked "${listing.name}". Check your email for details.`;
           await Notification.create({ recipient: listing.userRef, sender: buyer._id, message: msg, relatedId: listingId });
 
+          // Web Push Notification to Landlord
+          await sendPushNotification(listing.userRef, {
+            title: '🎉 New Booking Received!',
+            body: `${buyer.username} just booked "${listing.name}". Check your email for contact details.`,
+            icon: '/icon-192.png'
+          });
+
           // Admin Notification
           const admins = await User.find({ role: 'admin' });
           for (const admin of admins) {
@@ -125,6 +133,12 @@ export const verifyPayment = async (req, res, next) => {
                 sender: buyer._id,
                 message: `👑 Admin Alert: ${buyer.username} booked ${listing.name}`,
                 relatedId: listingId
+              });
+              // Web Push Notification to Admin
+              await sendPushNotification(admin._id, {
+                title: '👑 Admin Alert: New Booking',
+                body: `${buyer.username} booked ${listing.name}.`,
+                icon: '/icon-192.png'
               });
           }
       }

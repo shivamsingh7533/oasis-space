@@ -12,6 +12,7 @@ import {
     FaHeart, FaUserShield, FaUserTag, FaPhone, FaEnvelope, FaLock,
     FaBoxOpen
 } from 'react-icons/fa';
+import PushNotificationManager from '../components/PushNotificationManager'; // ✅ Push Manager Integration
 
 export default function Profile({ onClose }) {
     const fileRef = useRef(null);
@@ -313,6 +314,9 @@ export default function Profile({ onClose }) {
 
                     {/* MAIN ACTIONS */}
                     <div className='bg-slate-800/50 rounded-2xl overflow-hidden border border-slate-700/50'>
+                        {/* ✅ Push Notification Toggle Button */}
+                        <PushNotificationManager />
+
                         {currentUser.role === 'admin' && (
                             <Link to="/dashboard" onClick={onClose} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
                                 <span className='text-purple-400'><FaUserShield /></span> <span className='text-sm font-medium'>Admin Dashboard</span>

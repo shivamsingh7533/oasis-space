@@ -12,8 +12,24 @@ import listingRouter from './routes/listing.route.js';
 import chatRouter from './routes/chat.route.js';
 import orderRouter from './routes/order.route.js';
 import notificationRouter from './routes/notification.route.js'; // ✅ NEW NOTIFICATION IMPORT
+import pushRouter from './routes/push.route.js'; // ✅ PUSH IMPORT
+import webpush from 'web-push';
 
 dotenv.config();
+
+// Initialize Web Push
+const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE_KEY;
+if (VAPID_PUBLIC && VAPID_PRIVATE) {
+  webpush.setVapidDetails(
+    'mailto:support@oasisspace.com',
+    VAPID_PUBLIC,
+    VAPID_PRIVATE
+  );
+  console.log('✅ Web Push VAPID keys configured!');
+} else {
+  console.warn('⚠️ Web Push VAPID keys missing in .env');
+}
 
 // Connect to MongoDB
 mongoose
@@ -82,6 +98,7 @@ app.use('/api/listing', globalLimiter, listingRouter);
 app.use('/api/chat', globalLimiter, chatRouter);
 app.use('/api/order', globalLimiter, orderRouter);
 app.use('/api/notification', globalLimiter, notificationRouter);
+app.use('/api/push', globalLimiter, pushRouter);
 
 // Health Check
 app.get('/ping', (req, res) => {

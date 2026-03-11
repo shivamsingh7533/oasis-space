@@ -61,6 +61,7 @@ export default defineConfig({
             },
           },
         ],
+        importScripts: ['custom-sw.js'], // ✅ Inject the push listener
       },
       // ⚠️ IMPORTANT: Manifest false kiya kyunki humne khud file banayi hai
       manifest: false
