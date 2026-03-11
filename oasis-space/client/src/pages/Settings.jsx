@@ -184,13 +184,21 @@ export default function Settings() {
                             onChange={(e) => dispatch(setCurrency(e.target.value))}
                             className="bg-slate-800 border border-slate-700 text-white text-sm rounded-xl focus:ring-blue-500 focus:border-blue-500 block w-full max-w-xs p-3 appearance-none outline-none"
                         >
-                            <option value="INR">🇮🇳 INR - Indian Rupee (Default)</option>
-                            <option value="USD">🇺🇸 USD - US Dollar</option>
-                            <option value="EUR">🇪🇺 EUR - Euro</option>
-                            <option value="GBP">🇬🇧 GBP - British Pound</option>
-                            <option value="AED">🇦🇪 AED - UAE Dirham</option>
-                            <option value="CAD">🇨🇦 CAD - Canadian Dollar</option>
-                            <option value="AUD">🇦🇺 AUD - Australian Dollar</option>
+                            <option value="INR">INR (₹) - Indian Rupee (Default)</option>
+                            <option value="USD">USD ($) - US Dollar</option>
+                            <option value="EUR">EUR (€) - Euro</option>
+                            <option value="GBP">GBP (£) - British Pound</option>
+                            <option value="AED">AED (د.إ) - UAE Dirham</option>
+                            <option value="CAD">CAD ($) - Canadian Dollar</option>
+                            <option value="AUD">AUD ($) - Australian Dollar</option>
+                            <option value="JPY">JPY (¥) - Japanese Yen</option>
+                            <option value="CNY">CNY (¥) - Chinese Yuan</option>
+                            <option value="CHF">CHF (Fr) - Swiss Franc</option>
+                            <option value="NZD">NZD ($) - New Zealand Dollar</option>
+                            <option value="ZAR">ZAR (R) - South African Rand</option>
+                            <option value="SGD">SGD ($) - Singapore Dollar</option>
+                            <option value="RUB">RUB (₽) - Russian Ruble</option>
+                            <option value="BRL">BRL (R$) - Brazilian Real</option>
                         </select>
                     </div>
                 </div>
@@ -244,7 +252,7 @@ export default function Settings() {
                                 }`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <span className={`text-xl ${tab.headerClass || (activeTab === tab.id ? 'text-blue-400' : 'text-slate-500')}`}>
+                                    <span className={`text-xl flex-shrink-0 transition-transform ${tab.headerClass || (activeTab === tab.id ? 'text-blue-400 scale-110' : 'text-slate-500')}`}>
                                         {tab.icon}
                                     </span>
                                     <div>
@@ -258,8 +266,17 @@ export default function Settings() {
                     </div>
 
                     {/* Desktop Content Area */}
-                    <div className="w-2/3 bg-slate-800/40 border border-slate-700/50 rounded-2xl p-8 shadow-xl min-h-[400px]">
-                        {tabs.find(t => t.id === activeTab)?.content}
+                    <div className="relative w-2/3 bg-slate-800/40 border border-slate-700/50 rounded-2xl p-8 shadow-xl min-h-[400px] overflow-hidden">
+                        
+                        {/* Huge Visual Watermark */}
+                        <div className="absolute -bottom-12 -right-12 text-[260px] text-slate-800/30 z-0 pointer-events-none transform -rotate-12 select-none">
+                            {tabs.find(t => t.id === activeTab)?.icon}
+                        </div>
+                        
+                        {/* Foreground Content */}
+                        <div className="relative z-10 h-full">
+                            {tabs.find(t => t.id === activeTab)?.content}
+                        </div>
                     </div>
                 </div>
 

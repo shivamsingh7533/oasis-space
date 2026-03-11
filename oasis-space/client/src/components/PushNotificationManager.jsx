@@ -101,17 +101,27 @@ export default function PushNotificationManager() {
     <button 
       onClick={isSubscribed ? unsubscribePush : subscribePush}
       disabled={loading}
-      className={`w-full p-3 hover:bg-slate-700 flex items-center justify-between transition border-b border-slate-700/50 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+      className={`w-full p-4 hover:bg-slate-700 flex items-center justify-between transition ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
     >
-      <div className='flex items-center gap-3'>
-        <span className={isSubscribed ? 'text-green-400' : 'text-slate-400'}>
+      <div className='flex items-center gap-4'>
+        <div className={`p-2.5 rounded-xl ${isSubscribed ? 'bg-green-500/20 text-green-400' : 'bg-slate-800 text-slate-400 border border-slate-600'}`}>
           {isSubscribed ? <FaBell /> : <FaBellSlash />}
-        </span>
-        <span className='text-sm font-medium'>
-          {isSubscribed ? 'Push Notifications Active' : 'Enable Push Notifications'}
-        </span>
+        </div>
+        <div className='flex flex-col text-left'>
+            <span className='font-bold text-white'>Mobile Alerts</span>
+            <span className='text-xs text-slate-400'>
+              {isSubscribed ? 'Active. Tap to disable.' : 'Off. Tap to receive alerts.'}
+            </span>
+        </div>
       </div>
-      {loading && <span className="text-xs text-slate-400 animate-pulse">Wait...</span>}
+      
+      {/* iOS Toggle Switch component */}
+      <div className="flex items-center gap-3">
+        {loading && <span className="text-xs font-bold text-slate-400 animate-pulse">Saving...</span>}
+        <div className={`relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-800 shadow-inner ${isSubscribed ? 'bg-green-500' : 'bg-slate-600'}`}>
+          <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300 shadow-md ${isSubscribed ? 'translate-x-8' : 'translate-x-1'}`} />
+        </div>
+      </div>
     </button>
   );
 }
