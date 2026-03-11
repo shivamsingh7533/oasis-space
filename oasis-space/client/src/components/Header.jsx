@@ -90,7 +90,7 @@ export default function Header() {
 
     return (
         <>
-            <header className='shadow-md sticky top-0 z-40' style={{ backgroundColor: 'var(--bg-primary)' }}>
+            <header className='shadow-md sticky top-0 z-40' style={{ backgroundColor: 'var(--bg-nav)' }}>
                 <div className='flex justify-between items-center max-w-6xl mx-auto p-3'>
 
                     {/* --- LOGO --- */}

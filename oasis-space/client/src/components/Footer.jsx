@@ -46,7 +46,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className='text-sm mt-auto border-t' style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-secondary)', borderColor: 'var(--border-primary)' }}>
+    <footer className='text-sm mt-auto border-t' style={{ backgroundColor: 'var(--bg-footer)', color: 'var(--text-secondary)', borderColor: 'var(--border-primary)' }}>
       {/* Top Section - 4 Columns */}
       <div className='max-w-6xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8'>
 

@@ -14,6 +14,8 @@
   --bg-input: #0f172a;         /* slate-900 */
   --bg-hover: #334155;         /* slate-700 */
   --bg-accent: rgba(37, 99, 235, 0.2); /* blue-600/20 */
+  --bg-nav: #0f172a;           /* same as primary in dark */
+  --bg-footer: #0f172a;        /* same as primary in dark */
 
   --text-primary: #e2e8f0;     /* slate-200 */
   --text-secondary: #94a3b8;   /* slate-400 */
@@ -39,6 +41,8 @@
   --bg-input: #eff6ff;         /* ice blue (blue-50) */
   --bg-hover: #eff6ff;         /* ice blue */
   --bg-accent: rgba(37, 99, 235, 0.1);
+  --bg-nav: #f8fafc;           /* subtle cool grey navbar */
+  --bg-footer: #f1f5f9;        /* slightly deeper grey footer */
 
   --text-primary: #1e293b;     /* navy (slate-800) */
   --text-secondary: #475569;   /* slate-600 */
