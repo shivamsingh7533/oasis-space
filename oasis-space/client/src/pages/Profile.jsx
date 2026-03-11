@@ -10,9 +10,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
     FaTimes, FaCamera, FaUserEdit, FaSignOutAlt, FaList,
     FaHeart, FaUserShield, FaUserTag, FaPhone, FaEnvelope, FaLock,
-    FaBoxOpen
+    FaBoxOpen, FaCog
 } from 'react-icons/fa';
-import PushNotificationManager from '../components/PushNotificationManager'; // ✅ Push Manager Integration
+
 
 export default function Profile({ onClose }) {
     const fileRef = useRef(null);
@@ -314,8 +314,10 @@ export default function Profile({ onClose }) {
 
                     {/* MAIN ACTIONS */}
                     <div className='bg-slate-800/50 rounded-2xl overflow-hidden border border-slate-700/50'>
-                        {/* ✅ Push Notification Toggle Button */}
-                        <PushNotificationManager />
+                        {/* ✅ Settings Link */}
+                        <Link to="/settings" onClick={onClose} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
+                            <span className='text-slate-400'><FaCog /></span> <span className='text-sm font-medium text-white'>Settings</span>
+                        </Link>
 
                         {currentUser.role === 'admin' && (
                             <Link to="/dashboard" onClick={onClose} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
@@ -392,13 +394,10 @@ export default function Profile({ onClose }) {
                         )}
                     </div>
 
-                    {/* DELETE & SIGNOUT */}
-                    <div className='flex flex-col gap-2 pt-2'>
-                        <button onClick={handleSignOut} className='w-full p-3 bg-slate-700 hover:bg-slate-600 rounded-xl flex items-center justify-center gap-2 transition text-white font-medium'>
+                    {/* SIGNOUT */}
+                    <div className='flex flex-col gap-2 pt-2 pb-4'>
+                        <button onClick={handleSignOut} className='w-full p-3 bg-red-600/20 hover:bg-red-600/40 border border-red-500/30 rounded-xl flex items-center justify-center gap-2 transition text-red-500 font-bold'>
                             <FaSignOutAlt /> Sign Out
-                        </button>
-                        <button onClick={handleDeleteUser} className='w-full p-2 text-red-400 hover:text-red-300 text-xs text-center hover:underline'>
-                            Delete Account permanently
                         </button>
                     </div>
 

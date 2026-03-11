@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useEffect, useState } from 'react';
-import { FaBars, FaTimes, FaUserShield, FaHeart, FaChartLine, FaBell, FaTrash } from 'react-icons/fa'; // ✅ Added FaTrash
+import { FaBars, FaTimes, FaUserShield, FaHeart, FaChartLine, FaBell, FaTrash, FaCog } from 'react-icons/fa'; // ✅ Added FaCog
+
 import Profile from '../pages/Profile';
 
 export default function Header() {
@@ -203,6 +204,13 @@ export default function Header() {
                                     </button>
                                 </li>
 
+                                {/* SETTINGS GEAR */}
+                                <li>
+                                    <Link to='/settings' className="relative cursor-pointer focus:outline-none block mt-1" title="Settings">
+                                        <FaCog className="text-xl text-slate-300 hover:text-white transition" />
+                                    </Link>
+                                </li>
+
                                 {/* Profile Trigger */}
                                 <li>
                                     <button aria-label="User Profile" className='relative cursor-pointer focus:outline-none' onClick={() => setShowProfile(true)}>
@@ -323,7 +331,12 @@ export default function Header() {
                                 )}
                             </div>
 
-                            <Link to='/create-listing' className='text-slate-300 hover:text-white text-lg font-medium p-2 hover:bg-slate-700 rounded transition mt-2' onClick={toggleSidebar}>
+                            {/* ✅ Mobile Settings Link */}
+                            <Link to='/settings' className='text-slate-300 hover:text-white text-lg font-medium p-2 hover:bg-slate-700 rounded transition flex items-center gap-2 mt-2' onClick={toggleSidebar}>
+                                <FaCog /> Settings
+                            </Link>
+
+                            <Link to='/create-listing' className='text-slate-300 hover:text-white text-lg font-medium p-2 hover:bg-slate-700 rounded transition' onClick={toggleSidebar}>
                                 Create Listing
                             </Link>
 

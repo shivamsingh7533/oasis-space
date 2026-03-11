@@ -24,6 +24,7 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const OrderHistory = lazy(() => import('./pages/OrderHistory'));
+const Settings = lazy(() => import('./pages/Settings')); // ✅ Settings Page
 
 // Footer Pages
 const Privacy = lazy(() => import('./pages/Privacy'));
@@ -76,6 +77,9 @@ export default function App() {
 
                 {/* Order History */}
                 <Route path='/order-history' element={<OrderHistory />} />
+
+                {/* Settings */}
+                <Route path='/settings' element={<Settings />} />
               </Route>
             </Routes>
           </Suspense>
