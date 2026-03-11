@@ -10,7 +10,7 @@ export default function Terms() {
             <p className='text-slate-400'>Please read these terms carefully before using OasisSpace.</p>
         </div>
 
-        <div className='bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-700 space-y-6 leading-relaxed'>
+        <div className='p-8 rounded-2xl shadow-xl border space-y-6 leading-relaxed' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
             
             <section>
                 <h2 className='text-xl font-bold text-green-400 mb-3'>1. Acceptance of Terms</h2>

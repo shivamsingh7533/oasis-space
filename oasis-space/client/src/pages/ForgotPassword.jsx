@@ -89,7 +89,7 @@ export default function ForgotPassword() {
   return (
     <div className='min-h-screen flex items-center justify-center p-3' style={{ backgroundColor: 'var(--bg-primary)' }}>
       
-      <div className='bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-md border border-slate-700'>
+      <div className='p-8 rounded-xl shadow-2xl w-full max-w-md border' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
         
         <h1 className='text-3xl text-center font-bold text-slate-100 mb-4'>
             {step === 1 ? 'Forgot Password 🔒' : 'Reset Password 🔑'}

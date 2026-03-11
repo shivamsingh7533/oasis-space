@@ -179,12 +179,12 @@ export default function Dashboard() {
                                     <p className='text-4xl font-bold text-white mt-2'>₹ {estimatedRevenue.toLocaleString('en-IN')}</p>
                                 </div>
                                 {/* ✅ RESTORED CARD: Inventory Value */}
-                                <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl'>
+                                <div className='p-6 rounded-2xl border shadow-xl' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
                                     <h3 className='text-slate-400 text-sm font-bold uppercase'>Inventory Value</h3>
                                     <p className='text-3xl font-bold text-white mt-2'>₹ {totalSaleValue.toLocaleString('en-IN')}</p>
                                 </div>
                                 {/* ✅ RESTORED CARD: Rent Volume */}
-                                <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl'>
+                                <div className='p-6 rounded-2xl border shadow-xl' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
                                     <h3 className='text-slate-400 text-sm font-bold uppercase'>Rent Volume/Mo</h3>
                                     <p className='text-3xl font-bold text-white mt-2'>₹ {totalRentVolume.toLocaleString('en-IN')}</p>
                                 </div>
@@ -192,16 +192,16 @@ export default function Dashboard() {
 
                             {/* Status Stats Row (NEW) */}
                             <div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-                                <div className='bg-slate-800 p-4 rounded-xl border border-slate-700 text-center'>
+                                <div className='p-4 rounded-xl border text-center' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
                                     <p className='text-2xl font-bold text-red-400'>{soldCount}</p><span className='text-xs uppercase text-red-400'>Sold</span>
                                 </div>
-                                <div className='bg-slate-800 p-4 rounded-xl border border-slate-700 text-center'>
+                                <div className='p-4 rounded-xl border text-center' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
                                     <p className='text-2xl font-bold text-orange-400'>{rentedCount}</p><span className='text-xs uppercase text-orange-400'>Rented</span>
                                 </div>
-                                <div className='bg-slate-800 p-4 rounded-xl border border-slate-700 text-center'>
+                                <div className='p-4 rounded-xl border text-center' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
                                     <p className='text-2xl font-bold text-yellow-400'>{users.filter(u => u.sellerStatus === 'pending').length}</p><span className='text-xs uppercase text-yellow-400'>Pending Sellers</span>
                                 </div>
-                                <div className='bg-slate-800 p-4 rounded-xl border border-slate-700 text-center'>
+                                <div className='p-4 rounded-xl border text-center' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
                                     <p className='text-2xl font-bold text-green-400'>{listings.filter(l => l.offer).length}</p><span className='text-xs uppercase text-green-400'>Active Offers</span>
                                 </div>
                             </div>
@@ -209,7 +209,7 @@ export default function Dashboard() {
                             {/* --- CHARTS SECTION --- */}
                             <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
                                 {/* Pie Chart: Rent vs Sale */}
-                                <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl'>
+                                <div className='p-6 rounded-2xl border shadow-xl' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
                                     <h3 className='text-white font-bold text-lg mb-4 flex items-center gap-2'>
                                         <FaChartLine className='text-indigo-400' /> Property Distribution
                                     </h3>
@@ -239,7 +239,7 @@ export default function Dashboard() {
                                 </div>
 
                                 {/* Bar Chart: Status Breakdown */}
-                                <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl'>
+                                <div className='p-6 rounded-2xl border shadow-xl' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
                                     <h3 className='text-white font-bold text-lg mb-4 flex items-center gap-2'>
                                         <FaBuilding className='text-emerald-400' /> Status Breakdown
                                     </h3>

@@ -51,7 +51,7 @@ export default function ListingItem({ listing }) {
   };
 
   return (
-    <div className='bg-slate-800 border border-slate-700 shadow-md hover:shadow-2xl transition-all overflow-hidden rounded-2xl w-full sm:w-[300px] group relative'>
+    <div className='shadow-md hover:shadow-2xl transition-all overflow-hidden rounded-2xl w-full sm:w-[300px] group relative border' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
       {/* 🧠 ACCESSIBILITY FIX: The button is no longer inside the Link */}
 
       {/* 1. Global Link covering the entire card */}
@@ -62,11 +62,11 @@ export default function ListingItem({ listing }) {
       />
 
       {/* IMAGE SECTION (Enhanced) */}
-      <div className='relative overflow-hidden h-[180px] bg-slate-700 rounded-t-2xl z-20'>
+      <div className='relative overflow-hidden h-[180px] rounded-t-2xl z-20' style={{ backgroundColor: 'var(--bg-tertiary)' }}>
 
         {/* 1. BLUR SKELETON (Jab tak image load na ho) */}
         {!imageLoaded && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-700 animate-pulse z-0">
+          <div className="absolute inset-0 flex items-center justify-center animate-pulse z-0" style={{ backgroundColor: 'var(--bg-tertiary)' }}>
             <FaImage className="text-slate-600 text-4xl" />
           </div>
         )}
@@ -87,7 +87,7 @@ export default function ListingItem({ listing }) {
         />
 
         {/* Performance Fix: Removed backdrop-blur-sm to eradicate mobile scroll lagging */}
-        <div className='absolute top-3 left-3 bg-slate-900/90 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider border border-slate-600 shadow-sm z-20'>
+        <div className='absolute top-3 left-3 bg-slate-900/90 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-sm z-20' style={{ borderColor: 'var(--border-primary)' }}>
           {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
         </div>
 
@@ -114,36 +114,36 @@ export default function ListingItem({ listing }) {
       {/* CONTENT SECTION */}
       <div className='p-4 flex flex-col gap-2 w-full z-0 relative pointer-events-none'>
 
-        <h3 className='truncate text-lg font-bold text-slate-100 group-hover:text-blue-400 transition-colors'>
+        <h3 className='truncate text-lg font-bold group-hover:text-blue-400 transition-colors' style={{ color: 'var(--text-heading)' }}>
           {listing.name}
         </h3>
 
         <div className='flex items-center gap-1.5'>
           <MdLocationOn className='h-4 w-4 text-green-500' />
-          <p className='text-xs text-slate-400 truncate w-full font-medium'>
+          <p className='text-xs truncate w-full font-medium' style={{ color: 'var(--text-secondary)' }}>
             {listing.address}
           </p>
         </div>
 
-        <p className='text-xs text-slate-400 line-clamp-2 leading-relaxed font-medium'>
+        <p className='text-xs line-clamp-2 leading-relaxed font-medium' style={{ color: 'var(--text-secondary)' }}>
           {listing.description}
         </p>
 
         <div className='flex items-center justify-between mt-1'>
-          <p className='text-white font-bold text-lg'>
+          <p className='font-bold text-lg' style={{ color: 'var(--text-heading)' }}>
             {formatPrice(listing.offer ? listing.discountPrice : listing.regularPrice, currency, rates)}
-            {listing.type === 'rent' && <span className='text-xs font-normal text-slate-400'> / mo</span>}
+            {listing.type === 'rent' && <span className='text-xs font-normal' style={{ color: 'var(--text-muted)' }}> / mo</span>}
           </p>
         </div>
 
-        <div className='flex gap-4 text-slate-400 text-xs mt-1 border-t border-slate-700/50 pt-3'>
+        <div className='flex gap-4 text-xs mt-1 border-t pt-3' style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-secondary)' }}>
           <div className='flex items-center gap-1.5'>
             <FaBed className="text-blue-500" />
-            <span className="font-bold text-slate-300">{listing.bedrooms} Beds</span>
+            <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{listing.bedrooms} Beds</span>
           </div>
           <div className='flex items-center gap-1.5'>
             <FaBath className="text-blue-500" />
-            <span className="font-bold text-slate-300">{listing.bathrooms} Baths</span>
+            <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{listing.bathrooms} Baths</span>
           </div>
         </div>
 

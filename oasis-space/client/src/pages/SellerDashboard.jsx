@@ -112,7 +112,7 @@ export default function SellerDashboard() {
       </div>
 
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10'>
-        <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg'>
+        <div className='p-6 rounded-2xl border shadow-lg' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
           <div className='flex justify-between items-start'>
             <div className='p-3 bg-green-500/10 text-green-400 rounded-lg'><FaRupeeSign className='text-xl' /></div>
             <span className='text-xs font-bold text-green-400 bg-green-400/10 px-2 py-1 rounded'>Finance</span>
@@ -121,7 +121,7 @@ export default function SellerDashboard() {
           <h3 className='text-3xl font-bold mt-1 text-white'>₹{(stats.totalRevenue || 0).toLocaleString()}</h3>
         </div>
 
-        <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg'>
+        <div className='p-6 rounded-2xl border shadow-lg' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
           <div className='p-3 bg-blue-500/10 text-blue-400 rounded-lg w-fit'><FaChartPie className='text-xl' /></div>
           <p className='text-slate-400 text-sm mt-4 font-medium'>Deals Closed</p>
           <div className='flex items-baseline gap-2 mt-1'>
@@ -130,13 +130,13 @@ export default function SellerDashboard() {
           </div>
         </div>
 
-        <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg'>
+        <div className='p-6 rounded-2xl border shadow-lg' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
           <div className='p-3 bg-orange-500/10 text-orange-400 rounded-lg w-fit'><FaHome className='text-xl' /></div>
           <p className='text-slate-400 text-sm mt-4 font-medium'>Active Inventory</p>
           <h3 className='text-3xl font-bold mt-1'>{stats.activeListings} <span className='text-sm text-slate-500 font-normal'>/ {stats.totalListings} Total</span></h3>
         </div>
 
-        <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg'>
+        <div className='p-6 rounded-2xl border shadow-lg' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
           <div className='p-3 bg-purple-500/10 text-purple-400 rounded-lg w-fit'><FaEye className='text-xl' /></div>
           <p className='text-slate-400 text-sm mt-4 font-medium'>Total Property Views</p>
           <h3 className='text-3xl font-bold mt-1'>{stats.totalViews.toLocaleString()}</h3>
@@ -146,7 +146,7 @@ export default function SellerDashboard() {
       {/* --- CHARTS SECTION --- */}
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10'>
         {/* Pie Chart: Rent vs Sale */}
-        <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl'>
+        <div className='p-6 rounded-2xl border shadow-xl' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
           <h3 className='text-white font-bold text-lg mb-4 flex items-center gap-2'>
             <FaChartLine className='text-blue-400' /> Property Distribution
           </h3>
@@ -176,7 +176,7 @@ export default function SellerDashboard() {
         </div>
 
         {/* Bar Chart: Status Breakdown */}
-        <div className='bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl'>
+        <div className='p-6 rounded-2xl border shadow-xl' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
           <h3 className='text-white font-bold text-lg mb-4 flex items-center gap-2'>
             <FaBuilding className='text-emerald-400' /> Status Breakdown
           </h3>

@@ -195,7 +195,7 @@ export default function CreateListing() {
 
   return (
     <div className='min-h-screen flex items-center justify-center p-4 py-10' style={{ backgroundColor: 'var(--bg-primary)' }}>
-      <div className='max-w-4xl w-full bg-slate-800 rounded-lg shadow-2xl p-8 border border-slate-700'>
+      <div className='max-w-4xl w-full rounded-lg shadow-2xl p-8 border' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
 
         <h1 className='text-3xl font-bold text-center text-white mb-8'>Create a Listing</h1>
 

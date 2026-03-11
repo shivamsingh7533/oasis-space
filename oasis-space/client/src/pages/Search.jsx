@@ -124,32 +124,34 @@ export default function Search() {
 
       {/* --- SIDEBAR FILTERS --- */}
       <div
-        className={`fixed inset-0 z-40 bg-slate-800 md:static md:z-auto md:min-h-screen md:w-80 border-r border-slate-700 shadow-xl p-6 overflow-y-auto transition-transform transform ${showFilters ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-0 z-40 md:static md:z-auto md:min-h-screen md:w-80 border-r shadow-xl p-6 overflow-y-auto transition-transform transform ${showFilters ? 'translate-x-0' : '-translate-x-full'
           } md:translate-x-0`}
+        style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}
       >
         <h1 className="sr-only">Search Properties</h1>
         <div className="flex justify-between items-center md:hidden mb-6 border-b border-slate-600 pb-4">
-          <h2 className='text-xl font-bold text-slate-200'>Filters</h2>
-          <button aria-label="Close Filters" onClick={() => setShowFilters(false)} className='text-slate-400 hover:text-white text-2xl font-bold'>&times;</button>
+          <h2 className='text-xl font-bold' style={{ color: 'var(--text-primary)' }}>Filters</h2>
+          <button aria-label="Close Filters" onClick={() => setShowFilters(false)} className='hover:opacity-80 text-2xl font-bold' style={{ color: 'var(--text-secondary)' }}>&times;</button>
         </div>
 
         <form onSubmit={handleSubmit} className='flex flex-col gap-8'>
           <div className='flex flex-col gap-2'>
-            <label htmlFor='searchTerm' className='whitespace-nowrap font-semibold text-slate-300 flex items-center gap-2'>
+            <label htmlFor='searchTerm' className='whitespace-nowrap font-semibold flex items-center gap-2' style={{ color: 'var(--text-primary)' }}>
               <FaSearchLocation className="text-indigo-400" /> Search Location / Property
             </label>
             <input
               type='text'
               id='searchTerm'
               placeholder='e.g. "Villa" or "Mumbai"'
-              className='border border-slate-600 rounded-lg p-3 w-full bg-slate-900 text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder:text-slate-500'
+              className='border rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500'
+              style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-primary)', color: 'var(--text-primary)' }}
               value={sidebardata.searchTerm}
               onChange={handleChange}
             />
           </div>
 
           <div className='flex flex-col gap-2'>
-            <span className='font-semibold text-slate-300'>Type</span>
+            <span className='font-semibold' style={{ color: 'var(--text-primary)' }}>Type</span>
             <div className='flex flex-wrap gap-4'>
               <div className='flex gap-2 items-center'>
                 <input type='checkbox' id='all' className='w-5 h-5 accent-indigo-500 bg-slate-700' onChange={handleChange} checked={sidebardata.type === 'all'} />
@@ -167,7 +169,7 @@ export default function Search() {
           </div>
 
           <div className='flex flex-col gap-2'>
-            <span className='font-semibold text-slate-300'>Amenities</span>
+            <span className='font-semibold' style={{ color: 'var(--text-primary)' }}>Amenities</span>
             <div className='flex flex-wrap gap-4'>
               <div className='flex gap-2 items-center'>
                 <input type='checkbox' id='parking' className='w-5 h-5 accent-indigo-500 bg-slate-700' onChange={handleChange} checked={sidebardata.parking} />
@@ -192,13 +194,14 @@ export default function Search() {
 
       {/* --- RESULTS SECTION --- */}
       <div className='flex-1 w-full'>
-        <div className='bg-slate-800 shadow-md p-5 sticky top-0 z-30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-700'>
+        <div className='shadow-md p-5 sticky top-0 z-30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
 
           <div className="flex items-center gap-4 w-full sm:w-auto justify-between">
-            <h2 className='text-2xl font-bold text-slate-200'>Listing Results</h2>
+            <h2 className='text-2xl font-bold' style={{ color: 'var(--text-heading)' }}>Listing Results</h2>
             <button
               onClick={() => setShowFilters(true)}
-              className='md:hidden flex items-center gap-2 bg-slate-700 text-slate-200 px-4 py-2 rounded-full font-medium shadow-sm border border-slate-600 hover:bg-slate-600'
+              className='md:hidden flex items-center gap-2 px-4 py-2 rounded-full font-medium shadow-sm border hover:opacity-80'
+              style={{ backgroundColor: 'var(--bg-tertiary)', color: 'var(--text-primary)', borderColor: 'var(--border-primary)' }}
             >
               <FaFilter className='text-sm' /> Filters
             </button>
@@ -211,8 +214,9 @@ export default function Search() {
               onClick={() => handleSortChange('created_at', 'desc')}
               className={`px-4 py-1.5 rounded-full transition-all border ${sidebardata.sort === 'created_at'
                 ? 'bg-indigo-600 text-white border-indigo-500'
-                : 'bg-slate-900 text-slate-300 border-slate-600 hover:bg-slate-700'
+                : 'border hover:opacity-80'
                 }`}
+              style={!(sidebardata.sort === 'created_at' || (sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc') || (sidebardata.sort === 'regularPrice' && sidebardata.order === 'desc')) ? {} : (sidebardata.sort === 'created_at' ? {} : (sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc' ? {} : {}))}
             >
               Latest
             </button>
@@ -221,8 +225,9 @@ export default function Search() {
               onClick={() => handleSortChange('regularPrice', 'asc')}
               className={`px-4 py-1.5 rounded-full transition-all border ${sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc'
                 ? 'bg-indigo-600 text-white border-indigo-500'
-                : 'bg-slate-900 text-slate-300 border-slate-600 hover:bg-slate-700'
+                : 'border hover:opacity-80'
                 }`}
+              style={!(sidebardata.sort === 'created_at' || (sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc') || (sidebardata.sort === 'regularPrice' && sidebardata.order === 'desc')) ? {} : (sidebardata.sort === 'created_at' ? {} : (sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc' ? {} : {}))}
             >
               Price: Low to High
             </button>
@@ -231,8 +236,9 @@ export default function Search() {
               onClick={() => handleSortChange('regularPrice', 'desc')}
               className={`px-4 py-1.5 rounded-full transition-all border ${sidebardata.sort === 'regularPrice' && sidebardata.order === 'desc'
                 ? 'bg-indigo-600 text-white border-indigo-500'
-                : 'bg-slate-900 text-slate-300 border-slate-600 hover:bg-slate-700'
+                : 'border hover:opacity-80'
                 }`}
+              style={!(sidebardata.sort === 'created_at' || (sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc') || (sidebardata.sort === 'regularPrice' && sidebardata.order === 'desc')) ? {} : (sidebardata.sort === 'created_at' ? {} : (sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc' ? {} : {}))}
             >
               Price: High to Low
             </button>

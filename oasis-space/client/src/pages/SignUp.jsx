@@ -124,7 +124,7 @@ export default function SignUp() {
         />
       )}
 
-      <div className='bg-slate-800 p-5 rounded-xl shadow-2xl w-full max-w-sm border border-slate-700 max-h-[90vh] overflow-y-auto custom-scrollbar'>
+      <div className='p-5 rounded-xl shadow-2xl w-full max-w-sm border max-h-[90vh] overflow-y-auto custom-scrollbar' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
         
         <h1 className='text-2xl text-center font-bold mb-4 text-slate-100 drop-shadow-md'>
           Sign Up

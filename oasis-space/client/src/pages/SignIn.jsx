@@ -55,7 +55,7 @@ export default function SignIn() {
   return (
     <div className='min-h-screen flex items-center justify-center p-3' style={{ backgroundColor: 'var(--bg-primary)' }}>
       
-      <div className='bg-slate-800 p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-sm border border-slate-700'>
+      <div className='p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-sm border' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
         
         <h1 className='text-2xl text-center font-bold my-4 text-slate-100 drop-shadow-md'>
           Sign In
