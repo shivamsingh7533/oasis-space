@@ -5,8 +5,7 @@ import { FaBell, FaShieldAlt, FaTrash, FaDesktop, FaChevronRight, FaChevronDown 
 import PushNotificationManager from '../components/PushNotificationManager';
 import { 
     updateUserStart, updateUserSuccess, updateUserFailure, 
-    deleteUserFailure, deleteUserStart, deleteUserSuccess,
-    signOutUserStart 
+    deleteUserFailure, deleteUserStart, deleteUserSuccess
 } from '../redux/user/userSlice';
 import { setTheme } from '../redux/theme/themeSlice';
 import { setCurrency } from '../redux/currency/currencySlice';
@@ -149,7 +148,7 @@ export default function Settings() {
             id: 'preferences',
             icon: <FaDesktop />,
             title: 'Preferences',
-            subtitle: 'App appearance and region (Coming Soon)',
+            subtitle: 'App appearance and regional currency',
             content: (
                 <div className="space-y-8">
                     {/* Theme Selection */}
@@ -234,7 +233,7 @@ export default function Settings() {
     return (
         <div className="min-h-[85vh] py-8 px-4 sm:px-6 lg:px-8 animate-in fade-in duration-500" style={{ backgroundColor: 'var(--bg-primary)' }}>
             <div className="max-w-6xl mx-auto">
-                <h1 className="text-3xl font-extrabold text-white mb-2">Settings</h1>
+                <h1 className="text-3xl font-extrabold mb-2" style={{ color: 'var(--text-heading)' }}>Settings</h1>
                 <p className="text-slate-400 mb-8">Manage your account preferences and configurations.</p>
 
                 {/* --- DESKTOP LAYOUT (Sidebar + Content) --- */}

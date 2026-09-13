@@ -3,9 +3,11 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { FaTrashAlt, FaMapMarkerAlt, FaBed, FaBath } from 'react-icons/fa';
 import { updateUserSuccess } from '../redux/user/userSlice'; 
+import { formatPrice } from '../utils/currencyFormatter';
 
 export default function SavedListings() {
   const { currentUser } = useSelector((state) => state.user);
+  const { currency, rates } = useSelector((state) => state.currency);
   const dispatch = useDispatch();
   const [savedListings, setSavedListings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -144,7 +146,7 @@ export default function SavedListings() {
 
                     <div className='flex justify-between items-center mt-auto pt-4 border-t border-slate-700'>
                         <p className='text-white font-bold text-lg'>
-                            ₹{listing.offer ? listing.discountPrice.toLocaleString('en-IN') : listing.regularPrice.toLocaleString('en-IN')}
+                            {formatPrice(listing.offer ? listing.discountPrice : listing.regularPrice, currency, rates)}
                             {listing.type === 'rent' && <span className='text-xs font-normal text-slate-400 ml-1'>/ month</span>}
                         </p>
                         

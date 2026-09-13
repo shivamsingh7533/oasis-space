@@ -20,8 +20,15 @@ export const verifyToken = (req, res, next) => {
         return next(errorHandler(500, 'Server Config Error'));
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET.trim(), (err, user) => {
       if (err) return next(errorHandler(403, 'Forbidden: Invalid Token'));
+      if (!user || !user.id) return next(errorHandler(403, 'Forbidden: Invalid Token'));
+
+      // Session tokens only — reject seller magic-link tokens (`purpose: 'seller'`)
+      // from being used as authenticated API sessions.
+      if (user.purpose && user.purpose !== 'session') {
+        return next(errorHandler(403, 'Forbidden: Invalid Token'));
+      }
 
       req.user = user;
       next();

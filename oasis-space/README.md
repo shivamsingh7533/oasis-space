@@ -51,8 +51,9 @@ Whether you're a property seeker, seller, or admin, OasisSpace provides an intui
 - ✍️ **AI Description Generator** — Auto-generate SEO-friendly property descriptions using Google Gemini
 
 ### 💳 **Payment Integration**
-- 💰 **Razorpay** payment gateway for secure bookings
-- 📜 Complete order history with transaction tracking
+- ₹1,100 listing fee for **Rent** properties, ₹5,100 for **Sale** (paid via Razorpay)
+- Listings are created as drafts and are only published to the marketplace once the fee is paid
+- 📜 Complete order history with transaction tracking + real admin revenue stats
 - 🧮 **EMI/Mortgage Calculator** — Estimate monthly payments instantly
 
 ### 🔐 **Authentication & Security**
@@ -64,7 +65,7 @@ Whether you're a property seeker, seller, or admin, OasisSpace provides an intui
 ### 👥 **Role-Based Access Control**
 | Role | Capabilities |
 |------|-------------|
-| **User** | Browse, save listings, contact landlords, make payments |
+| **User** | Browse, save listings, contact landlords, pay listing fees |
 | **Seller** | List properties for rent (sale requires approval) |
 | **Approved Seller** | List properties for both sale and rent |
 | **Admin** | Manage users, approve sellers, feature listings, view analytics |
@@ -197,7 +198,7 @@ cd server
 npm install
 ```
 
-Create a `.env` file in the `server` folder:
+Create a `.env` file in the `server` folder (see `server/.env.example`):
 ```env
 # Database
 MONGO=mongodb+srv://your-connection-string
@@ -208,9 +209,12 @@ JWT_SECRET=your_jwt_secret_key
 # Environment
 NODE_ENV=development
 CLIENT_URL=http://localhost:5173
+SERVER_URL=http://localhost:3000
+PORT=3000
 
 # Email (Brevo)
 BREVO_API_KEY=your_brevo_api_key
+SENDER_EMAIL=admin@oasisspace.example
 
 # Razorpay
 RAZORPAY_KEY_ID=your_razorpay_key_id
@@ -232,7 +236,7 @@ cd ../client
 npm install
 ```
 
-Create a `.env` file in the `client` folder:
+Create a `.env` file in the `client` folder (see `client/.env.example`):
 ```env
 # API
 VITE_API_URL=http://localhost:3000
@@ -272,39 +276,47 @@ Navigate to `http://localhost:5173`
 | POST | `/api/auth/verify-email` | Verify OTP |
 | POST | `/api/auth/signin` | User login |
 | POST | `/api/auth/google` | Google OAuth |
-| POST | `/api/auth/forgot-password` | Password reset request |
-| POST | `/api/auth/reset-password/:id/:token` | Reset password |
+| POST | `/api/auth/forgot-password` | Request OTP for password reset |
+| POST | `/api/auth/reset-password` | Reset password with OTP |
 | GET | `/api/auth/signout` | Logout |
 
 ### Listings
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/listing/get` | Get listings with filters |
+| GET | `/api/listing/get` | Get listings with filters (`{ listings, total, hasMore }`) |
 | GET | `/api/listing/get/:id` | Get single listing |
-| POST | `/api/listing/create` | Create listing |
-| POST | `/api/listing/update/:id` | Update listing |
-| DELETE | `/api/listing/delete/:id` | Delete listing |
-| POST | `/api/listing/feature/:id` | Toggle featured |
-| POST | `/api/listing/ai-description` | Generate AI description |
+| POST | `/api/listing/create` | Create draft listing (status `pending`) |
+| POST | `/api/listing/update/:id` | Update listing (allowlisted fields) |
+| POST | `/api/listing/delete/:id` | Delete listing |
+| POST | `/api/listing/feature/:id` | Toggle featured (admin) |
+| POST | `/api/listing/status/:id` | Mark sold/rented (owner/admin); `pending` guarded by fee |
+| GET | `/api/listing/admin-listings` | All listings incl. drafts (admin) |
+| POST | `/api/listing/generate-ai` | Generate AI description |
 
 ### Users
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/user/:id` | Get user info |
+| GET | `/api/user/:id` | Get public user info |
 | POST | `/api/user/update/:id` | Update profile |
 | DELETE | `/api/user/delete/:id` | Delete account |
 | GET | `/api/user/listings/:id` | Get user's listings |
 | POST | `/api/user/save/:id` | Save/unsave listing |
 | GET | `/api/user/saved` | Get saved listings |
-| POST | `/api/user/request-seller` | Request seller status |
-| GET | `/api/user/seller-dashboard` | Seller analytics |
+| GET | `/api/user/dashboard/:id` | Seller dashboard stats |
+| POST | `/api/user/request-seller/:id` | Request seller status |
+| POST | `/api/user/verify-seller/:id` | Approve/reject seller (admin) |
+| POST | `/api/user/contact` | Contact landlord from listing page |
+| POST | `/api/user/contact-us` | Contact form (spam-limited) |
 
 ### Orders
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/order/create` | Create Razorpay order |
-| POST | `/api/order/verify` | Verify payment |
-| GET | `/api/order/user/:userId` | Get user orders |
+| POST | `/api/order/create` | Create Razorpay order for listing fee |
+| POST | `/api/order/verify` | Verify payment + publish listing |
+| GET | `/api/order/history` | Get user's order history |
+| GET | `/api/order/admin` | Admin revenue stats (fees + bookings) |
+| POST | `/api/order/cancel/:id` | Cancel a booking (fee orders rejected) |
+| DELETE | `/api/order/delete/:id` | Remove an order from history |
 
 ### Chat
 | Method | Endpoint | Description |

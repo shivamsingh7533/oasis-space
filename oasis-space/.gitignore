@@ -1,2 +1,12 @@
 node_modules/
+
+# Environment files — never commit secrets
+.env
+.env.*
+!.env.example
 server/.env
+client/.env
+
+# Build outputs
+client/dist/
+client/dev-dist/

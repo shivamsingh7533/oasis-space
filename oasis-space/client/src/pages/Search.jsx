@@ -47,12 +47,16 @@ export default function Search() {
         const res = await fetch(`/api/listing/get?${searchQuery}`);
         const data = await res.json();
 
-        if (data.length > 8) {
-          setShowMore(true);
-        } else {
+        if (data.success === false) {
+          setLoading(false);
+          setListings([]);
           setShowMore(false);
+          return;
         }
-        setListings(data);
+
+        const resultListings = Array.isArray(data) ? data : data.listings || [];
+        setShowMore(Array.isArray(data) ? resultListings.length > 8 : Boolean(data.hasMore));
+        setListings(resultListings);
         setLoading(false);
       } catch (error) {
         console.log(error);
@@ -105,10 +109,11 @@ export default function Search() {
     const searchQuery = urlParams.toString();
     const res = await fetch(`/api/listing/get?${searchQuery}`);
     const data = await res.json();
-    if (data.length < 9) {
+    const resultListings = Array.isArray(data) ? data : data.listings || [];
+    if (resultListings.length < 9) {
       setShowMore(false);
     }
-    setListings([...listings, ...data]);
+    setListings([...listings, ...resultListings]);
   };
 
   const handleSortChange = (sort, order) => {
@@ -216,7 +221,6 @@ export default function Search() {
                 ? 'bg-indigo-600 text-white border-indigo-500'
                 : 'border hover:opacity-80'
                 }`}
-              style={!(sidebardata.sort === 'created_at' || (sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc') || (sidebardata.sort === 'regularPrice' && sidebardata.order === 'desc')) ? {} : (sidebardata.sort === 'created_at' ? {} : (sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc' ? {} : {}))}
             >
               Latest
             </button>
@@ -227,7 +231,6 @@ export default function Search() {
                 ? 'bg-indigo-600 text-white border-indigo-500'
                 : 'border hover:opacity-80'
                 }`}
-              style={!(sidebardata.sort === 'created_at' || (sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc') || (sidebardata.sort === 'regularPrice' && sidebardata.order === 'desc')) ? {} : (sidebardata.sort === 'created_at' ? {} : (sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc' ? {} : {}))}
             >
               Price: Low to High
             </button>
@@ -238,7 +241,6 @@ export default function Search() {
                 ? 'bg-indigo-600 text-white border-indigo-500'
                 : 'border hover:opacity-80'
                 }`}
-              style={!(sidebardata.sort === 'created_at' || (sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc') || (sidebardata.sort === 'regularPrice' && sidebardata.order === 'desc')) ? {} : (sidebardata.sort === 'created_at' ? {} : (sidebardata.sort === 'regularPrice' && sidebardata.order === 'asc' ? {} : {}))}
             >
               Price: High to Low
             </button>

@@ -1,46 +1,60 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import {
   FaHome, FaEye, FaCheckCircle, FaEdit,
-  FaTrash, FaPlus, FaTag, FaRupeeSign, FaStar, FaRegStar, FaChartPie, FaChartLine, FaBuilding, FaClock
+  FaTrash, FaPlus, FaTag, FaRupeeSign, FaStar, FaRegStar, FaChartPie, FaChartLine, FaBuilding, FaClock, FaCreditCard
 } from 'react-icons/fa';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { formatPrice } from '../utils/currencyFormatter';
+import RazorpayBtn from '../components/RazorpayBtn';
+import { getListingFee } from '../utils/fees';
 
 export default function SellerDashboard() {
   const { currentUser } = useSelector((state) => state.user);
+  const { currency, rates } = useSelector((state) => state.currency);
   const [stats, setStats] = useState({
-    totalListings: 0, rentListings: 0, saleListings: 0, offerListings: 0,
-    totalViews: 0, activeListings: 0, soldCount: 0, rentedCount: 0, totalRevenue: 0
+    totalListings: 0, activeListings: 0, pendingListings: 0,
+    rentListings: 0, saleListings: 0, offerListings: 0,
+    soldCount: 0, rentedCount: 0, bookingsCount: 0, bookingsValue: 0
   });
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [payingListing, setPayingListing] = useState(null);
   const tableRef = useRef(null);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const res = await fetch(`/api/user/dashboard/${currentUser._id}`);
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/user/dashboard/${currentUser._id}`);
 
-        // Handle Session Timeout (401)
-        if (res.status === 401) {
-          setLoading(false);
-          return; // Data won't load, Profile component will handle logout
-        }
-
-        const data = await res.json();
-        if (data.success) {
-          setStats(data.stats);
-          setListings(data.listings);
-        }
+      // Handle Session Timeout (401)
+      if (res.status === 401) {
         setLoading(false);
-      } catch (error) {
-        console.log("Dashboard fetch error:", error);
-        setLoading(false);
+        return; // Data won't load, Profile component will handle logout
       }
-    };
-    fetchDashboardData();
+
+      const data = await res.json();
+      if (data.success) {
+        setStats(data.stats);
+        setListings(data.listings);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.log("Dashboard fetch error:", error);
+      setLoading(false);
+    }
   }, [currentUser._id]);
+
+  useEffect(() => {
+    // Loading state is only set async after the fetch settles; no cascading renders.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  const handleListingPaid = async () => {
+    setPayingListing(null);
+    await fetchDashboardData();
+  };
 
   const handleDeleteListing = async (listingId) => {
     if (!window.confirm("Are you sure you want to delete this listing?")) return;
@@ -76,17 +90,16 @@ export default function SellerDashboard() {
 
   const handleStatusChange = async (listingId, newStatus) => {
     try {
-      const res = await fetch(`/api/listing/update/${listingId}`, {
+      const res = await fetch(`/api/listing/status/${listingId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus, userRef: currentUser._id }),
+        body: JSON.stringify({ status: newStatus }),
       });
       const data = await res.json();
       if (data.success === false) return;
       setListings((prev) => prev.map((item) =>
         item._id === listingId ? { ...item, status: newStatus } : item
       ));
-      window.location.reload();
     } catch (error) {
       console.log(error);
     }
@@ -117,8 +130,9 @@ export default function SellerDashboard() {
             <div className='p-3 bg-green-500/10 text-green-400 rounded-lg'><FaRupeeSign className='text-xl' /></div>
             <span className='text-xs font-bold text-green-400 bg-green-400/10 px-2 py-1 rounded'>Finance</span>
           </div>
-          <p className='text-slate-400 text-sm mt-4 font-medium'>Total Revenue Generated</p>
-          <h3 className='text-3xl font-bold mt-1 text-white'>₹{(stats.totalRevenue || 0).toLocaleString()}</h3>
+          <p className='text-slate-400 text-sm mt-4 font-medium'>Bookings Value (received)</p>
+          <h3 className='text-3xl font-bold mt-1' style={{ color: 'var(--text-heading)' }}>{formatPrice(stats.bookingsValue || 0, currency, rates)}</h3>
+          <p className='text-[11px] text-slate-500 mt-1'>{stats.bookingsCount} successful booking payment{stats.bookingsCount === 1 ? '' : 's'}</p>
         </div>
 
         <div className='p-6 rounded-2xl border shadow-lg' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
@@ -137,9 +151,10 @@ export default function SellerDashboard() {
         </div>
 
         <div className='p-6 rounded-2xl border shadow-lg' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
-          <div className='p-3 bg-purple-500/10 text-purple-400 rounded-lg w-fit'><FaEye className='text-xl' /></div>
-          <p className='text-slate-400 text-sm mt-4 font-medium'>Total Property Views</p>
-          <h3 className='text-3xl font-bold mt-1'>{stats.totalViews.toLocaleString()}</h3>
+          <div className='p-3 bg-purple-500/10 text-purple-400 rounded-lg w-fit'><FaClock className='text-xl' /></div>
+          <p className='text-slate-400 text-sm mt-4 font-medium'>Pending Listings</p>
+          <h3 className='text-3xl font-bold mt-1'>{stats.pendingListings}</h3>
+          <p className='text-[11px] text-slate-500 mt-1'>Awaiting listing-fee payment to go live</p>
         </div>
       </div>
 
@@ -147,7 +162,7 @@ export default function SellerDashboard() {
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10'>
         {/* Pie Chart: Rent vs Sale */}
         <div className='p-6 rounded-2xl border shadow-xl' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
-          <h3 className='text-white font-bold text-lg mb-4 flex items-center gap-2'>
+          <h3 className='font-bold text-lg mb-4 flex items-center gap-2' style={{ color: 'var(--text-heading)' }}>
             <FaChartLine className='text-blue-400' /> Property Distribution
           </h3>
           <ResponsiveContainer width='100%' height={300}>
@@ -177,20 +192,22 @@ export default function SellerDashboard() {
 
         {/* Bar Chart: Status Breakdown */}
         <div className='p-6 rounded-2xl border shadow-xl' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
-          <h3 className='text-white font-bold text-lg mb-4 flex items-center gap-2'>
+          <h3 className='font-bold text-lg mb-4 flex items-center gap-2' style={{ color: 'var(--text-heading)' }}>
             <FaBuilding className='text-emerald-400' /> Status Breakdown
           </h3>
           <ResponsiveContainer width='100%' height={300}>
             <BarChart data={[
               { name: 'Available', count: stats.activeListings || 0 },
+              { name: 'Pending', count: stats.pendingListings || 0 },
               { name: 'Sold', count: stats.soldCount || 0 },
               { name: 'Rented', count: stats.rentedCount || 0 },
-            ]} barSize={45}>
+            ]} barSize={40}>
               <XAxis dataKey='name' tick={{ fill: '#94a3b8', fontSize: 13 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: '#94a3b8', fontSize: 13 }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', color: '#e2e8f0' }} cursor={{ fill: 'rgba(99, 102, 241, 0.1)' }} />
               <Bar dataKey='count' radius={[8, 8, 0, 0]}>
                 <Cell fill='#10b981' />
+                <Cell fill='#f59e0b' />
                 <Cell fill='#ef4444' />
                 <Cell fill='#f97316' />
               </Bar>
@@ -262,11 +279,12 @@ export default function SellerDashboard() {
                       {listing.type}
                     </span>
                   </td>
-                  <td className='p-3 text-white font-medium'>₹ {listing.regularPrice?.toLocaleString('en-IN')}</td>
+                  <td className='p-3'>{formatPrice(listing.regularPrice, currency, rates)}</td>
                   <td className='p-3'>
                     <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase ${listing.status === 'sold' ? 'bg-red-500/20 text-red-400' :
                         listing.status === 'rented' ? 'bg-orange-500/20 text-orange-400' :
-                          'bg-emerald-500/20 text-emerald-400'
+                          listing.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                            'bg-emerald-500/20 text-emerald-400'
                       }`}>
                       {listing.status || 'available'}
                     </span>
@@ -286,7 +304,7 @@ export default function SellerDashboard() {
 
       <div ref={tableRef} className='bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-2xl'>
         <div className='p-6 border-b border-slate-700 bg-slate-800/50'>
-          <h2 className='text-xl font-bold flex items-center gap-2'>
+          <h2 className='text-xl font-bold text-white flex items-center gap-2'>
             <FaCheckCircle className='text-blue-500' /> Property Management Center
           </h2>
         </div>
@@ -307,14 +325,20 @@ export default function SellerDashboard() {
               {listings.length > 0 ? listings.map((listing) => (
                 <tr key={listing._id} className='hover:bg-slate-700/20 transition-all'>
                   <td className='p-5 text-center'>
-                    <button onClick={() => handleFeaturedToggle(listing._id, listing.featured)} className={`text-2xl transition-transform hover:scale-110 ${listing.featured ? 'text-yellow-400' : 'text-slate-600 hover:text-yellow-200'}`} title='Toggle Featured'>
-                      {listing.featured ? <FaStar /> : <FaRegStar />}
-                    </button>
+                    {currentUser.role === 'admin' ? (
+                      <button onClick={() => handleFeaturedToggle(listing._id, listing.featured)} className={`text-2xl transition-transform hover:scale-110 ${listing.featured ? 'text-yellow-400' : 'text-slate-600 hover:text-yellow-200'}`} title='Toggle Featured'>
+                        {listing.featured ? <FaStar /> : <FaRegStar />}
+                      </button>
+                    ) : (
+                      <span className={`text-2xl ${listing.featured ? 'text-yellow-400' : 'text-slate-600'}`} title={listing.featured ? 'Featured (VIP)' : 'Not featured'}>
+                        {listing.featured ? <FaStar /> : <FaRegStar />}
+                      </span>
+                    )}
                   </td>
                   <td className='p-5'>
                     <div className='flex items-center gap-4'>
                       <div className='relative'>
-                        <img src={listing.imageUrls[0]} alt="" className='w-14 h-14 rounded-xl object-cover bg-slate-700 border border-slate-600' />
+                        <img src={listing.imageUrls?.[0]} alt="" className='w-14 h-14 rounded-xl object-cover bg-slate-700 border border-slate-600' />
                         {listing.offer && <div className='absolute -top-2 -right-2 bg-purple-600 text-[8px] font-bold px-1.5 py-0.5 rounded-md'>OFFER</div>}
                       </div>
                       <div>
@@ -324,14 +348,20 @@ export default function SellerDashboard() {
                     </div>
                   </td>
                   <td className='p-5'>
+                    {listing.status === 'pending' ? (
+                      <span className='text-xs font-bold uppercase px-2 py-1.5 rounded-lg border bg-slate-900 text-yellow-400 border-yellow-500/50'>
+                        Pending fee
+                      </span>
+                    ) : (
                     <select value={listing.status || 'available'} onChange={(e) => handleStatusChange(listing._id, e.target.value)} className={`text-xs font-bold uppercase px-2 py-1.5 rounded-lg border bg-slate-900 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${listing.status === 'sold' ? 'text-green-500 border-green-500/50' : listing.status === 'rented' ? 'text-orange-500 border-orange-500/50' : 'text-blue-400 border-blue-500/50'}`}>
                       <option value="available">Available</option>
                       {listing.type === 'sale' && <option value="sold">Mark as Sold</option>}
                       {listing.type === 'rent' && <option value="rented">Mark as Rented</option>}
                     </select>
+                    )}
                   </td>
                   <td className='p-5'>
-                    <p className='font-bold text-white'>₹{listing.regularPrice.toLocaleString()}</p>
+                    <p className='font-bold text-white'>{formatPrice(listing.regularPrice, currency, rates)}</p>
                     {listing.type === 'rent' && <p className='text-[10px] text-slate-500'>per month</p>}
                   </td>
                   <td className='p-5 text-sm text-slate-400 font-medium'>
@@ -339,12 +369,24 @@ export default function SellerDashboard() {
                   </td>
                   <td className='p-5'>
                     <div className='flex justify-center gap-2'>
-                      <Link to={`/update-listing/${listing._id}`} className='p-2.5 bg-slate-700 text-blue-400 hover:bg-blue-500 hover:text-white rounded-xl transition-all shadow-sm' title='Edit'>
-                        <FaEdit />
-                      </Link>
-                      <button onClick={() => handleDeleteListing(listing._id)} className='p-2.5 bg-slate-700 text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm' title='Delete'>
-                        <FaTrash />
-                      </button>
+                      {listing.status === 'pending' ? (
+                        <button
+                          onClick={() => setPayingListing(listing)}
+                          className='p-2.5 bg-indigo-600 text-white hover:bg-indigo-500 rounded-xl transition-all shadow-sm flex items-center gap-1.5 text-xs font-bold uppercase'
+                          title='Pay listing fee to publish'
+                        >
+                          <FaCreditCard /> Pay ₹{getListingFee(listing.type).toLocaleString('en-IN')}
+                        </button>
+                      ) : (
+                        <>
+                          <Link to={`/update-listing/${listing._id}`} className='p-2.5 bg-slate-700 text-blue-400 hover:bg-blue-500 hover:text-white rounded-xl transition-all shadow-sm' title='Edit'>
+                            <FaEdit />
+                          </Link>
+                          <button onClick={() => handleDeleteListing(listing._id)} className='p-2.5 bg-slate-700 text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-all shadow-sm' title='Delete'>
+                            <FaTrash />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -363,6 +405,47 @@ export default function SellerDashboard() {
           </table>
         </div>
       </div>
+
+      {/* --- PAY LISTING FEE MODAL --- */}
+      {payingListing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 transition-all overflow-y-auto">
+          <div className="bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl border border-slate-700 relative overflow-hidden animate-fadeIn my-auto">
+            <div className="p-8">
+              <h3 className="text-xl font-bold text-white mb-2">Publish &quot;{payingListing.name}&quot;</h3>
+              <p className="text-slate-400 text-sm mb-6">
+                Pay the one-time listing fee to publish this property. It goes live immediately after the payment succeeds.
+              </p>
+
+              <div className="bg-slate-900/60 rounded-xl border border-slate-700 p-5 mb-6">
+                <div className="flex justify-between items-center mb-2">
+                  <span className='text-slate-400 text-sm'>Listing Type</span>
+                  <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wide ${payingListing.type === 'rent' ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-green-500/20 text-green-400 border border-green-500/30'}`}>
+                    For {payingListing.type === 'rent' ? 'Rent' : 'Sale'}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className='text-slate-400 text-sm'>Listing Fee (one-time)</span>
+                  <span className='text-3xl font-black text-white'>₹{getListingFee(payingListing.type).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              <RazorpayBtn
+                listing={payingListing}
+                btnText={`Pay ₹${getListingFee(payingListing.type).toLocaleString('en-IN')} & Publish`}
+                onSuccess={handleListingPaid}
+                customStyle="w-full justify-center flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-5 py-4 rounded-xl font-bold transition-all shadow-lg shadow-green-900/30 border border-green-500/50"
+              />
+
+              <button
+                onClick={() => setPayingListing(null)}
+                className='mt-4 w-full text-center text-slate-400 hover:text-slate-200 text-sm font-semibold transition'
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

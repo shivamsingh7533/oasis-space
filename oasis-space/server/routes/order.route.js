@@ -1,7 +1,7 @@
 import express from 'express';
 import { verifyToken } from '../utils/verifyUser.js'; 
 // ✅ cancelOrder ko bhi import kiya
-import { createOrder, verifyPayment, getOrderHistory, deleteOrder, cancelOrder } from '../controllers/order.controller.js'; 
+import { createOrder, verifyPayment, getOrderHistory, getAdminOrderStats, deleteOrder, cancelOrder } from '../controllers/order.controller.js'; 
 
 const router = express.Router();
 
@@ -13,6 +13,9 @@ router.post('/verify', verifyToken, verifyPayment);
 
 // Route: GET ORDER HISTORY
 router.get('/history', verifyToken, getOrderHistory);
+
+// Route: ADMIN STATS (fees collected, bookings value)
+router.get('/admin', verifyToken, getAdminOrderStats);
 
 // Route: DELETE ORDER (History se udana)
 router.delete('/delete/:id', verifyToken, deleteOrder);

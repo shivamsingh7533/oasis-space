@@ -1,20 +1,28 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FaShieldAlt, FaTimes, FaSpinner } from 'react-icons/fa';
 
-export default function VerifyEmailModal({ email, onClose }) {
+export default function VerifyEmailModal({ email: emailProp, onClose }) {
+  const location = useLocation();
+  // Standalone /verify-email page passes email via router state; SignUp passes it as a prop.
+  const email = emailProp || location?.state?.email || '';
   const [otp, setOtp] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleClose = onClose || (() => navigate('/sign-in'));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    // Debugging ke liye (Check Console F12)
-    console.log("Sending for verification:", { email, otp });
+    if (!email) {
+      setLoading(false);
+      setError('Missing email. Please sign up again.');
+      return;
+    }
 
     try {
       const res = await fetch('/api/auth/verify-email', {
@@ -35,7 +43,7 @@ export default function VerifyEmailModal({ email, onClose }) {
       alert('Verification Successful! Please Login.');
       
       // Success hone par Modal band aur Login page par bhejo
-      onClose(); 
+      handleClose(); 
       navigate('/sign-in');
 
     } catch (error) {
@@ -46,14 +54,14 @@ export default function VerifyEmailModal({ email, onClose }) {
 
   return (
     // Backdrop
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 transition-all">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 transition-all overflow-y-auto">
       
       {/* Modal Card */}
-      <div className="bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl border border-slate-700 relative overflow-hidden animate-fadeIn">
+      <div className="bg-slate-800 w-full max-w-md rounded-2xl shadow-2xl border border-slate-700 relative overflow-hidden animate-fadeIn my-auto">
         
         {/* Close Button */}
         <button 
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
         >
           <FaTimes size={20} />

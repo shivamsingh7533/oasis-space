@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay, Pagination } from 'swiper/modules';
-import SwiperCore from 'swiper';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -42,22 +41,32 @@ export default function Home() {
   
   const navigate = useNavigate();
 
-  SwiperCore.use([Navigation, Autoplay, Pagination]);
-
   useEffect(() => {
     const fetchAllListings = async () => {
       try {
         const featuredRes = await fetch('/api/listing/get?featured=true&limit=4');
-        if (featuredRes.ok) setFeaturedListings(await featuredRes.json());
+        if (featuredRes.ok) {
+          const featuredData = await featuredRes.json();
+          setFeaturedListings(featuredData.listings || []);
+        }
 
         const offerRes = await fetch('/api/listing/get?offer=true&limit=4');
-        if (offerRes.ok) setOfferListings(await offerRes.json());
+        if (offerRes.ok) {
+          const offerData = await offerRes.json();
+          setOfferListings(offerData.listings || []);
+        }
 
         const rentRes = await fetch('/api/listing/get?type=rent&limit=4');
-        if (rentRes.ok) setRentListings(await rentRes.json());
+        if (rentRes.ok) {
+          const rentData = await rentRes.json();
+          setRentListings(rentData.listings || []);
+        }
 
         const saleRes = await fetch('/api/listing/get?type=sale&limit=4');
-        if (saleRes.ok) setSaleListings(await saleRes.json());
+        if (saleRes.ok) {
+          const saleData = await saleRes.json();
+          setSaleListings(saleData.listings || []);
+        }
       } catch (error) {
         console.log('Error fetching listings:', error);
       }
@@ -167,7 +176,7 @@ export default function Home() {
                   >
                     {/* EXPLICT LAZY LOAD IMAGE instead of CSS Background */}
                     <img
-                      src={listing.imageUrls[0].startsWith('data:') ? listing.imageUrls[0] : `https://wsrv.nl/?url=${encodeURIComponent(listing.imageUrls[0])}&output=webp&w=600&q=80`}
+                      src={listing.imageUrls?.[0]?.startsWith('data:') ? listing.imageUrls[0] : `https://wsrv.nl/?url=${encodeURIComponent(listing.imageUrls[0] || '')}&output=webp&w=600&q=80`}
                       alt={listing.name}
                       width="600"
                       height="400"

@@ -1,8 +1,6 @@
-import React from 'react';
-
 export default function Preloader() {
   return (
-    <div className='fixed inset-0 bg-slate-200 flex flex-col items-center justify-center z-50'>
+    <div className='fixed inset-0 flex flex-col items-center justify-center z-50' style={{ backgroundColor: 'var(--bg-primary)' }}>
       {/* Logo Section */}
       <img
         src='/logo.png'   // Make sure this matches your file path (or URL)
@@ -14,11 +12,11 @@ export default function Preloader() {
       />
 
       {/* Welcome Text */}
-      <h1 className='text-4xl font-bold text-slate-800 animate-pulse font-serif'>
+      <h1 className='text-4xl font-bold animate-pulse font-serif' style={{ color: 'var(--text-heading)' }}>
         Welcome to Oasis Space
       </h1>
 
-      <p className='text-slate-700 mt-2 text-lg font-medium'>
+      <p className='mt-2 text-lg font-medium' style={{ color: 'var(--text-secondary)' }}>
         Finding your dream home...
       </p>
     </div>

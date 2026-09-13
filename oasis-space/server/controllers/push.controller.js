@@ -6,9 +6,10 @@ export const subscribe = async (req, res, next) => {
   try {
     const subscription = req.body;
 
-    // Save or update subscription in database
+    // Save or update subscription — scoped by BOTH endpoint and user.
+    // Prevents a logged-in user from hijacking another device's subscription.
     const newSub = await Subscription.findOneAndUpdate(
-      { endpoint: subscription.endpoint }, // find by endpoint to avoid duplicates
+      { endpoint: subscription.endpoint, userRef: req.user.id },
       {
         userRef: req.user.id,
         endpoint: subscription.endpoint,
@@ -48,7 +49,11 @@ export const unsubscribe = async (req, res, next) => {
 
 export const getVapidPublicKey = (req, res, next) => {
   try {
-    res.status(200).json({ success: true, publicKey: process.env.VAPID_PUBLIC_KEY });
+    // Return the SAME trimmed/padded key format that index.js configures
+    // for webpush.setVapidDetails, so browser subscriptions validate.
+    const key = (process.env.VAPID_PUBLIC_KEY || '').trim().replace(/=+$/, '');
+    if (!key) return next(errorHandler(500, 'VAPID public key is not configured'));
+    res.status(200).json({ success: true, publicKey: key });
   } catch (error) {
     next(error);
   }

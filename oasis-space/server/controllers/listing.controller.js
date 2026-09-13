@@ -1,21 +1,52 @@
 import Listing from '../models/listing.model.js';
 import User from '../models/user.model.js';
+import Order from '../models/order.model.js';
 import { errorHandler } from '../utils/error.js';
 import { GoogleGenerativeAI } from "@google/generative-ai"; // ✅ AI Import
 
-// 1. Create Listing
+// Whitelist applied on create — never trust raw req.body keys like userRef/featured/status.
+const CREATE_FIELDS = [
+  'name', 'description', 'address', 'regularPrice', 'discountPrice',
+  'bathrooms', 'bedrooms', 'furnished', 'parking', 'type', 'offer',
+  'imageUrls', 'imageLabels',
+];
+
+const UPDATE_FIELDS_SELLER = [
+  'name', 'description', 'address', 'regularPrice', 'discountPrice',
+  'bathrooms', 'bedrooms', 'furnished', 'parking', 'offer',
+  'imageUrls', 'imageLabels',
+];
+
+const toBools = {
+  'true': true, '1': true, 'yes': true, 'on': true,
+  'false': false, '0': false, 'no': false, 'off': false,
+};
+
+// 1. Create Listing — always created as a PAYMENT-PENDING draft.
+//    It becomes publicly visible ('available') only after the listing fee is paid.
 export const createListing = async (req, res, next) => {
   try {
-    if (req.body.type === 'sale') {
+    const type = req.body.type;
+
+    if (type === 'sale') {
       const user = await User.findById(req.user.id);
       if (user.sellerStatus !== 'approved' && user.role !== 'admin') {
         return next(errorHandler(403, 'Permission Denied! Only Approved Sellers can list properties for SALE.'));
       }
+    } else if (type !== 'rent') {
+      return next(errorHandler(400, "Listing type must be either 'rent' or 'sale'."));
     }
-    const newListingData = {
-      ...req.body,
-      status: req.body.status || 'available'
-    };
+
+    const newListingData = {};
+    for (const field of CREATE_FIELDS) {
+      if (req.body[field] !== undefined) newListingData[field] = req.body[field];
+    }
+
+    // Server-authoritative fields — never taken from the client.
+    newListingData.userRef = req.user.id;
+    newListingData.featured = false;
+    newListingData.status = 'pending';
+
     const listing = await Listing.create(newListingData);
     return res.status(201).json(listing);
   } catch (error) {
@@ -50,11 +81,31 @@ export const updateListing = async (req, res, next) => {
     if (req.user.id !== listing.userRef && user.role !== 'admin') {
       return next(errorHandler(401, 'You can only update your own listings!'));
     }
-    const { userRef, ...rest } = req.body;
+
+    const isAdmin = user.role === 'admin';
+    const updates = {};
+
+    // Non-admin sellers cannot: self-feature, change status, change type (rent→sale bypass),
+    // or reassign ownership. Those are admin/approval-gated operations.
+    if (isAdmin) {
+      if (req.body.userRef !== undefined) updates.userRef = req.body.userRef;
+      if (req.body.featured !== undefined) updates.featured = req.body.featured;
+      if (req.body.type !== undefined) updates.type = req.body.type;
+      if (req.body.status !== undefined) updates.status = req.body.status;
+    }
+
+    const editable = isAdmin
+      ? [...UPDATE_FIELDS_SELLER, 'featured', 'status', 'type', 'userRef']
+      : UPDATE_FIELDS_SELLER;
+
+    for (const field of editable) {
+      if (req.body[field] !== undefined) updates[field] = req.body[field];
+    }
+
     const updatedListing = await Listing.findByIdAndUpdate(
       req.params.id,
-      rest,
-      { new: true }
+      updates,
+      { new: true, runValidators: true }
     );
     res.status(200).json(updatedListing);
   } catch (error) {
@@ -79,32 +130,25 @@ export const getListings = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 9;
     const startIndex = parseInt(req.query.startIndex) || 0;
 
-    let offer = req.query.offer;
-    if (offer === undefined || offer === 'false') offer = { $in: [false, true] };
+    // Boolean filters coerce reliably ('true'/'1'/'yes'/'on' → true, rest → false)
+    const boolFilter = (key) => {
+      if (req.query[key] === undefined) return { $in: [false, true] };
+      const parsed = toBools[String(req.query[key]).toLowerCase()];
+      return parsed === undefined ? { $in: [false, true] } : parsed;
+    };
 
-    let furnished = req.query.furnished;
-    if (furnished === undefined || furnished === 'false') furnished = { $in: [false, true] };
-
-    let parking = req.query.parking;
-    if (parking === undefined || parking === 'false') parking = { $in: [false, true] };
+    let offer = boolFilter('offer');
+    let furnished = boolFilter('furnished');
+    let parking = boolFilter('parking');
 
     let type = req.query.type;
     if (type === undefined || type === 'all') type = { $in: ['sale', 'rent'] };
 
-    let featured = req.query.featured;
-    if (featured === undefined || featured === 'false') {
-      featured = { $in: [false, true] };
-    } else {
-      featured = true;
-    }
+    let featured = boolFilter('featured');
 
     const searchTerm = req.query.searchTerm || '';
-
-    // Split search term by spaces
     const words = searchTerm.split(/\s+/).filter(Boolean);
 
-    // Build an AND regex using lookaheads for each word, allowing 'v' and 'w' interchangeably.
-    // Example: "shanti bhavan" -> /(?=.*shanti)(?=.*bha(v|w)an)/i
     let searchRegexPattern = '';
     if (words.length > 0) {
       const lookaheads = words.map(word => {
@@ -116,10 +160,11 @@ export const getListings = async (req, res, next) => {
     }
     const searchRegex = searchRegexPattern ? new RegExp(searchRegexPattern, 'i') : new RegExp('', 'i');
 
-    const sort = req.query.sort || 'createdAt';
-    const order = req.query.order || 'desc';
+    // Map client sort keys → real schema fields (frontend used the non-existent `created_at`)
+    const sortKey = { created_at: 'createdAt', createdAt: 'createdAt', price: 'regularPrice', price_desc: 'regularPrice' }[req.query.sort] || 'createdAt';
+    const order = req.query.order === 'asc' ? 'asc' : 'desc';
 
-    const listings = await Listing.find({
+    const filter = {
       $or: [
         { name: { $regex: searchRegex } },
         { address: { $regex: searchRegex } },
@@ -129,19 +174,24 @@ export const getListings = async (req, res, next) => {
       parking,
       type,
       featured,
-      status: { $nin: ['sold', 'rented'] }
-    })
-      .sort({ [sort]: order })
-      .limit(limit)
-      .skip(startIndex);
+      status: { $nin: ['sold', 'rented', 'pending'] }
+    };
 
-    return res.status(200).json(listings);
+    const [listings, total] = await Promise.all([
+      Listing.find(filter)
+        .sort({ [sortKey]: order })
+        .limit(limit)
+        .skip(startIndex),
+      Listing.countDocuments(filter),
+    ]);
+
+    return res.status(200).json({ listings, total, hasMore: startIndex + listings.length < total });
   } catch (error) {
     next(error);
   }
 };
 
-// 6. Admin Get All Listings
+// 6. Admin Get All Listings (paginated)
 export const getAdminListings = async (req, res, next) => {
   try {
     if (!req.user || !req.user.id) {
@@ -153,8 +203,15 @@ export const getAdminListings = async (req, res, next) => {
       return next(errorHandler(403, 'Admins only.'));
     }
 
-    const listings = await Listing.find().sort({ createdAt: -1 });
-    res.status(200).json(listings);
+    const limit = parseInt(req.query.limit) || 50;
+    const startIndex = parseInt(req.query.startIndex) || 0;
+
+    const [listings, total] = await Promise.all([
+      Listing.find().sort({ createdAt: -1 }).limit(limit).skip(startIndex),
+      Listing.countDocuments(),
+    ]);
+
+    res.status(200).json({ listings, total });
   } catch (error) {
     next(error);
   }
@@ -188,6 +245,24 @@ export const updateListingStatus = async (req, res, next) => {
       return next(errorHandler(401, 'Permission denied!'));
     }
 
+    if (!['available', 'sold', 'rented'].includes(req.body.status)) {
+      return next(errorHandler(400, 'Invalid status'));
+    }
+
+    // Draft listings can't be published/moved to sold/rented until the listing fee is paid.
+    // The only publish path is the paid Razorpay flow (order.controller verifyPayment).
+    if (listing.status === 'pending' && req.body.status !== 'pending') {
+      const paid = await Order.exists({
+        listingRef: listing._id,
+        userRef: listing.userRef,
+        type: 'listing_fee',
+        status: 'success',
+      });
+      if (!paid) {
+        return next(errorHandler(400, 'Pay the listing fee before publishing this listing.'));
+      }
+    }
+
     const updatedListing = await Listing.findByIdAndUpdate(
       req.params.id,
       { status: req.body.status },
@@ -199,7 +274,7 @@ export const updateListingStatus = async (req, res, next) => {
   }
 };
 
-// 👇👇👇 9. NEW AI FEATURE: GENERATE DESCRIPTION 🤖 👇👇👇
+// 👇👇👇 9. AI FEATURE: GENERATE DESCRIPTION 🤖 👇👇👇
 export const generateDescription = async (req, res, next) => {
   const { name, address, type, bedrooms, bathrooms, parking, furnished, offer } = req.body;
 
@@ -210,7 +285,6 @@ export const generateDescription = async (req, res, next) => {
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-    // ✅ Using the model confirmed by your check-models.js
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `

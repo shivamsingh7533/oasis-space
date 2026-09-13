@@ -21,7 +21,7 @@ export default function OrderHistory() {
           setLoading(false);
           return;
         }
-        setOrders(data);
+        setOrders(data.orders || (Array.isArray(data) ? data : []));
         setLoading(false);
       } catch (error) {
         console.log(error);
@@ -96,7 +96,7 @@ export default function OrderHistory() {
                 <FaArrowLeft />
             </Link>
             <div>
-                <h1 className='text-3xl font-bold text-white flex items-center gap-3'>
+                <h1 className='text-3xl font-bold flex items-center gap-3' style={{ color: 'var(--text-heading)' }}>
                     Transaction History
                 </h1>
                 <p className='text-slate-400 text-sm mt-1'>Track your property payments & bookings</p>
@@ -187,6 +187,14 @@ export default function OrderHistory() {
                                     <FaExclamationCircle /> Failed
                                 </span>
                             )}
+
+                            {/* TYPE BADGE: Listing Fee vs Booking */}
+                            <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded-full border ${order.type === 'listing_fee'
+                                ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
+                                : 'bg-sky-500/10 text-sky-400 border-sky-500/20'
+                                }`}>
+                                {order.type === 'listing_fee' ? 'Listing Fee' : 'Booking'}
+                            </span>
                         </div>
                         
                         <p className='text-slate-400 text-xs font-mono bg-slate-900/60 inline-block px-2 py-1 rounded border border-slate-700/50 mb-2'>
@@ -205,15 +213,15 @@ export default function OrderHistory() {
                 {/* 3. Amount & Action */}
                 <div className='flex flex-row sm:flex-col items-center justify-between sm:justify-center border-t sm:border-t-0 sm:border-l border-slate-700 pt-4 sm:pt-0 sm:pl-6 min-w-[140px]'>
                     <div className='text-right sm:text-center'>
-                        <p className='text-slate-500 text-xs uppercase font-bold tracking-wider mb-1'>Total Amount</p>
+                        <p className='text-slate-400 text-xs uppercase font-bold tracking-wider mb-1'>Amount Paid</p>
                         <p className='text-2xl font-bold text-green-400 flex items-center justify-end sm:justify-center'>
                             <FaRupeeSign className='text-lg' />
                             {order.amount.toLocaleString('en-IN')}
                         </p>
                     </div>
                     
-                    {/* CANCEL BUTTON (Only if status is success) */}
-                    {order.status === 'success' && (
+                    {/* CANCEL BUTTON (Only if status is success AND it's a booking — fee payments have no online refund) */}
+                    {order.status === 'success' && order.type === 'booking' && (
                         <button 
                             onClick={() => handleCancelOrder(order._id)}
                             className='hidden sm:inline-block mt-2 text-xs text-red-400 hover:text-red-300 border border-red-500/30 px-3 py-1 rounded hover:bg-red-500/10 transition'
@@ -228,7 +236,7 @@ export default function OrderHistory() {
                     </Link>
 
                     {/* Mobile Cancel Button */}
-                    {order.status === 'success' && (
+                    {order.status === 'success' && order.type === 'booking' && (
                          <button 
                             onClick={() => handleCancelOrder(order._id)}
                             className='sm:hidden text-xs text-red-400 hover:text-red-300 font-bold'

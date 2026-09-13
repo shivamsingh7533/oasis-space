@@ -136,20 +136,20 @@ export default function Footer() {
                 href="https://www.google.com/maps/search/?api=1&query=Jaipur+Rajasthan+India"
                 target="_blank"
                 rel="noreferrer"
-                className='hover:text-white transition-colors'
+                className='hover:text-blue-400 transition-colors'
               >
                 Jaipur, Rajasthan, India
               </a>
             </li>
             <li className='flex items-center gap-3 group'>
               <FaPhoneAlt className='text-blue-500 text-lg group-hover:rotate-12 transition-transform' />
-              <a href="tel:+919876543210" className='hover:text-white transition-colors'>+91 98765 43210</a>
+              <a href="tel:+919876543210" className='hover:text-blue-400 transition-colors'>+91 98765 43210</a>
             </li>
             <li className='flex items-center gap-3 group'>
               <FaEnvelope className='text-blue-500 text-lg group-hover:scale-110 transition-transform' />
               <button
                 onClick={() => setShowContact(true)}
-                className='hover:text-white transition-colors break-all text-left cursor-pointer'
+                className='hover:text-blue-400 transition-colors break-all text-left cursor-pointer'
               >
                 oasisspace60@gmail.com
               </button>
@@ -191,7 +191,7 @@ export default function Footer() {
               <FaTimes className='text-lg' />
             </button>
 
-            <h3 className='text-xl font-bold text-white mb-1 flex items-center gap-2'>
+            <h3 className='text-xl font-bold mb-1 flex items-center gap-2' style={{ color: 'var(--text-heading)' }}>
               <FaEnvelope className='text-blue-500' /> Contact Us
             </h3>
             <p className='text-slate-400 text-xs mb-5'>We'll get back to you at your email.</p>

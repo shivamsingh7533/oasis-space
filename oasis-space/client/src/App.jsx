@@ -21,7 +21,6 @@ const SavedListings = lazy(() => import('./pages/SavedListings'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const SellerDashboard = lazy(() => import('./pages/SellerDashboard'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
-const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const OrderHistory = lazy(() => import('./pages/OrderHistory'));
 const Settings = lazy(() => import('./pages/Settings')); // ✅ Settings Page
@@ -53,7 +52,6 @@ export default function App() {
               <Route path='/search' element={<Search />} />
               <Route path='/listing/:listingId' element={<Listing />} />
               <Route path='/forgot-password' element={<ForgotPassword />} />
-              <Route path='/reset-password/:id/:token' element={<ResetPassword />} />
 
               {/* Footer Pages Routes */}
               <Route path='/privacy' element={<Privacy />} />

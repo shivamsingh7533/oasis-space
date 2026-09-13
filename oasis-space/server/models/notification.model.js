@@ -6,19 +6,26 @@ const notificationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+      index: true,
     },
-    sender: { // Jisne book kiya (Buyer)
+    sender: { // Jisne action kiya (Buyer/Seller)
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
-    message: { // "User X booked Property Y. Contact: 999..."
+    message: {
       type: String,
       required: true,
+    },
+    relatedId: { // Deep-link target (property/listing id)
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Listing',
+      default: null,
     },
     isRead: {
       type: Boolean,
       default: false,
+      index: true,
     },
   },
   { timestamps: true }

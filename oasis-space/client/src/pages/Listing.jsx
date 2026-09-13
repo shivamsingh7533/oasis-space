@@ -7,7 +7,6 @@ import {
 } from 'react-icons/fa';
 import Contact from '../components/Contact';
 import EMICalculator from '../components/EMICalculator';
-import RazorpayBtn from '../components/RazorpayBtn';
 import { formatPrice } from '../utils/currencyFormatter';
 
 // IMPORTS FOR SLIDER
@@ -184,7 +183,7 @@ export default function Listing() {
                                         if (navigator.share) {
                                             try {
                                                 await navigator.share(shareData);
-                                            } catch (err) {
+                                            } catch {
                                                 // User cancelled or share failed — silently ignore
                                             }
                                         } else {
@@ -327,15 +326,7 @@ export default function Listing() {
                                     )}
                                 </div>
 
-                                {currentUser && listing.userRef !== currentUser._id && (
-                                    <div className="mt-3">
-                                        <RazorpayBtn
-                                            listing={listing}
-                                            btnText="Book Now (₹500)"
-                                            customStyle="w-full justify-center flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3.5 rounded-xl font-bold transition-all shadow-lg shadow-indigo-900/30 border border-indigo-500/50"
-                                        />
-                                    </div>
-                                )}
+                                {/* BUYERS EXPRESS INTEREST BY MESSAGING THE OWNER (see Contact card below) */}
                             </div>
 
                             {/* EMI CALCULATOR */}

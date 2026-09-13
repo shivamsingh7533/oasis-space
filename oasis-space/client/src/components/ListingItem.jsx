@@ -35,9 +35,9 @@ export default function ListingItem({ listing }) {
         let updatedSavedListings;
 
         if (isSaved) {
-          updatedSavedListings = currentUser.savedListings.filter(id => id !== listing._id);
+          updatedSavedListings = (currentUser.savedListings || []).filter(id => id !== listing._id);
         } else {
-          updatedSavedListings = [...currentUser.savedListings, listing._id];
+          updatedSavedListings = [...(currentUser.savedListings || []), listing._id];
         }
 
         dispatch(updateUserSuccess({
@@ -62,7 +62,7 @@ export default function ListingItem({ listing }) {
       />
 
       {/* IMAGE SECTION (Enhanced) */}
-      <div className='relative overflow-hidden h-[180px] rounded-t-2xl z-20' style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+      <div className='relative overflow-hidden h-[180px] rounded-t-2xl z-0' style={{ backgroundColor: 'var(--bg-tertiary)' }}>
 
         {/* 1. BLUR SKELETON (Jab tak image load na ho) */}
         {!imageLoaded && (

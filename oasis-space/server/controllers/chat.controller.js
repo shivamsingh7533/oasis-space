@@ -2,6 +2,25 @@ import Groq from "groq-sdk";
 import Listing from "../models/listing.model.js"; // ✅ Import Listing Model
 import { errorHandler } from '../utils/error.js';
 
+const MAX_PROMPT_LENGTH = 1000;
+const MAX_HISTORY_MESSAGES = 6;
+
+// Sanitize client-supplied history: only 'user'/'assistant' roles and plain text.
+// Blocks system-role injection that could override the assistant's data rules.
+const sanitizeHistory = (history) => {
+  if (!Array.isArray(history)) return [];
+  return history
+    .slice(-MAX_HISTORY_MESSAGES)
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const role = item.role === 'assistant' ? 'assistant' : 'user';
+      const content = String(item.content || '').slice(0, MAX_PROMPT_LENGTH).trim();
+      if (!content) return null;
+      return { role, content };
+    })
+    .filter(Boolean);
+};
+
 export const chatWithGroq = async (req, res, next) => {
   const { prompt, history } = req.body;
 
@@ -9,13 +28,17 @@ export const chatWithGroq = async (req, res, next) => {
     return next(errorHandler(500, "Groq API Key is missing inside .env file!"));
   }
 
+  const cleanPrompt = String(prompt || '').slice(0, MAX_PROMPT_LENGTH).trim();
+  if (!cleanPrompt) {
+    return next(errorHandler(400, 'Prompt is required'));
+  }
+
   try {
     // 1️⃣ DATABASE SE LATEST PROPERTIES NIKALO (Real-Time Data)
-    // Hum sirf zaroori fields le rahe hain taaki token limit cross na ho
-    const listings = await Listing.find({ status: 'available' }) // Sirf available properties
-      .sort({ createdAt: -1 }) // Latest pehle
-      .limit(10) // Top 10 properties (Token bachane ke liye)
-      .select('name address regularPrice discountPrice type description bedrooms bathrooms');
+    const listings = await Listing.find({ status: 'available' })
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('name address regularPrice discountPrice type description bedrooms bathrooms offer');
 
     // 2️⃣ DATA KO STRING FORMAT MEIN CONVERT KARO
     const propertiesContext = listings.map((p, index) => {
@@ -42,17 +65,17 @@ export const chatWithGroq = async (req, res, next) => {
       End of Data.`
     };
 
-    // 4️⃣ MESSAGE HISTORY BHEJO
+    // 4️⃣ MESSAGE HISTORY — sanitized, never trusted as system input
     const messages = [
       systemMessage,
-      ...history,
-      { role: "user", content: prompt }
+      ...sanitizeHistory(history),
+      { role: "user", content: cleanPrompt }
     ];
 
     const completion = await groq.chat.completions.create({
       messages: messages,
       model: "llama-3.3-70b-versatile",
-      temperature: 0.5, // Thoda strict rakha hai taaki jhoot na bole
+      temperature: 0.5,
       max_tokens: 300,
     });
 

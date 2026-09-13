@@ -56,7 +56,7 @@ export default function ChatWidget() {
 
       {/* CHAT WINDOW */}
       {isOpen && (
-        <div className="bg-slate-800 border border-slate-700 w-[320px] sm:w-[380px] h-[500px] rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-4 animate-fadeIn">
+        <div className="bg-slate-800 border border-slate-700 w-[calc(100vw-2rem)] max-w-[380px] h-[500px] max-h-[70vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-4 animate-fadeIn">
 
           {/* Header */}
           <div className="bg-indigo-600 p-4 flex justify-between items-center">

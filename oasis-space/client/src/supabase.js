@@ -1,6 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://xefiwydezpodjnhipxlw.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlZml3eWRlenBvZGpuaGlweGx3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3NTM0NzMsImV4cCI6MjA4NDMyOTQ3M30.eiQi_PAaEYN7nJEMbBgo9WnMKa4vW6qPzxh-pZnoPuI';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://xefiwydezpodjnhipxlw.supabase.co';
+// Anon key MUST come from the environment — no committed secrets.
+const supabaseKey = import.meta.env.VITE_SUPABASE_KEY || '';
+
+if (!supabaseKey) {
+  console.error('[supabase] Missing VITE_SUPABASE_KEY in client/.env — image uploads will fail.');
+}
 
 export const supabase = createClient(supabaseUrl, supabaseKey);

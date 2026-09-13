@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import rateLimit from 'express-rate-limit';
+import webpush from 'web-push';
 
 // Import Routes
 import userRouter from './routes/user.route.js';
@@ -11,9 +11,9 @@ import authRouter from './routes/auth.route.js';
 import listingRouter from './routes/listing.route.js';
 import chatRouter from './routes/chat.route.js';
 import orderRouter from './routes/order.route.js';
-import notificationRouter from './routes/notification.route.js'; // ✅ NEW NOTIFICATION IMPORT
-import pushRouter from './routes/push.route.js'; // ✅ PUSH IMPORT
-import webpush from 'web-push';
+import notificationRouter from './routes/notification.route.js';
+import pushRouter from './routes/push.route.js';
+import { globalLimiter, authLimiter, chatLimiter } from './utils/limiters.js';
 
 dotenv.config();
 
@@ -32,20 +32,35 @@ if (VAPID_PUBLIC && VAPID_PRIVATE) {
 }
 
 // Connect to MongoDB
-mongoose
-  .connect(process.env.MONGO)
-  .then(() => {
+async function connectDB() {
+  try {
+    await mongoose.connect(process.env.MONGO);
     console.log('✅ Connected to MongoDB!');
-  })
-  .catch((err) => {
+    await mongoose.connection.syncIndexes().catch((e) => console.warn('Index sync skipped:', e.message));
+  } catch (err) {
     console.log('❌ MongoDB Connection Error:', err);
-  });
+    // Retry once after 5s instead of silently running without a DB
+    setTimeout(connectDB, 5000);
+  }
+}
+connectDB();
 
 const app = express();
 
-// ✅ PRODUCTION READY CORS SETUP
+// ✅ PRODUCTION READY CORS — allow primary + preview/PWA origins
+const allowedOrigins = (process.env.CLIENT_URL || 'http://localhost:5173')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin(origin, cb) {
+    // Allow same-origin / non-browser requests, plus the configured origins
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      return cb(null, true);
+    }
+    return cb(null, false);
+  },
   credentials: true,
 }));
 
@@ -58,44 +73,14 @@ app.use((req, res, next) => {
 // ✅ Trust Proxy (Critical for Render/Vercel/Heroku cookies)
 app.set('trust proxy', 1);
 
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 
-// ✅ RATE LIMITERS
-// 1. Global API Limiter — 100 requests per 15 min per IP
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: 'Too many requests, please try again after 15 minutes.' },
-});
-
-// 2. Auth Limiter — Strict 15 requests per 15 min (brute-force protection)
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 15,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: 'Too many login/signup attempts. Please try again after 15 minutes.' },
-});
-
-// 3. Contact Limiter — 5 requests per 15 min (spam protection)
-const contactLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: 'Too many messages sent. Please try again later.' },
-});
-
-// --- ROUTES ---
-app.use('/api/auth', authLimiter, authRouter);                        // 🔒 Strict limit
-app.use('/api/user/contact-us', contactLimiter);                      // 🔒 Spam protection
-app.use('/api/user/contact', contactLimiter);                         // 🔒 Spam protection
+// --- ROUTES (each limiter applied exactly once per endpoint) ---
+app.use('/api/auth', authLimiter, authRouter);            // 🔒 Strict
+app.use('/api/chat', chatLimiter, chatRouter);            // 🔒 AI spend guard
 app.use('/api/user', globalLimiter, userRouter);
 app.use('/api/listing', globalLimiter, listingRouter);
-app.use('/api/chat', globalLimiter, chatRouter);
 app.use('/api/order', globalLimiter, orderRouter);
 app.use('/api/notification', globalLimiter, notificationRouter);
 app.use('/api/push', globalLimiter, pushRouter);
@@ -113,20 +98,35 @@ app.get('/', (req, res) => {
   });
 });
 
-// Error Middleware
+// Error Middleware — log details server-side, keep client response generic for 5xx
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
-  const message = err.message || 'Internal Server Error';
+  const is5xx = statusCode >= 500;
+  console.error(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`, is5xx ? err : '');
   return res.status(statusCode).json({
     success: false,
     statusCode,
-    message,
+    message: is5xx ? 'Something went wrong on our end. Please try again.' : err.message,
   });
 });
 
 // ✅ Dynamic Port for Render
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port: ${PORT}`);
 });
+
+// Graceful shutdown — save in-flight payments and disconnect cleanly
+const shutdown = (signal) => {
+  console.log(`\n${signal} received, shutting down gracefully...`);
+  server.close(() => {
+    mongoose.connection.close(false, () => {
+      console.log('MongoDB connection closed.');
+      process.exit(0);
+    });
+  });
+  setTimeout(() => process.exit(1), 10000).unref();
+};
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));

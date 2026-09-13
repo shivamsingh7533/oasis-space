@@ -1,6 +1,7 @@
 import User from '../models/user.model.js';
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { errorHandler } from '../utils/error.js';
 import sendEmail from '../utils/sendEmail.js';
 
@@ -54,6 +55,9 @@ const getOtpTemplate = (otp) => `
   </div>
 `;
 
+// --- HELPER: CRYPTO OTP (cryptographically secure, unlike Math.random) ---
+const generateOtp = () => crypto.randomInt(100000, 1000000).toString();
+
 // --- HELPER: COOKIE OPTIONS ---
 const isProduction = process.env.NODE_ENV === 'production';
 const cookieOptions = {
@@ -68,6 +72,18 @@ const clearCookieOptions = {
   sameSite: isProduction ? 'None' : 'Lax',
 };
 
+const signSessionToken = (id) => {
+  // Session tokens expire after 7 days (cookie itself lasts 1 day).
+  // `purpose: 'session'` disambiguates from seller magic-link tokens (purpose: 'seller').
+  const secret = (process.env.JWT_SECRET || '').trim();
+  return jwt.sign({ id, purpose: 'session' }, secret, { expiresIn: '7d' });
+};
+
+const toSafeUser = (doc) => {
+  // otp / otpExpires / password are `select: false`, so this is always clean.
+  return doc.toObject();
+};
+
 // --- CONTROLLER LOGIC ---
 
 // ✅ 1. SIGN UP
@@ -75,14 +91,21 @@ export const signup = async (req, res, next) => {
   const { username, email, password, mobile } = req.body;
   if (!username || !email || !password || !mobile) return next(errorHandler(400, 'All fields are required'));
 
+  const cleanUsername = username.trim();
+  const cleanEmail = email.trim().toLowerCase();
+
+  if (cleanUsername.length < 3) return next(errorHandler(400, 'Username must be at least 3 characters'));
+  if (password.length < 8) return next(errorHandler(400, 'Password must be at least 8 characters'));
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) return next(errorHandler(400, 'Please enter a valid email'));
+
   try {
-    const hashedPassword = bcryptjs.hashSync(password.trim(), 10);
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const hashedPassword = bcryptjs.hashSync(password, 10);
+    const otp = generateOtp();
     const otpExpires = Date.now() + 10 * 60 * 1000;
 
     const newUser = new User({
-      username: username.trim(),
-      email: email.trim().toLowerCase(),
+      username: cleanUsername,
+      email: cleanEmail,
       password: hashedPassword,
       mobile: mobile.trim(),
       otp,
@@ -90,7 +113,15 @@ export const signup = async (req, res, next) => {
       isVerified: false
     });
 
-    await newUser.save();
+    try {
+      await newUser.save();
+    } catch (err) {
+      if (err.code === 11000) {
+        const field = Object.keys(err.keyPattern || {})[0] || 'field';
+        return next(errorHandler(409, `This ${field === 'email' ? 'email' : 'username'} is already registered`));
+      }
+      throw err;
+    }
     await sendEmail(newUser.email, 'Verify Your Account 🔐', getOtpTemplate(otp));
 
     res.status(201).json({ success: true, message: "OTP sent! Please check your email." });
@@ -102,14 +133,19 @@ export const signup = async (req, res, next) => {
 // ✅ 2. VERIFY EMAIL
 export const verifyEmail = async (req, res, next) => {
   const { email, otp } = req.body;
+  if (!email || !otp) return next(errorHandler(400, 'Email and OTP are required'));
   try {
-    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+otp +otpExpires');
 
     if (!user) return next(errorHandler(404, 'User not found'));
-    if (user.otp !== otp) return next(errorHandler(400, 'Invalid OTP'));
+    if (!user.otp || user.otp !== otp) return next(errorHandler(400, 'Invalid OTP'));
+    if (user.otpExpires && Date.now() > new Date(user.otpExpires).getTime()) {
+      return next(errorHandler(400, 'OTP has expired. Please request a new one.'));
+    }
 
     user.isVerified = true;
     user.otp = undefined;
+    user.otpExpires = undefined;
     await user.save();
 
     console.log(`⏳ Preparing to send PREMIUM Welcome Card to: ${user.email}`);
@@ -120,40 +156,35 @@ export const verifyEmail = async (req, res, next) => {
       console.error("❌ Email Failed but User Verified:", emailError);
     }
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-    const { password: pass, ...rest } = user._doc;
+    const token = signSessionToken(user._id);
 
-    res.cookie('access_token', token, cookieOptions).status(200).json(rest);
-
+    res.cookie('access_token', token, cookieOptions).status(200).json(toSafeUser(user));
   } catch (error) {
     next(error);
   }
 };
 
-// ✅ 3. GOOGLE AUTH (Updated with Unique Mobile Fix)
+// ✅ 3. GOOGLE AUTH
 export const google = async (req, res, next) => {
   const { name, email, photo } = req.body;
+  if (!email) return next(errorHandler(400, 'Email is required'));
+  const cleanEmail = email.trim().toLowerCase();
+
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: cleanEmail });
 
     if (user) {
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-      const { password: pass, ...rest } = user._doc;
-      res.cookie('access_token', token, cookieOptions).status(200).json(rest);
+      const token = signSessionToken(user._id);
+      res.cookie('access_token', token, cookieOptions).status(200).json(toSafeUser(user));
     } else {
-      const generatedPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+      const generatedPassword = crypto.randomBytes(12).toString('hex');
       const hashedPassword = bcryptjs.hashSync(generatedPassword, 10);
 
-      // ✅ FIX: Generate a random unique mobile number to avoid duplicate key error
-      // Kyunki agar sabka 0000000000 hoga to MongoDB dusre user ko save nahi karega.
-      const randomMobile = "91" + Math.floor(100000000 + Math.random() * 900000000).toString();
-
       const newUser = new User({
-        username: name.toLowerCase().split(' ').join('') + Math.random().toString(36).slice(-4),
-        email,
+        username: (name || 'user').toLowerCase().split(' ').join('') + crypto.randomBytes(2).toString('hex'),
+        email: cleanEmail,
         password: hashedPassword,
         avatar: photo,
-        mobile: randomMobile, // ✅ Now Unique
         isVerified: true
       });
 
@@ -167,9 +198,8 @@ export const google = async (req, res, next) => {
         console.error("❌ Google Email Failed:", err);
       }
 
-      const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET);
-      const { password: p, ...rest2 } = newUser._doc;
-      res.cookie('access_token', token, cookieOptions).status(200).json(rest2);
+      const token = signSessionToken(newUser._id);
+      res.cookie('access_token', token, cookieOptions).status(200).json(toSafeUser(newUser));
     }
   } catch (error) {
     next(error);
@@ -179,19 +209,23 @@ export const google = async (req, res, next) => {
 // ✅ 4. SIGN IN
 export const signin = async (req, res, next) => {
   const { email, password } = req.body;
+  if (!email || !password) return next(errorHandler(400, 'Email and password are required'));
   try {
-    const user = await User.findOne({ email: email.trim().toLowerCase() });
+    const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+password');
     if (!user) return next(errorHandler(404, 'User not found'));
 
     if (!user.password) return next(errorHandler(400, 'Please login with Google'));
 
+    if (!user.isVerified) {
+      return next(errorHandler(403, 'Please verify your email first. Check your inbox for the OTP.'));
+    }
+
     const validPassword = bcryptjs.compareSync(password, user.password);
     if (!validPassword) return next(errorHandler(401, 'Wrong credentials'));
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-    const { password: pass, ...rest } = user._doc;
+    const token = signSessionToken(user._id);
 
-    res.cookie('access_token', token, cookieOptions).status(200).json(rest);
+    res.cookie('access_token', token, cookieOptions).status(200).json(toSafeUser(user));
   } catch (error) {
     next(error);
   }
@@ -200,16 +234,17 @@ export const signin = async (req, res, next) => {
 // ✅ 5. FORGOT PASSWORD
 export const forgotPassword = async (req, res, next) => {
   const { email } = req.body;
+  if (!email) return next(errorHandler(400, 'Email is required'));
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
     if (!user) return next(errorHandler(404, 'User not found'));
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = generateOtp();
     user.otp = otp;
     user.otpExpires = Date.now() + 15 * 60 * 1000;
 
-    await user.save(); 
-    
+    await user.save();
+
     await sendEmail(user.email, 'Reset Password OTP', getOtpTemplate(otp));
 
     res.status(200).json({ success: true, message: 'OTP sent to your email!' });
@@ -221,12 +256,19 @@ export const forgotPassword = async (req, res, next) => {
 // ✅ 6. RESET PASSWORD
 export const resetPassword = async (req, res, next) => {
   const { email, otp, password } = req.body;
+  if (!email || !otp || !password) return next(errorHandler(400, 'Email, OTP and new password are required'));
+  if (password.length < 8) return next(errorHandler(400, 'Password must be at least 8 characters'));
+
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+otp +otpExpires');
     if (!user || user.otp !== otp) return next(errorHandler(400, 'Invalid OTP'));
+    if (user.otpExpires && Date.now() > new Date(user.otpExpires).getTime()) {
+      return next(errorHandler(400, 'OTP has expired. Please request a new one.'));
+    }
 
     user.password = bcryptjs.hashSync(password, 10);
     user.otp = undefined;
+    user.otpExpires = undefined;
     await user.save();
 
     res.status(200).json({ success: true, message: 'Password reset successful!' });

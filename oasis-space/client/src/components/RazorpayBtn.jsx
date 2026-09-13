@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import PaymentLoading from './PaymentLoading';
 import { FaCreditCard } from 'react-icons/fa';
 
-export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle = "" }) {
+export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle = "", onSuccess }) {
   const { currentUser } = useSelector((state) => state.user);
   const [paymentStatus, setPaymentStatus] = useState(null); // null | 'processing' | 'success' | 'failed'
   const navigate = useNavigate();
@@ -36,30 +36,24 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
     }
 
     try {
-      // B. Create Order (Backend Call)
-      const amount = 500; // Example: ₹500
-      
+      // B. Create Order (Backend Call) — fee is computed server-side, never trust the client amount
       const orderRes = await fetch('/api/order/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount: amount, listingId: listing._id })
+        body: JSON.stringify({ listingId: listing._id })
       });
-      
+
       const orderData = await orderRes.json();
       if (orderData.success === false) throw new Error(orderData.message);
 
-      // ✅ SMART PREFILL LOGIC (Google Login Fix)
+      // ✅ SMART PREFILL LOGIC — mobile is optional now (Google sign-ins have none)
       const prefillData = {
           name: currentUser.username,
           email: currentUser.email
       };
 
-      const userMobile = currentUser.mobile;
-      // Check for dummy or missing mobile
-      const isDummyMobile = !userMobile || userMobile === "0000000000" || userMobile === "9999999999";
-
-      if (!isDummyMobile) {
-          prefillData.contact = userMobile;
+      if (currentUser.mobile) {
+          prefillData.contact = currentUser.mobile;
       }
 
       // ✅ FIX: Use import.meta.env for Vite
@@ -77,7 +71,7 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
         amount: orderData.order.amount,
         currency: orderData.order.currency,
         name: "OasisSpace",
-        description: `Booking for ${listing.name}`,
+        description: `Publishing fee for ${listing.name}`,
         image: "https://cdn-icons-png.flaticon.com/512/1040/1040993.png",
         order_id: orderData.order.id, // Backend Order ID
         
@@ -94,18 +88,23 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
                    razorpay_signature: response.razorpay_signature
                 })
              });
-             
+
+             setPaymentStatus('success');
+
              const verifyData = await verifyRes.json();
-             
+
              if (verifyData.success) {
-                setPaymentStatus('success');
-                setTimeout(() => {
-                    setPaymentStatus(null);
-                    navigate('/order-history'); 
-                }, 3000);
+                if (onSuccess) {
+                   onSuccess(verifyData);
+                } else {
+                   setTimeout(() => {
+                       setPaymentStatus(null);
+                       navigate('/order-history');
+                   }, 1200);
+                }
              } else {
-                setPaymentStatus('failed');
-                setTimeout(() => setPaymentStatus(null), 3000);
+                console.log(verifyData.message || 'Payment verification failed');
+                setPaymentStatus(null);
              }
 
           } catch (error) {

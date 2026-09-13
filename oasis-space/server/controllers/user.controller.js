@@ -1,45 +1,58 @@
 import bcryptjs from 'bcryptjs';
 import User from '../models/user.model.js';
 import Listing from '../models/listing.model.js';
+import Order from '../models/order.model.js';
+import Notification from '../models/notification.model.js';
+import Subscription from '../models/subscription.model.js';
 import { errorHandler } from '../utils/error.js';
 import jwt from 'jsonwebtoken';
 import sendEmail from '../utils/sendEmail.js'; // ✅ Using Brevo API
 import { sendPushNotification } from '../utils/sendPush.js';
 
-// TEST ROUTE
-export const test = (req, res) => {
-  res.json({ message: 'Api route is working!' });
-};
+const SELLER_STATUSES = ['regular', 'pending', 'approved', 'rejected'];
 
 // UPDATE USER
 export const updateUser = async (req, res, next) => {
   if (req.user.id !== req.params.id)
     return next(errorHandler(401, 'You can only update your own account!'));
-  try {
-    if (req.body.password) {
-      req.body.password = bcryptjs.hashSync(req.body.password, 10);
+
+  // Allowlist — only these fields may ever be written from a profile update.
+  const allowedFields = ['username', 'email', 'avatar', 'mobile'];
+  const updates = {};
+
+  for (const field of allowedFields) {
+    if (req.body[field] !== undefined) {
+      updates[field] = (field === 'email') ? req.body[field].trim().toLowerCase() : String(req.body[field]).trim();
     }
+  }
+
+  // Password is updated ONLY when a real, non-empty value is provided.
+  // Fixes the bug where Profile.jsx sent `password: ''` on every save and
+  // wiped the hash, locking the account out permanently.
+  if (req.body.password && typeof req.body.password === 'string' && req.body.password.trim().length > 0) {
+    if (req.body.password.length < 8) return next(errorHandler(400, 'Password must be at least 8 characters'));
+    updates.password = bcryptjs.hashSync(req.body.password, 10);
+  }
+
+  try {
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
-      {
-        $set: {
-          username: req.body.username,
-          email: req.body.email,
-          password: req.body.password,
-          avatar: req.body.avatar,
-          mobile: req.body.mobile,
-        },
-      },
-      { new: true }
-    );
-    const { password, ...rest } = updatedUser._doc;
-    res.status(200).json(rest);
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select('-otp -otpExpires');
+
+    if (!updatedUser) return next(errorHandler(404, 'User not found'));
+    res.status(200).json(updatedUser);
   } catch (error) {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern || {})[0] || 'field';
+      return next(errorHandler(409, `This ${field === 'email' ? 'email' : 'username'} is already in use`));
+    }
     next(error);
   }
 };
 
-// DELETE USER
+// DELETE USER (self or admin) + cascade cleanup of dependent data
 export const deleteUser = async (req, res, next) => {
   try {
     const requestingUser = await User.findById(req.user.id);
@@ -49,12 +62,18 @@ export const deleteUser = async (req, res, next) => {
       return next(errorHandler(401, 'You can only delete your own account!'));
     }
 
-    await User.findByIdAndDelete(req.params.id);
+    await Promise.all([
+      User.findByIdAndDelete(req.params.id),
+      Listing.deleteMany({ userRef: req.params.id }),
+      Order.deleteMany({ userRef: req.params.id }),
+      Notification.deleteMany({ $or: [{ recipient: req.params.id }, { sender: req.params.id }] }),
+      Subscription.deleteMany({ userRef: req.params.id }),
+    ]);
 
     if (req.user.id === req.params.id) {
       res.clearCookie('access_token');
     }
-    res.status(200).json('User has been deleted!');
+    res.status(200).json('User and all associated data has been deleted!');
   } catch (error) {
     next(error);
   }
@@ -64,7 +83,7 @@ export const deleteUser = async (req, res, next) => {
 export const getUserListings = async (req, res, next) => {
   if (req.user.id === req.params.id) {
     try {
-      const listings = await Listing.find({ userRef: req.params.id });
+      const listings = await Listing.find({ userRef: req.params.id }).sort({ createdAt: -1 });
       res.status(200).json(listings);
     } catch (error) {
       next(error);
@@ -74,13 +93,17 @@ export const getUserListings = async (req, res, next) => {
   }
 };
 
-// GET PUBLIC USER INFO
+// GET PUBLIC USER INFO (safe allowlisted fields only)
 export const getUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) return next(errorHandler(404, 'User not found!'));
-    const { password: pass, ...rest } = user._doc;
-    res.status(200).json(rest);
+    res.status(200).json({
+      username: user.username,
+      avatar: user.avatar,
+      sellerStatus: user.sellerStatus,
+      role: user.role,
+    });
   } catch (error) {
     next(error);
   }
@@ -91,8 +114,12 @@ export const saveListing = async (req, res, next) => {
   try {
     const listingId = req.params.id;
     const userId = req.user.id;
-    const user = await User.findById(userId);
+    const [user, listingExists] = await Promise.all([
+      User.findById(userId),
+      Listing.exists({ _id: listingId }),
+    ]);
     if (!user) return next(errorHandler(404, 'User not found!'));
+    if (!listingExists) return next(errorHandler(404, 'Listing not found!'));
 
     const savedListings = user.savedListings || [];
     const isSaved = savedListings.some((id) => id.toString() === listingId);
@@ -115,9 +142,10 @@ export const getSavedListings = async (req, res, next) => {
     const user = await User.findById(req.user.id);
     if (!user) return next(errorHandler(404, 'User not found'));
     const savedListingsIds = user.savedListings || [];
-    const savedListings = await Promise.all(savedListingsIds.map((listingId) => Listing.findById(listingId)));
-    const validListings = savedListings.filter(listing => listing !== null);
-    res.status(200).json(validListings);
+    const listings = savedListingsIds.length
+      ? await Listing.find({ _id: { $in: savedListingsIds }, status: { $ne: 'pending' } })
+      : [];
+    res.status(200).json(listings);
   } catch (error) {
     next(error);
   }
@@ -133,12 +161,8 @@ export const getUsers = async (req, res, next) => {
     if (!user || user.role !== 'admin') {
       return next(errorHandler(403, 'Access Denied! Admins only.'));
     }
-    const users = await User.find().sort({ createdAt: -1 });
-    const usersWithoutPassword = users.map((u) => {
-      const { password, ...rest } = u._doc;
-      return rest;
-    });
-    res.status(200).json(usersWithoutPassword);
+    const users = await User.find().sort({ createdAt: -1 }).select('-otp -otpExpires');
+    res.status(200).json(users);
   } catch (error) {
     console.log("Error in getUsers:", error.message);
     next(error);
@@ -157,8 +181,8 @@ export const requestSeller = async (req, res, next) => {
     user.sellerStatus = 'pending';
     await user.save();
 
-    const approveToken = jwt.sign({ id: user._id, action: 'approved' }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    const rejectToken = jwt.sign({ id: user._id, action: 'rejected' }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    const approveToken = jwt.sign({ id: user._id, action: 'approved', purpose: 'seller' }, process.env.JWT_SECRET.trim(), { expiresIn: '7d' });
+    const rejectToken = jwt.sign({ id: user._id, action: 'rejected', purpose: 'seller' }, process.env.JWT_SECRET.trim(), { expiresIn: '7d' });
 
     // Dynamic Server URL (Render compatible)
     const serverUrl = process.env.SERVER_URL || 'https://oasis-space.onrender.com';
@@ -186,8 +210,7 @@ export const requestSeller = async (req, res, next) => {
         `
     );
 
-    const { password, ...rest } = user._doc;
-    res.status(200).json(rest);
+    res.status(200).json(user);
   } catch (error) {
     next(error);
   }
@@ -197,8 +220,15 @@ export const requestSeller = async (req, res, next) => {
 export const respondSellerViaEmail = async (req, res, next) => {
   try {
     const { token } = req.params;
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const { id, action } = decoded;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET.trim());
+    const { id, action, purpose } = decoded;
+
+    if (purpose !== 'seller') {
+      return res.status(400).send(`<h1 style="color: red;">Error: Invalid Link</h1>`);
+    }
+    if (!SELLER_STATUSES.includes(action)) {
+      return res.status(400).send(`<h1 style="color: red;">Error: Invalid Link</h1>`);
+    }
 
     const user = await User.findByIdAndUpdate(
       id,
@@ -246,11 +276,15 @@ export const verifySeller = async (req, res, next) => {
     if (!adminUser || adminUser.role !== 'admin') return next(errorHandler(403, 'Admins Only!'));
 
     const { status } = req.body;
+    if (!SELLER_STATUSES.includes(status)) return next(errorHandler(400, 'Invalid seller status'));
+
     const updatedUser = await User.findByIdAndUpdate(
       req.params.id,
       { $set: { sellerStatus: status } },
       { new: true }
-    );
+    ).select('-otp -otpExpires');
+
+    if (!updatedUser) return next(errorHandler(404, 'User not found'));
 
     const color = status === 'approved' ? '#10b981' : '#ef4444';
     await sendEmail(
@@ -269,68 +303,51 @@ export const verifySeller = async (req, res, next) => {
       icon: '/icon-192.png'
     });
 
-    const { password, ...rest } = updatedUser._doc;
-    res.status(200).json(rest);
+    res.status(200).json(updatedUser);
   } catch (error) {
     next(error);
   }
 };
 
-// SELLER DASHBOARD (ANALYTICS)
+// SELLER DASHBOARD (ANALYTICS) — honest numbers only, no fabricated revenue/views
 export const getSellerDashboard = async (req, res, next) => {
   if (req.user.id === req.params.id) {
     try {
-      const listings = await Listing.find({ userRef: req.params.id }).sort({ createdAt: -1 });
+      const [listings, orderStats] = await Promise.all([
+        Listing.find({ userRef: req.params.id }).sort({ createdAt: -1 }),
+        Order.aggregate([
+          { $match: { status: 'success' } },
+          // join on real ObjectId listingRef — legacy order docs keep working via cast
+          { $lookup: { from: 'listings', localField: 'listingRef', foreignField: '_id', as: 'listing' } },
+          { $unwind: { path: '$listing', preserveNullAndEmptyArrays: true } },
+          { $match: { 'listing.userRef': req.params.id } },
+          { $group: { _id: null, count: { $sum: 1 }, value: { $sum: '$amount' } } },
+        ]),
+      ]);
 
-      let totalRevenue = 0;
-      let soldCount = 0;
-      let rentedCount = 0;
-      let activeListings = 0;
+      const soldCount = listings.filter((l) => l.status === 'sold').length;
+      const rentedCount = listings.filter((l) => l.status === 'rented').length;
+      const pendingListings = listings.filter((l) => l.status === 'pending').length;
+      const activeListings = listings.filter((l) => l.status === 'available').length;
+      const rentListings = listings.filter((l) => l.type === 'rent' && l.status === 'available').length;
+      const saleListings = listings.filter((l) => l.type === 'sale' && l.status === 'available').length;
+      const offerListings = listings.filter((l) => l.offer && l.status === 'available').length;
 
-      let rentListings = 0;
-      let saleListings = 0;
-      let offerListings = 0;
-
-      listings.forEach((listing) => {
-        const price = listing.offer ? listing.discountPrice : listing.regularPrice;
-
-        if (listing.status === 'sold') {
-          soldCount++;
-        } else if (listing.status === 'rented') {
-          rentedCount++;
-        } else {
-          // Only count AVAILABLE properties for Active Inventory & Potential Revenue
-          activeListings++;
-
-          if (listing.type === 'rent') {
-            rentListings++;
-            totalRevenue += (price * 0.10); // Example 10% commission on rent
-          } else if (listing.type === 'sale') {
-            saleListings++;
-            totalRevenue += (price * 0.02); // Example 2% commission on sale
-          }
-
-          if (listing.offer) {
-            offerListings++;
-          }
-        }
-      });
-
-      // Make totalViews somewhat realistic if they don't exist yet
-      const totalViews = listings.reduce((acc, curr) => acc + (curr.views || Math.floor(Math.random() * 50) + 5), 0);
+      const orderAgg = orderStats[0] || { count: 0, value: 0 };
 
       res.status(200).json({
         success: true,
         stats: {
           totalListings: listings.length,
           activeListings,
+          pendingListings,
           rentListings,
           saleListings,
           offerListings,
-          totalViews,
           soldCount,
           rentedCount,
-          totalRevenue
+          bookingsCount: orderAgg.count,
+          bookingsValue: orderAgg.value || 0,
         },
         listings
       });
@@ -342,10 +359,13 @@ export const getSellerDashboard = async (req, res, next) => {
   }
 };
 
-// ✅ NEW FEATURE: CONTACT LANDLORD (DIRECT EMAIL)
+// GET CONTACT LANDLORD (DIRECT EMAIL)
 export const contactLandlord = async (req, res, next) => {
   try {
     const { landlordId, listingName, message, senderName, senderEmail } = req.body;
+    if (!landlordId || !listingName || !message || !senderName || !senderEmail) {
+      return next(errorHandler(400, 'All fields are required.'));
+    }
 
     const landlord = await User.findById(landlordId);
     if (!landlord) return next(errorHandler(404, 'Landlord not found!'));
@@ -379,7 +399,7 @@ export const contactLandlord = async (req, res, next) => {
   }
 };
 
-// ✅ CONTACT US (Public — Footer Form)
+// CONTACT US (Public — Footer Form)
 export const contactUs = async (req, res, next) => {
   try {
     const { name, email, message } = req.body;

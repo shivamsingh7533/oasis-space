@@ -14,16 +14,10 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export default function PushNotificationManager() {
-  const [isSupported, setIsSupported] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if ('serviceWorker' in navigator && 'PushManager' in window) {
-      setIsSupported(true);
-      checkSubscription();
-    }
-  }, []);
+  const isSupported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
 
   const checkSubscription = async () => {
     try {
@@ -34,6 +28,13 @@ export default function PushNotificationManager() {
       console.log('Error checking push subscription:', err);
     }
   };
+
+  useEffect(() => {
+    if (isSupported) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- async subscription check
+      checkSubscription();
+    }
+  }, [isSupported]);
 
   const subscribePush = async () => {
     setLoading(true);

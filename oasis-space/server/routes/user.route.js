@@ -1,6 +1,5 @@
 import express from 'express';
 import {
-  test,
   updateUser,
   deleteUser,
   getUserListings,
@@ -12,21 +11,19 @@ import {
   verifySeller,
   respondSellerViaEmail,
   getSellerDashboard,
-  contactLandlord, // ✅ NEW IMPORT
-  contactUs        // ✅ FOOTER CONTACT
+  contactLandlord,
+  contactUs
 } from '../controllers/user.controller.js';
 import { verifyToken } from '../utils/verifyUser.js';
+import { contactLimiter } from '../utils/limiters.js';
 
 const router = express.Router();
 
-// 1. Test Route
-router.get('/test', test);
-
-// 2. Auth Required Routes
+// 1. Auth Required Routes
 router.post('/update/:id', verifyToken, updateUser);
 router.delete('/delete/:id', verifyToken, deleteUser);
 
-// 3. User Specific Routes
+// 2. User Specific Routes
 router.get('/listings/:id', verifyToken, getUserListings);
 
 // ✅ Saved Listings (Must be before /:id)
@@ -46,11 +43,13 @@ router.post('/verify-seller/:id', verifyToken, verifySeller);
 // 6. Magic Link Route
 router.get('/respond-seller/:token', respondSellerViaEmail);
 
-// 7. ✅ CONTACT ROUTES
-router.post('/contact', verifyToken, contactLandlord);
-router.post('/contact-us', contactUs); // Public — no auth needed
+// 7. ✅ CONTACT ROUTES (public — spam-limited, never double-counted)
+//    contactLandlord is called from the public Listing detail page by
+//    anonymous visitors too.
+router.post('/contact', contactLimiter, contactLandlord);
+router.post('/contact-us', contactLimiter, contactUs);
 
-// 8. Public Route (Always keep at bottom)
-router.get('/:id', verifyToken, getUser);
+// 8. Public Route (Always keep at bottom) — allowlisted safe fields only
+router.get('/:id', getUser);
 
 export default router;

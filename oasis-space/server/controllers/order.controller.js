@@ -1,12 +1,13 @@
 import Razorpay from 'razorpay';
 import Order from '../models/order.model.js';
-import Listing from '../models/listing.model.js'; 
-import User from '../models/user.model.js';       
-import Notification from '../models/notification.model.js'; 
+import Listing from '../models/listing.model.js';
+import User from '../models/user.model.js';
+import Notification from '../models/notification.model.js';
 import crypto from 'crypto';
 import { errorHandler } from '../utils/error.js';
-import sendEmail from '../utils/sendEmail.js'; 
+import sendEmail from '../utils/sendEmail.js';
 import { sendPushNotification } from '../utils/sendPush.js';
+import { getListingFee, FEES_CURRENCY } from '../utils/fees.js';
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
@@ -14,22 +15,51 @@ const razorpay = new Razorpay({
     key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// 1. CREATE ORDER
+const escapeHtml = (str = '') =>
+  String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// 1. CREATE ORDER — listing-fee payment to publish a pending listing.
+//    Amount is computed SERVER-SIDE from the listing type (never trusted from the client).
 export const createOrder = async (req, res, next) => {
   try {
-    const { amount, listingId } = req.body;
+    const { listingId } = req.body;
 
-    if (!amount || !listingId) {
-      return next(errorHandler(400, "Amount and Listing ID are required!"));
+    if (!listingId) {
+      return next(errorHandler(400, "Listing ID is required!"));
+    }
+
+    const listing = await Listing.findById(listingId);
+    if (!listing) return next(errorHandler(404, 'Listing not found!'));
+
+    // Only the listing owner can publish their own property.
+    if (listing.userRef !== req.user.id) {
+      return next(errorHandler(403, 'You can only pay the listing fee for your own property.'));
+    }
+
+    if (listing.status !== 'pending') {
+      return next(errorHandler(400, 'This listing is not awaiting a listing fee.'));
+    }
+
+    const fee = getListingFee(listing.type);
+
+    const existingPaid = await Order.findOne({
+      userRef: req.user.id,
+      listingRef: listingId,
+      type: 'listing_fee',
+      status: 'success',
+    });
+    if (existingPaid) {
+      return next(errorHandler(400, 'Listing fee already paid for this property.'));
     }
 
     const options = {
-      amount: Number(amount * 100), // Convert to paise
-      currency: "INR",
-      receipt: `receipt_order_${Date.now()}`,
+      amount: fee * 100, // Convert to paise
+      currency: FEES_CURRENCY,
+      receipt: `receipt_listing_${listingId}`,
       notes: {
         listingId: listingId,
-        userId: req.user.id
+        userId: req.user.id,
+        type: 'listing_fee',
       }
     };
 
@@ -43,17 +73,19 @@ export const createOrder = async (req, res, next) => {
       success: true,
       order,
     });
-
   } catch (error) {
     console.log("Create Order Error:", error);
     next(error);
   }
 };
 
-// 2. VERIFY PAYMENT (Renamed to match Route)
+// 2. VERIFY PAYMENT
 export const verifyPayment = async (req, res, next) => {
   try {
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return next(errorHandler(400, 'Missing payment parameters'));
+    }
 
     const body = razorpay_order_id + "|" + razorpay_payment_id;
 
@@ -64,96 +96,169 @@ export const verifyPayment = async (req, res, next) => {
 
     const isAuthentic = expectedSignature === razorpay_signature;
 
-    if (isAuthentic) {
-       // A. Fetch Razorpay Order to get Notes (Listing ID)
-       const rzpOrder = await razorpay.orders.fetch(razorpay_order_id);
-       const listingId = rzpOrder.notes.listingId;
+    if (!isAuthentic) {
+      return res.status(400).json({ success: false, message: "Invalid Signature! Payment Verification Failed." });
+    }
 
-       // ✅ FIX: HANDLE DUMMY MOBILE NUMBER for Google Users
-       // Agar DB mein mobile nahi hai, ya 0000.. hai, to valid dummy set karo
-       let savedMobile = req.user.mobile;
-       if (!savedMobile || savedMobile === "0000000000" || savedMobile === "9999999999") {
-           savedMobile = "9999999999"; 
-       }
+    // A. Fetch Razorpay Order to get type + listing from notes
+    const rzpOrder = await razorpay.orders.fetch(razorpay_order_id);
+    const notes = rzpOrder.notes || {};
+    const listingId = notes.listingId;
+    const paymentType = notes.type === 'listing_fee' ? 'listing_fee' : 'booking';
 
-       // B. Save to Database
-       const newOrder = new Order({
-         userRef: req.user.id,
-         listingRef: listingId,
-         amount: rzpOrder.amount / 100,
-         paymentId: razorpay_payment_id,
-         orderId: razorpay_order_id,
-         status: 'success',
-         mobile: savedMobile // ✅ Saves safely to DB
-       });
- 
-       const order = await newOrder.save();
+    const listing = await Listing.findById(listingId);
+    if (!listing) return next(errorHandler(404, 'Listing not found'));
 
-      // C. Notifications & Emails
-      const listing = await Listing.findById(listingId);
-      const buyer = await User.findById(req.user.id);
-      const landlord = await User.findById(listing.userRef);
+    if (paymentType === 'listing_fee') {
+      // Validate this is still an unpublished draft owned by the payer
+      if (listing.userRef !== req.user.id) {
+        return next(errorHandler(403, 'You can only verify a fee payment for your own listing.'));
+      }
+      if (listing.status !== 'pending') {
+        return next(errorHandler(400, 'This listing already paid its listing fee.'));
+      }
+      const expectedFee = getListingFee(listing.type);
+      if (rzpOrder.amount / 100 !== expectedFee) {
+        return next(errorHandler(400, 'Payment amount does not match the listing fee.'));
+      }
+    }
 
-      if (listing && buyer && landlord) {
-          // Email to Landlord
-          const emailSubject = `🏠 New Booking Alert: ${listing.name}`;
-          const emailBody = `
-            <div style="font-family: Arial, sans-serif; color: #333;">
-              <h2 style="color: #2563eb;">Good News, ${landlord.username}!</h2>
-              <p>Your property <strong>${listing.name}</strong> has just been booked.</p>
-              <div style="background: #f3f4f6; padding: 15px; border-radius: 10px; margin: 20px 0;">
-                <p><strong>👤 Buyer Name:</strong> ${buyer.username}</p>
-                <p><strong>📞 Contact:</strong> ${savedMobile === "9999999999" ? "Provided via Payment Gateway" : savedMobile}</p>
-                <p><strong>✉️ Email:</strong> ${buyer.email}</p>
-                <p><strong>💰 Booking Amount:</strong> ₹${order.amount}</p>
-              </div>
-              <p>Please contact the buyer as soon as possible to proceed further.</p>
-              <br/>
-              <p style="font-size: 12px; color: #888;">Team OasisSpace</p>
+    // B. Idempotency — a payment/order id can only be processed once
+    const alreadyProcessed = await Order.findOne({
+      $or: [{ paymentId: razorpay_payment_id }, { orderId: razorpay_order_id }],
+    });
+    if (alreadyProcessed) {
+      return res.status(200).json({ success: true, message: "Payment already verified." });
+    }
+
+    const buyer = await User.findById(req.user.id);
+
+    // C. Save to Database
+    const newOrder = new Order({
+      userRef: req.user.id,
+      listingRef: listingId,
+      amount: rzpOrder.amount / 100,
+      paymentId: razorpay_payment_id,
+      orderId: razorpay_order_id,
+      status: 'success',
+      type: paymentType,
+      mobile: (buyer && buyer.mobile) || '',
+    });
+
+    const order = await newOrder.save();
+
+    if (paymentType === 'listing_fee') {
+      // Publish the listing — draft becomes publicly visible
+      listing.status = 'available';
+      await listing.save();
+
+      const fee = getListingFee(listing.type);
+
+      // Receipt email to the seller
+      if (buyer) {
+        const emailSubject = `✅ Your Listing "${listing.name}" is now Live!`;
+        const emailBody = `
+          <div style="font-family: Arial, sans-serif; color: #333;">
+            <h2 style="color: #2563eb;">Congratulations, ${escapeHtml(buyer.username)}!</h2>
+            <p>Your property <strong>${escapeHtml(listing.name)}</strong> has been published.</p>
+            <div style="background: #f3f4f6; padding: 15px; border-radius: 10px; margin: 20px 0;">
+              <p><strong>📋 Property:</strong> ${escapeHtml(listing.name)}</p>
+              <p><strong>📍 Address:</strong> ${escapeHtml(listing.address)}</p>
+              <p><strong>💰 Listing Fee Paid:</strong> ₹${fee}</p>
+              <p><strong>🧾 Payment ID:</strong> ${escapeHtml(razorpay_payment_id)}</p>
             </div>
-          `;
-          await sendEmail(landlord.email, emailSubject, emailBody);
-
-          // In-App Notification
-          const msg = `🚀 New Booking! ${buyer.username} booked "${listing.name}". Check your email for details.`;
-          await Notification.create({ recipient: listing.userRef, sender: buyer._id, message: msg, relatedId: listingId });
-
-          // Web Push Notification to Landlord
-          await sendPushNotification(listing.userRef, {
-            title: '🎉 New Booking Received!',
-            body: `${buyer.username} just booked "${listing.name}". Check your email for contact details.`,
-            icon: '/icon-192.png'
-          });
-
-          // Admin Notification
-          const admins = await User.find({ role: 'admin' });
-          for (const admin of admins) {
-              await Notification.create({
-                recipient: admin._id,
-                sender: buyer._id,
-                message: `👑 Admin Alert: ${buyer.username} booked ${listing.name}`,
-                relatedId: listingId
-              });
-              // Web Push Notification to Admin
-              await sendPushNotification(admin._id, {
-                title: '👑 Admin Alert: New Booking',
-                body: `${buyer.username} booked ${listing.name}.`,
-                icon: '/icon-192.png'
-              });
-          }
+            <p>Your listing is now visible to buyers and tenants.</p>
+            <br/>
+            <p style="font-size: 12px; color: #888;">Team OasisSpace</p>
+          </div>
+        `;
+        await sendEmail(buyer.email, emailSubject, emailBody);
       }
 
-      res.status(200).json({
-        success: true,
-        message: "Payment Verified, Email Sent & Landlord Notified!",
+      // In-app notification to the seller
+      const msg = `🚀 "${listing.name}" is now LIVE! Listing fee of ₹${fee} received.`;
+      await Notification.create({ recipient: listing.userRef, sender: req.user.id, message: msg, relatedId: listingId });
+
+      // Web push to the seller
+      await sendPushNotification(listing.userRef, {
+        title: '🎉 Listing Published!',
+        body: `"${listing.name}" is now live on OasisSpace.`,
+        icon: '/icon-192.png'
       });
-    } else {
-      res.status(400).json({
-        success: false,
-        message: "Invalid Signature! Payment Verification Failed.",
+
+      // Admin notification
+      const admins = await User.find({ role: 'admin' });
+      for (const admin of admins) {
+        await Notification.create({
+          recipient: admin._id,
+          sender: req.user.id,
+          message: `👑 ${buyer ? buyer.username : 'A seller'} published "${listing.name}" (fee ₹${fee} collected)`,
+          relatedId: listingId
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Payment Verified. Your listing is now live!",
+        type: 'listing_fee',
       });
     }
 
+    // --- LEGACY BOOKING PATH (pre-fee-model orders only) ---
+    const landlord = await User.findById(listing.userRef);
+
+    if (landlord && buyer) {
+      // Email to Landlord
+      const emailSubject = `🏠 New Booking Alert: ${listing.name}`;
+      const emailBody = `
+        <div style="font-family: Arial, sans-serif; color: #333;">
+          <h2 style="color: #2563eb;">Good News, ${escapeHtml(landlord.username)}!</h2>
+          <p>Your property <strong>${escapeHtml(listing.name)}</strong> has been booked.</p>
+          <div style="background: #f3f4f6; padding: 15px; border-radius: 10px; margin: 20px 0;">
+            <p><strong>👤 Buyer Name:</strong> ${escapeHtml(buyer.username)}</p>
+            <p><strong>📞 Contact:</strong> ${order.mobile ? escapeHtml(order.mobile) : 'Not provided'}</p>
+            <p><strong>✉️ Email:</strong> ${escapeHtml(buyer.email)}</p>
+            <p><strong>💰 Booking Amount:</strong> ₹${order.amount}</p>
+          </div>
+          <p>Please contact the buyer as soon as possible to proceed further.</p>
+          <br/>
+          <p style="font-size: 12px; color: #888;">Team OasisSpace</p>
+        </div>
+      `;
+      await sendEmail(landlord.email, emailSubject, emailBody);
+
+      // In-App Notification
+      await Notification.create({ recipient: listing.userRef, sender: buyer._id, message: `🚀 New Booking! ${buyer.username} booked "${listing.name}".`, relatedId: listingId });
+
+      // Web Push to Landlord
+      await sendPushNotification(listing.userRef, {
+        title: '🎉 New Booking Received!',
+        body: `${buyer.username} just booked "${listing.name}". Check your email for contact details.`,
+        icon: '/icon-192.png'
+      });
+
+      // Admin Notification
+      const admins = await User.find({ role: 'admin' });
+      for (const admin of admins) {
+        await Notification.create({
+          recipient: admin._id,
+          sender: buyer._id,
+          message: `👑 Admin Alert: ${buyer.username} booked ${listing.name}`,
+          relatedId: listingId
+        });
+        await sendPushNotification(admin._id, {
+          title: '👑 Admin Alert: New Booking',
+          body: `${buyer.username} booked ${listing.name}.`,
+          icon: '/icon-192.png'
+        });
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Payment Verified, Email Sent & Landlord Notified!",
+      type: 'booking',
+    });
   } catch (error) {
     console.log("Verify Error:", error);
     next(error);
@@ -163,11 +268,51 @@ export const verifyPayment = async (req, res, next) => {
 // 3. GET ORDER HISTORY
 export const getOrderHistory = async (req, res, next) => {
   try {
-    const orders = await Order.find({ userRef: req.user.id })
-      .sort({ createdAt: -1 })
-      .populate('listingRef'); 
+    const limit = parseInt(req.query.limit) || 50;
+    const startIndex = parseInt(req.query.startIndex) || 0;
 
-    res.status(200).json(orders);
+    const [orders, total] = await Promise.all([
+      Order.find({ userRef: req.user.id })
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .skip(startIndex)
+        .populate('listingRef'),
+      Order.countDocuments({ userRef: req.user.id }),
+    ]);
+
+    res.status(200).json({ orders, total });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// 3b. ADMIN: COLLECTED FEES & PAYMENT STATS (real numbers from the orders collection)
+export const getAdminOrderStats = async (req, res, next) => {
+  try {
+    const adminUser = await User.findById(req.user.id);
+    if (!adminUser || adminUser.role !== 'admin') return next(errorHandler(403, 'Admins only!'));
+
+    const [fees, bookings] = await Promise.all([
+      Order.aggregate([
+        { $match: { status: 'success', type: 'listing_fee' } },
+        { $group: { _id: null, count: { $sum: 1 }, value: { $sum: '$amount' } } },
+      ]),
+      Order.aggregate([
+        { $match: { status: 'success', type: 'booking' } },
+        { $group: { _id: null, count: { $sum: 1 }, value: { $sum: '$amount' } } },
+      ]),
+    ]);
+
+    const feeAgg = fees[0] || { count: 0, value: 0 };
+    const bookingAgg = bookings[0] || { count: 0, value: 0 };
+
+    res.status(200).json({
+      success: true,
+      feesCollected: feeAgg.value || 0,
+      feesCount: feeAgg.count || 0,
+      bookingsValue: bookingAgg.value || 0,
+      bookingsCount: bookingAgg.count || 0,
+    });
   } catch (error) {
     next(error);
   }
@@ -193,20 +338,25 @@ export const cancelOrder = async (req, res, next) => {
     if (!order) return next(errorHandler(404, 'Order not found!'));
     if (order.userRef !== req.user.id) return next(errorHandler(401, 'You can only cancel your own orders!'));
 
+    // Fee payments cannot be cancelled here — no automated refund is wired up.
+    if (order.type === 'listing_fee') {
+      return next(errorHandler(400, 'Listing fee payments cannot be cancelled online. Contact support for a refund.'));
+    }
+
     order.status = 'cancelled';
     await order.save();
 
     const listing = await Listing.findById(order.listingRef);
     const buyer = await User.findById(req.user.id);
-    const landlord = await User.findById(listing.userRef);
+    const landlord = listing ? await User.findById(listing.userRef) : null;
 
     if (listing && landlord && buyer) {
        const emailSubject = `❌ Booking Cancelled: ${listing.name}`;
        const emailBody = `
          <div style="font-family: Arial, sans-serif; color: #333;">
            <h2 style="color: #dc2626;">Booking Cancelled</h2>
-           <p>Hello ${landlord.username},</p>
-           <p>The user <strong>${buyer.username}</strong> has cancelled their booking for <strong>${listing.name}</strong>.</p>
+           <p>Hello ${escapeHtml(landlord.username)},</p>
+           <p>The user <strong>${escapeHtml(buyer.username)}</strong> has cancelled their booking for <strong>${escapeHtml(listing.name)}</strong>.</p>
            <p>The status has been updated in your dashboard.</p>
            <br/>
            <p style="font-size: 12px; color: #888;">Team OasisSpace</p>
@@ -215,7 +365,7 @@ export const cancelOrder = async (req, res, next) => {
        await sendEmail(landlord.email, emailSubject, emailBody);
 
        await Notification.create({
-         recipient: listing.userRef, 
+         recipient: listing.userRef,
          sender: buyer._id,
          message: `❌ Booking Cancelled! ${buyer.username} cancelled booking for "${listing.name}".`,
          relatedId: listing._id

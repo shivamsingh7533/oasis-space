@@ -14,13 +14,12 @@ const userSchema = new mongoose.Schema(
     },
     mobile: {
       type: String,
-      required: true,
-      unique: false, 
+      required: false,
     },
-    // ✅ FIX: 'required: false' kar diya taaki Google users ka data save ho sake
     password: {
       type: String,
-      required: false, 
+      required: false,
+      select: false,
     },
     avatar: {
       type: String,
@@ -51,12 +50,14 @@ const userSchema = new mongoose.Schema(
       default: false, 
     },
     otp: {
-      type: String, 
+      type: String,
       default: null,
+      select: false,
     },
     otpExpires: {
-      type: Date, 
+      type: Date,
       default: null,
+      select: false,
     }
   },
   { timestamps: true }

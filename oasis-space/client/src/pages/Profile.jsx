@@ -3,13 +3,13 @@ import { useRef, useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import {
     updateUserStart, updateUserSuccess, updateUserFailure,
-    deleteUserFailure, deleteUserStart, deleteUserSuccess,
+    deleteUserSuccess,
     signOutUserStart,
 } from '../redux/user/userSlice';
 import { Link, useNavigate } from 'react-router-dom';
 import {
     FaTimes, FaCamera, FaUserEdit, FaSignOutAlt, FaList,
-    FaHeart, FaUserShield, FaUserTag, FaPhone, FaEnvelope, FaLock,
+    FaHeart, FaUserShield, FaUserTag, FaPhone, FaLock,
     FaBoxOpen, FaCog
 } from 'react-icons/fa';
 
@@ -23,7 +23,7 @@ export default function Profile({ onClose }) {
     const [formData, setFormData] = useState({
         username: currentUser.username,
         email: currentUser.email,
-        mobile: currentUser.mobile === '0000000000' ? '' : currentUser.mobile,
+        mobile: currentUser.mobile || '',
         password: '',
         avatar: currentUser.avatar
     });
@@ -38,6 +38,7 @@ export default function Profile({ onClose }) {
 
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const handleClose = onClose || (() => navigate(-1));
 
     const isGoogleUser = currentUser.avatar?.includes('googleusercontent.com');
 
@@ -52,7 +53,7 @@ export default function Profile({ onClose }) {
                     dispatch(signOutUserStart());
                     await fetch('/api/auth/signout');
                     dispatch(deleteUserSuccess({}));
-                    if (onClose) onClose();
+                    handleClose();
                     navigate('/'); // ✅ FIX: React Router Navigation (Seamless)
                     return;
                 }
@@ -148,31 +149,13 @@ export default function Profile({ onClose }) {
             dispatch(deleteUserSuccess({}));
 
             // 3. Close Modal
-            if (onClose) onClose();
+            handleClose();
 
             // 4. 🚀 REACT ROUTER NAVIGATE (Fix for hard refresh)
             navigate('/');
 
         } catch (error) {
             console.log(error);
-        }
-    };
-
-    const handleDeleteUser = async () => {
-        if (!window.confirm("Are you sure you want to delete your account?")) return;
-        try {
-            dispatch(deleteUserStart());
-            const res = await fetch(`/api/user/delete/${currentUser._id}`, { method: 'DELETE' });
-            const data = await res.json();
-            if (data.success === false) {
-                dispatch(deleteUserFailure(data.message));
-                return;
-            }
-            dispatch(deleteUserSuccess(data));
-            if (onClose) onClose();
-            navigate('/'); // ✅ FIX: React Router Navigation
-        } catch (error) {
-            dispatch(deleteUserFailure(error.message));
         }
     };
 
@@ -228,12 +211,12 @@ export default function Profile({ onClose }) {
         <div className='fixed inset-0 z-50 flex justify-end items-start p-4 sm:p-6 pt-20'>
 
             {/* Backdrop */}
-            <div className='fixed inset-0' onClick={onClose}></div>
+            <div className='fixed inset-0' onClick={handleClose}></div>
 
             {/* Main Card */}
             <div className='relative rounded-3xl shadow-2xl border w-full max-w-[380px] max-h-[85vh] overflow-y-auto custom-scrollbar animate-in fade-in slide-in-from-top-5 duration-200' style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)', borderColor: 'var(--border-primary)' }}>
 
-                <button onClick={onClose} className='absolute top-3 right-3 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-700 transition z-10'>
+                <button onClick={handleClose} className='absolute top-3 right-3 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-700 transition z-10'>
                     <FaTimes />
                 </button>
 
@@ -315,22 +298,22 @@ export default function Profile({ onClose }) {
                     {/* MAIN ACTIONS */}
                     <div className='bg-slate-800/50 rounded-2xl overflow-hidden border border-slate-700/50'>
                         {/* ✅ Settings Link */}
-                        <Link to="/settings" onClick={onClose} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
+                        <Link to="/settings" onClick={() => onClose?.()} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
                             <span className='text-slate-400'><FaCog /></span> <span className='text-sm font-medium text-white'>Settings</span>
                         </Link>
 
                         {currentUser.role === 'admin' && (
-                            <Link to="/dashboard" onClick={onClose} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
+                            <Link to="/dashboard" onClick={() => onClose?.()} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
                                 <span className='text-purple-400'><FaUserShield /></span> <span className='text-sm font-medium'>Admin Dashboard</span>
                             </Link>
                         )}
 
-                        <Link to="/create-listing" onClick={onClose} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
+                        <Link to="/create-listing" onClick={() => onClose?.()} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
                             <span className='text-green-400'>🏠</span> <span className='text-sm font-medium'>List a Property</span>
                         </Link>
 
                         {/* ✅ ORDER HISTORY BUTTON */}
-                        <Link to="/order-history" onClick={onClose} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
+                        <Link to="/order-history" onClick={() => onClose?.()} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
                             <span className='text-yellow-400'><FaBoxOpen /></span> <span className='text-sm font-medium'>Order History</span>
                         </Link>
 
@@ -349,7 +332,7 @@ export default function Profile({ onClose }) {
 
                         {/* Seller Dashboard Link */}
                         {currentUser.sellerStatus === 'approved' && (
-                            <Link to="/seller-dashboard" onClick={onClose} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
+                            <Link to="/seller-dashboard" onClick={() => onClose?.()} className='p-3.5 hover:bg-slate-700 flex items-center gap-3 transition border-b border-slate-700/50'>
                                 <span className='text-blue-400'><FaUserTag /></span> <span className='text-sm font-medium'>Seller Dashboard</span>
                             </Link>
                         )}
@@ -365,10 +348,10 @@ export default function Profile({ onClose }) {
                             <div className='bg-slate-900/50 p-2 max-h-40 overflow-y-auto'>
                                 {userListings.map((listing) => (
                                     <div key={listing._id} className='flex justify-between items-center p-2 mb-2 bg-slate-800 rounded border border-slate-700'>
-                                        <Link to={`/listing/${listing._id}`} onClick={onClose} className='text-xs text-white truncate w-24 hover:underline'>{listing.name}</Link>
+                                        <Link to={`/listing/${listing._id}`} onClick={() => onClose?.()} className='text-xs text-white truncate w-24 hover:underline'>{listing.name}</Link>
                                         <div className='flex gap-2'>
                                             <button onClick={() => handleListingDelete(listing._id)} className='text-red-400 text-[10px] uppercase hover:underline'>Delete</button>
-                                            <Link to={`/update-listing/${listing._id}`} onClick={onClose} className='text-green-400 text-[10px] uppercase hover:underline'>Edit</Link>
+                                            <Link to={`/update-listing/${listing._id}`} onClick={() => onClose?.()} className='text-green-400 text-[10px] uppercase hover:underline'>Edit</Link>
                                         </div>
                                     </div>
                                 ))}
@@ -386,8 +369,8 @@ export default function Profile({ onClose }) {
                             <div className='bg-slate-900/50 p-2 max-h-40 overflow-y-auto'>
                                 {savedListings.map((listing) => (
                                     <div key={listing._id} className='flex justify-between items-center p-2 mb-2 bg-slate-800 rounded border border-slate-700'>
-                                        <Link to={`/listing/${listing._id}`} onClick={onClose} className='text-xs text-white truncate w-32 hover:underline'>{listing.name}</Link>
-                                        <Link to={`/listing/${listing._id}`} onClick={onClose} className='text-blue-400 text-[10px] uppercase hover:underline'>View</Link>
+                                        <Link to={`/listing/${listing._id}`} onClick={() => onClose?.()} className='text-xs text-white truncate w-32 hover:underline'>{listing.name}</Link>
+                                        <Link to={`/listing/${listing._id}`} onClick={() => onClose?.()} className='text-blue-400 text-[10px] uppercase hover:underline'>View</Link>
                                     </div>
                                 ))}
                             </div>

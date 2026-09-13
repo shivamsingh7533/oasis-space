@@ -130,7 +130,7 @@ export default function Header() {
                             <>
                                 {/* Wishlist Link */}
                                 <li>
-                                    <Link to='/saved-listings' className='text-slate-300 hover:text-pink-500 transition-colors flex items-center gap-1' title="My Wishlist">
+                                    <Link to='/saved-listings' className='hover:text-pink-500 transition-colors flex items-center gap-1' style={{ color: 'var(--text-primary)' }} title="My Wishlist">
                                         <FaHeart className='text-lg' /> <span className='hidden lg:inline text-sm'>Wishlist</span>
                                     </Link>
                                 </li>
@@ -183,7 +183,7 @@ export default function Header() {
                                                                 <FaTrash /> Clear
                                                             </span>
                                                         )}
-                                                        <span className="text-xs text-slate-400 cursor-pointer hover:text-white" onClick={(e) => { e.stopPropagation(); setShowNotif(false); }}>Close</span>
+                                                        <span className="text-xs text-slate-400 cursor-pointer hover:text-blue-400" onClick={(e) => { e.stopPropagation(); setShowNotif(false); }}>Close</span>
                                                     </div>
                                                 </div>
                                                 <div className="max-h-64 overflow-y-auto custom-scrollbar">
@@ -191,7 +191,7 @@ export default function Header() {
                                                         <p className="p-6 text-center text-slate-400 text-sm">No new notifications</p>
                                                     ) : (
                                                         notifications.map((notif) => (
-                                                            <div key={notif._id} className={`p-3 border-b border-slate-700/50 text-sm hover:bg-slate-700 transition ${notif.isRead ? 'text-slate-400' : 'bg-slate-700/30 text-white font-semibold'}`}>
+                                                            <div key={notif._id} className={`p-3 border-b border-slate-700/50 text-sm transition ${notif.isRead ? 'text-slate-400' : 'bg-blue-500/10 font-semibold'}`} style={notif.isRead ? undefined : { color: 'var(--text-primary)' }}>
                                                                 <p>{notif.message}</p>
                                                                 <p className="text-[10px] text-slate-400 mt-1 text-right">
                                                                     {new Date(notif.createdAt).toLocaleDateString()}
@@ -360,7 +360,7 @@ export default function Header() {
                                     height="40"
                                 />
                                 <div>
-                                    <p className='text-white font-bold text-sm'>{currentUser.username}</p>
+                                    <p className='font-bold text-sm' style={{ color: 'var(--text-heading)' }}>{currentUser.username}</p>
                                     <p className='text-slate-400 text-xs'>View Profile</p>
                                 </div>
                             </div>

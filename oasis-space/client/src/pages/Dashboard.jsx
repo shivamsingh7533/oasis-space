@@ -3,11 +3,14 @@ import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import { FaMoneyBillWave, FaChartLine, FaUsers, FaHome, FaTrash, FaEdit, FaUserShield, FaUserTag, FaUser, FaStar, FaRegStar, FaCheckCircle, FaTag, FaClock, FaBuilding, FaUserCheck } from 'react-icons/fa';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { formatPrice } from '../utils/currencyFormatter';
 
 export default function Dashboard() {
     const { currentUser } = useSelector((state) => state.user);
+    const { currency, rates } = useSelector((state) => state.currency);
     const [listings, setListings] = useState([]);
     const [users, setUsers] = useState([]);
+    const [orderStats, setOrderStats] = useState({ feesCollected: 0, feesCount: 0, bookingsValue: 0, bookingsCount: 0 });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -26,11 +29,18 @@ export default function Dashboard() {
             setLoading(true);
             const resListings = await fetch('/api/listing/admin-listings');
             const dataListings = await resListings.json();
-            setListings(Array.isArray(dataListings) ? dataListings : []);
+            setListings(Array.isArray(dataListings) ? dataListings : dataListings.listings || []);
 
             const resUsers = await fetch('/api/user/getusers');
             const dataUsers = await resUsers.json();
             setUsers(Array.isArray(dataUsers) ? dataUsers : []);
+
+            // Real platform money stats (listing fees + booking payments)
+            const resOrders = await fetch('/api/order/admin');
+            const dataOrders = await resOrders.json();
+            if (dataOrders.success) {
+                setOrderStats(dataOrders);
+            }
 
         } catch (err) {
             setError(err.message);
@@ -136,12 +146,9 @@ export default function Dashboard() {
         const totalSaleValue = availableItems.filter(l => l.type === 'sale').reduce((acc, curr) => acc + (+curr.regularPrice || 0), 0);
         const totalRentVolume = availableItems.filter(l => l.type === 'rent').reduce((acc, curr) => acc + (+curr.regularPrice || 0), 0);
 
-        // Rough estimate revenue calculation (2% on sales, 10% on rent purely as an example)
-        const estimatedRevenue = (totalSaleValue * 0.02) + (totalRentVolume * 0.10);
-
-        return { totalSaleValue, totalRentVolume, estimatedRevenue, soldCount: soldItems.length, rentedCount: rentedItems.length };
+        return { totalSaleValue, totalRentVolume, soldCount: soldItems.length, rentedCount: rentedItems.length };
     };
-    const { totalSaleValue, totalRentVolume, estimatedRevenue, soldCount, rentedCount } = calculateFinancials();
+    const { totalSaleValue, totalRentVolume, soldCount, rentedCount } = calculateFinancials();
 
     if (!currentUser || currentUser.role !== 'admin') return <div className='p-10 text-center text-white'>Access Denied</div>;
 
@@ -175,18 +182,32 @@ export default function Dashboard() {
                             {/* Financial Stats Row */}
                             <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
                                 <div className='bg-green-900/40 p-6 rounded-2xl border border-green-700/50 shadow-xl'>
-                                    <h3 className='text-green-400 text-sm font-bold uppercase'>Est. Net Revenue</h3>
-                                    <p className='text-4xl font-bold text-white mt-2'>₹ {estimatedRevenue.toLocaleString('en-IN')}</p>
+                                    <h3 className='text-green-400 text-sm font-bold uppercase'>Listing Fees Collected</h3>
+                                    <p className='text-4xl font-bold text-white mt-2'>{formatPrice(orderStats.feesCollected || 0, currency, rates)}</p>
+                                    <p className='text-xs text-green-300 mt-1'>{orderStats.feesCount} paid listing{orderStats.feesCount === 1 ? '' : 's'}</p>
                                 </div>
                                 {/* ✅ RESTORED CARD: Inventory Value */}
                                 <div className='p-6 rounded-2xl border shadow-xl' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
                                     <h3 className='text-slate-400 text-sm font-bold uppercase'>Inventory Value</h3>
-                                    <p className='text-3xl font-bold text-white mt-2'>₹ {totalSaleValue.toLocaleString('en-IN')}</p>
+                                    <p className='text-3xl font-bold text-white mt-2'>{formatPrice(totalSaleValue, currency, rates)}</p>
                                 </div>
                                 {/* ✅ RESTORED CARD: Rent Volume */}
                                 <div className='p-6 rounded-2xl border shadow-xl' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
                                     <h3 className='text-slate-400 text-sm font-bold uppercase'>Rent Volume/Mo</h3>
-                                    <p className='text-3xl font-bold text-white mt-2'>₹ {totalRentVolume.toLocaleString('en-IN')}</p>
+                                    <p className='text-3xl font-bold text-white mt-2'>{formatPrice(totalRentVolume, currency, rates)}</p>
+                                </div>
+                            </div>
+
+                            {/* REAL BOOKING PAYMENTS ROW */}
+                            <div className='grid grid-cols-2 md:grid-cols-3 gap-4'>
+                                <div className='p-4 rounded-xl border text-center' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
+                                    <p className='text-2xl font-bold text-sky-400'>{formatPrice(orderStats.bookingsValue || 0, currency, rates)}</p><span className='text-xs uppercase text-sky-400'>Bookings Value</span>
+                                </div>
+                                <div className='p-4 rounded-xl border text-center' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
+                                    <p className='text-2xl font-bold text-sky-400'>{orderStats.bookingsCount}</p><span className='text-xs uppercase text-sky-400'>Booking Payments</span>
+                                </div>
+                                <div className='hidden md:block p-4 rounded-xl border text-center' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
+                                    <p className='text-2xl font-bold text-emerald-400'>{orderStats.feesCount + orderStats.bookingsCount}</p><span className='text-xs uppercase text-emerald-400'>Total Payments</span>
                                 </div>
                             </div>
 
@@ -296,6 +317,7 @@ export default function Dashboard() {
                                         View All →
                                     </button>
                                 </div>
+                                <div className='overflow-x-auto'>
                                 <table className='w-full text-left text-sm text-gray-400'>
                                     <thead className='bg-slate-900/60 uppercase text-[11px] text-slate-500'>
                                         <tr>
@@ -324,7 +346,7 @@ export default function Dashboard() {
                                                         {listing.type}
                                                     </span>
                                                 </td>
-                                                <td className='p-3 text-white font-medium'>₹ {listing.regularPrice?.toLocaleString('en-IN')}</td>
+                                                <td className='p-3'>{formatPrice(listing.regularPrice, currency, rates)}</td>
                                                 <td className='p-3'>
                                                     <span className={`px-2 py-0.5 rounded text-[11px] font-bold uppercase ${listing.status === 'sold' ? 'bg-red-500/20 text-red-400' :
                                                         listing.status === 'rented' ? 'bg-orange-500/20 text-orange-400' :
@@ -343,6 +365,7 @@ export default function Dashboard() {
                                         ))}
                                     </tbody>
                                 </table>
+                                </div>
                                 {listings.length === 0 && (
                                     <p className='text-center text-slate-500 py-8'>No listings found.</p>
                                 )}
@@ -353,6 +376,7 @@ export default function Dashboard() {
                     {/* --- TAB 2: LISTINGS --- */}
                     {activeTab === 'listings' && (
                         <div className='bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden'>
+                            <div className='overflow-x-auto'>
                             <table className='w-full text-left text-sm text-gray-400'>
                                 <thead className='bg-slate-900 uppercase text-xs'>
                                     <tr>
@@ -377,12 +401,14 @@ export default function Dashboard() {
                                                     {listing.featured ? <FaStar /> : <FaRegStar />}
                                                 </button>
                                             </td>
-                                            <td className='p-4 flex gap-3 items-center'>
-                                                <img src={listing.imageUrls[0]} className='w-12 h-12 rounded object-cover' alt="" />
-                                                <div><p className='text-white font-bold truncate w-40'>{listing.name}</p><p className='text-xs'>{listing.address}</p></div>
+                                            <td className='p-4'>
+                                                <div className='flex gap-3 items-center'>
+                                                    <img src={listing.imageUrls?.[0]} className='w-12 h-12 rounded object-cover' alt="" />
+                                                    <div><p className='text-white font-bold truncate w-40'>{listing.name}</p><p className='text-xs'>{listing.address}</p></div>
+                                                </div>
                                             </td>
                                             <td className='p-4'><span className={`px-2 py-1 rounded text-xs font-bold uppercase ${listing.type === 'rent' ? 'bg-blue-500/20 text-blue-400' : 'bg-green-500/20 text-green-400'}`}>{listing.type}</span></td>
-                                            <td className='p-4 text-white'>₹ {listing.regularPrice.toLocaleString('en-IN')}</td>
+                                            <td className='p-4 text-white'>{formatPrice(listing.regularPrice, currency, rates)}</td>
 
                                             {/* 🏷️ STATUS DROPDOWN */}
                                             <td className='p-4'>
@@ -409,6 +435,7 @@ export default function Dashboard() {
                                     ))}
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     )}
 

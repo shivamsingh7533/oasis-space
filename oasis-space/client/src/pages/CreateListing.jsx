@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { supabase } from '../supabase';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { FaCloudUploadAlt, FaTrashAlt } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaTrashAlt, FaCheckCircle, FaArrowLeft } from 'react-icons/fa';
 import { compressImage } from '../utils/compressImage';
+import RazorpayBtn from '../components/RazorpayBtn';
+import { getListingFee, LISTING_FEES } from '../utils/fees';
 
 export default function CreateListing() {
   const { currentUser } = useSelector((state) => state.user);
@@ -30,6 +32,8 @@ export default function CreateListing() {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  // Draft saved by the backend — payment is required before it goes live.
+  const [createdListing, setCreatedListing] = useState(null);
 
   // --- IMAGE UPLOAD LOGIC ---
   const handleImageSubmit = (files) => {
@@ -58,6 +62,9 @@ export default function CreateListing() {
   };
 
   const storeImage = async (file) => {
+    if (!import.meta.env.VITE_SUPABASE_KEY) {
+      throw new Error('Image upload is not configured (missing VITE_SUPABASE_KEY).');
+    }
     // 🗜️ Auto-compress to ≤2MB before upload
     const compressed = await compressImage(file);
     const ext = compressed.type === 'image/webp' ? '.webp' : '.jpg';
@@ -170,13 +177,15 @@ export default function CreateListing() {
     try {
       if (formData.imageUrls.length < 1) return setError('At least one image is required');
       if (+formData.regularPrice < +formData.discountPrice) return setError('Discount price must be lower than regular price');
+      if (!currentUser) return setError('Please login to create a listing');
 
       setLoading(true); setError(false);
 
+      // Backend forces userRef/status('pending'); ownership is never trusted from the client.
       const res = await fetch('/api/listing/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, userRef: currentUser?._id })
+        body: JSON.stringify(formData)
       });
 
       const data = await res.json();
@@ -185,13 +194,75 @@ export default function CreateListing() {
       if (data.success === false) {
         setError(data.message);
       } else {
-        navigate(`/listing/${data._id}`);
+        // Draft saved → show the fee-payment step to publish.
+        setCreatedListing(data);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (err) { console.log(err); setError('Failed to create listing'); setLoading(false); }
   };
 
   const inputClass = "bg-slate-700 text-white rounded-lg p-3 w-full border border-slate-600 focus:outline-none focus:border-indigo-500 placeholder-slate-400";
   const labelClass = "text-slate-300 font-semibold mb-2 block";
+
+  // --- PAYMENT STEP RENDERED AFTER THE DRAFT IS CREATED ---
+  if (createdListing) {
+    const fee = getListingFee(createdListing.type);
+    const feeLabel = createdListing.type === 'rent' ? 'Rent' : 'Sale';
+    return (
+      <div className='min-h-screen flex items-center justify-center p-4 py-10' style={{ backgroundColor: 'var(--bg-primary)' }}>
+        <div className='max-w-lg w-full rounded-lg shadow-2xl p-8 border' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
+          <button
+            onClick={() => setCreatedListing(null)}
+            className='flex items-center gap-2 text-slate-400 hover:text-slate-200 text-sm font-semibold transition mb-4'
+          >
+            <FaArrowLeft /> Back to edit draft
+          </button>
+
+          <div className='flex flex-col items-center text-center mb-6'>
+            <div className='bg-green-500/10 p-4 rounded-full mb-4 border border-green-500/30'>
+              <FaCheckCircle className='text-4xl text-green-500' />
+            </div>
+            <h2 className='text-2xl font-bold text-white mb-2'>Draft Saved!</h2>
+            <p className='text-slate-400 text-sm mb-4'>
+              <span className='font-semibold text-slate-200'>{createdListing.name}</span> is created as a draft. Pay the one-time listing fee to publish it for everyone to see.
+            </p>
+          </div>
+
+          <div className='bg-slate-800/60 rounded-2xl border border-slate-700 p-5 mb-6'>
+            <div className='flex justify-between items-center mb-2'>
+              <span className='text-slate-400 text-sm'>Listing Type</span>
+              <span className='px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wide bg-indigo-500/20 text-indigo-400 border border-indigo-500/30'>
+                For {feeLabel}
+              </span>
+            </div>
+            <div className='flex justify-between items-center'>
+              <span className='text-slate-400 text-sm'>Listing Fee (one-time)</span>
+              <span className='text-3xl font-black text-white'>&#8377;{fee.toLocaleString('en-IN')}</span>
+            </div>
+            <p className='text-[11px] text-slate-500 mt-3 leading-relaxed'>
+              Sale listings: &#8377;{LISTING_FEES.sale.toLocaleString('en-IN')} &nbsp;&middot;&nbsp; Rent listings: &#8377;{LISTING_FEES.rent.toLocaleString('en-IN')}. The fee is charged once via Razorpay. Your listing goes live right after payment.
+            </p>
+          </div>
+
+          <RazorpayBtn
+            listing={createdListing}
+            btnText={`Pay ₹${fee.toLocaleString('en-IN')} & Publish`}
+            onSuccess={() => navigate('/seller-dashboard')}
+            customStyle="w-full justify-center flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-5 py-4 rounded-xl font-bold transition-all shadow-lg shadow-green-900/30 border border-green-500/50"
+          />
+
+          <p className='text-center mt-4'>
+            <button
+              onClick={() => navigate('/seller-dashboard')}
+              className='text-slate-400 hover:text-slate-200 text-sm font-semibold transition'
+            >
+              Pay later — go to Seller Dashboard
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className='min-h-screen flex items-center justify-center p-4 py-10' style={{ backgroundColor: 'var(--bg-primary)' }}>
