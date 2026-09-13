@@ -34,7 +34,7 @@ Single repo (`main` branch), two deployables under `client/` and `server/`.
 | Password | bcryptjs | 3.0 | Hashing |
 | Payments | razorpay | 2.9 | Listing-fee orders, verify, fetch |
 | Email / OTP | @getbrevo/brevo | 2.5 | Transactional email (OTP, approvals) |
-| AI chat | groq-sdk | 0.37 | LLaMA chat assistant (`/api/chat/ask`) |
+| AI chat | groq-sdk | 0.37 | Agentic assistant (`/api/chat/ask`) — tool-calling w/ Mongo search (`chatTools.js`), `CHAT_MODEL` env + fallback chain |
 | AI description | @google/generative-ai | 0.24 | Generate listing descriptions |
 | Push | web-push | 3.6 | VAPID web push |
 | Rate limiting | express-rate-limit | 8.3 | Per-endpoint limiters |

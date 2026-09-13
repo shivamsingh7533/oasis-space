@@ -76,7 +76,7 @@ Base URL:
 ## Chat — `/api/chat`
 | Method | Path | Auth | Notes |
 |--------|------|:----:|-------|
-| POST | `/ask` | 🚦 | `{ prompt, history }` → `{ reply }`. Queries live `status: 'available'` listings, uses Groq LLaMA. Spam-limited. |
+| POST | `/ask` | 🚦 | `{ prompt, history }` → `{ reply, listings }`. Agentic tool-calling (Groq, `CHAT_MODEL`): search → real Mongo filters (city/type/budget/BHK/offer/sort), detail, platform facts. `listings` = matched cards for the client. 429/limits → friendly reply (200). Spam-limited. |
 
 ## Notifications — `/api/notification`
 | Method | Path | Auth | Notes |

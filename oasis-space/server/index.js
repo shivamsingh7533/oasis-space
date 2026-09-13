@@ -1,6 +1,9 @@
+// Must be the FIRST import — loads server/.env before any module that
+// reads process.env at import time (e.g. the Razorpay client in order.controller).
+import './config/env.js';
+
 import express from 'express';
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import webpush from 'web-push';
@@ -15,8 +18,6 @@ import notificationRouter from './routes/notification.route.js';
 import pushRouter from './routes/push.route.js';
 import seoRouter from './routes/seo.route.js';
 import { globalLimiter, authLimiter, chatLimiter } from './utils/limiters.js';
-
-dotenv.config();
 
 // Initialize Web Push
 const VAPID_PUBLIC = process.env.VAPID_PUBLIC_KEY?.trim().replace(/=+$/, '');

@@ -30,7 +30,7 @@ Browse (Home carousels, Recent Offers, Search w/ filters+sort)
  → /search?searchTerm=&type=&offer=&sort=&order=&startIndex=...   (hasMore pagination)
  → /listing/:id  (gallery, map, EMI, price in chosen currency)
     Actions: Save to wishlist  · WhatsApp share  · Contact landlord (verified sellers only)
-AI assistant: chat "2BHK in Mumbai under ₹20k" → live DB query via Groq.
+AI assistant: chat "2BHK in Mumbai under ₹20k" → model calls `search_listings` tool → server runs real Mongo filters → matched listings returned as cards + Hinglish summary.
 ```
 Wishlist (`/api/user/save/:id`) toggles, persisted in Redux; `/saved-listings` shows saved (excluding pending).
 

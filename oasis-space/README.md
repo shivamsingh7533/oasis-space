@@ -47,7 +47,7 @@ Whether you're a property seeker, seller, or admin, OasisSpace provides an intui
 - 🔍 Advanced search with filters (location, price, bedrooms, etc.)
 
 ### 🤖 **AI-Powered Features**
-- 💬 **Jarvis AI Chatbot** — Real-time property assistant powered by Groq LLaMA 3.3
+- 💬 **Jarvis AI Chatbot** — Agentic property assistant (Groq, tool-calling): filters real listings by city/budget/BHK and returns clickable cards
 - ✍️ **AI Description Generator** — Auto-generate SEO-friendly property descriptions using Google Gemini
 
 ### 💳 **Payment Integration**
@@ -119,7 +119,7 @@ Whether you're a property seeker, seller, or admin, OasisSpace provides an intui
 | [bcryptjs](https://www.npmjs.com/package/bcryptjs) | Password Hashing |
 | [Razorpay](https://razorpay.com/) | Payment Gateway |
 | [Brevo (Sendinblue)](https://www.brevo.com/) | Email Service |
-| [Groq SDK](https://groq.com/) | AI Chatbot (LLaMA 3.3) |
+| [Groq SDK](https://groq.com/) | AI Chatbot (agentic, tool-calling) |
 | [Google Generative AI](https://ai.google.dev/) | AI Description Generator |
 
 ---

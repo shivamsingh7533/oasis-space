@@ -28,6 +28,15 @@ Documented behaviours when the happy path breaks. Each item maps to a code guard
 - **Secrets**: `password`, `otp`, `otpExpires` are `select:false`; admin user list uses `select('-otp -otpExpires')`.
 - **Rate limits**: `authLimiter` on `/api/auth`, `chatLimiter` on `/api/chat`, `contactLimiter` on `/public contact*` — brute-force/OTP-spam and AI-cost spikes are bounded.
 
+## AI chatbot
+- **Tool-calling safety**: `chatTools.js` clamps/validates every tool arg; `search_listings` always filters `status: 'available'`, never fee drafts/sold/rented. The system prompt forbids inventing listings — the model only speaks from tool output.
+- **Unknown tool / bad JSON**: `runTool` returns `{ error }` and unknown tools → the loop feeds it back to the model; no crash, no DB write.
+- **No match**: search returns `[]` → model (by rule) gives the polite "maaf kijiye boss" no-listing reply in Hinglish.
+- **Groq rate limit (429)**: responded with a friendly `200` Hinglish "thoda ruk kar poochhiye" message, not a 500 (free-tier ~30 rpm / ~1k day caps).
+- **Model removed / no access (`model_not_found`)**: walks `CHAT_MODEL` → `CHAT_FALLBACK_MODELS` chain automatically (e.g. `qwen/qwen3.8-27b` → `qwen/qwen3.6-27b`). Keep both list-worthy on the Groq account.
+- **History injection**: client history is sanitized to `user`/`assistant` roles and truncated; assistant's data rules can't be overridden by a user message.
+- **Token/cost cap**: prompt capped at 1000 chars, history 6 msgs, `max_tokens: 350`, tool results `≤8` listings — per-message Groq cost stays tiny.
+
 ## Infra & integration
 - **Mongo down**: `connectDB()` retries every 5 s (never silently serves without DB).
 - **Missing VAPID keys**: `webpush.setVapidDetails` skipped with a warning; `/api/push/vapidPublicKey` errors; the browser prompt degrades gracefully (dismiss).

@@ -1,10 +1,47 @@
 import { useState, useRef, useEffect } from 'react';
-import { FaRobot, FaPaperPlane, FaTimes, FaCommentDots } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+import { FaRobot, FaPaperPlane, FaTimes, FaCommentDots, FaBed, FaBath } from 'react-icons/fa';
+
+const cardImage = (imageUrl) => {
+  if (!imageUrl) return 'https://via.placeholder.com/500';
+  if (imageUrl.startsWith('data:')) return imageUrl;
+  return `https://wsrv.nl/?url=${encodeURIComponent(imageUrl)}&output=webp&w=600&q=80`;
+};
+
+function ListingCard({ listing }) {
+  return (
+    <Link
+      to={listing.url || `/listing/${listing.id}`}
+      className="flex gap-3 bg-slate-900/70 border border-slate-700 rounded-xl p-2.5 hover:border-indigo-500 transition-colors mb-1.5"
+    >
+      <img
+        src={cardImage(listing.image)}
+        alt={listing.name}
+        className="w-16 h-16 rounded-lg object-cover bg-slate-700 border border-slate-600 flex-shrink-0"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-bold text-white truncate">{listing.name}</p>
+          <span className="text-xs font-black text-emerald-400 whitespace-nowrap">
+            ₹{Number(listing.price).toLocaleString('en-IN')}{listing.type === 'rent' ? '/mo' : ''}
+          </span>
+        </div>
+        <p className="text-[11px] text-slate-400 truncate">{listing.address}</p>
+        <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
+          <span className="flex items-center gap-1"><FaBed className="text-slate-500" /> {listing.bedrooms} BHK</span>
+          <span className="flex items-center gap-1"><FaBath className="text-slate-500" /> {listing.bathrooms} Bath</span>
+          {listing.offer && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-600 text-white">OFFER</span>}
+          <span className="ml-auto text-indigo-400 text-[11px] font-semibold">View →</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Hello! I am Jarvis 🤖. How can I help you find your dream home today?' }
+    { role: 'assistant', content: 'Hello! I am Jarvis 🤖. How can I help you find your dream home today?', listings: [] }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,7 +65,7 @@ export default function ChatWidget() {
     setLoading(true);
 
     try {
-      // Prepare history for context (last 6 messages to save tokens)
+      // Prepare plain-text history (last 6 messages) — structured cards are stripped.
       const history = messages.slice(-6).map(msg => ({ role: msg.role, content: msg.content }));
 
       const res = await fetch('/api/chat/ask', {
@@ -40,13 +77,13 @@ export default function ChatWidget() {
       const data = await res.json();
 
       if (data.reply) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
+        setMessages((prev) => [...prev, { role: 'assistant', content: data.reply, listings: data.listings || [] }]);
       } else {
-        setMessages((prev) => [...prev, { role: 'assistant', content: "Sorry, I'm having trouble connecting to the server." }]);
+        setMessages((prev) => [...prev, { role: 'assistant', content: "Sorry, I'm having trouble connecting to the server.", listings: [] }]);
       }
     } catch (error) {
       console.log(error);
-      setMessages((prev) => [...prev, { role: 'assistant', content: "Network error. Please try again." }]);
+      setMessages((prev) => [...prev, { role: 'assistant', content: "Network error. Please try again.", listings: [] }]);
     }
     setLoading(false);
   };
@@ -56,7 +93,7 @@ export default function ChatWidget() {
 
       {/* CHAT WINDOW */}
       {isOpen && (
-        <div className="bg-slate-800 border border-slate-700 w-[calc(100vw-2rem)] max-w-[380px] h-[500px] max-h-[70vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-4 animate-fadeIn">
+        <div className="bg-slate-800 border border-slate-700 w-[calc(100vw-2rem)] max-w-[380px] h-[520px] max-h-[70vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden mb-4 animate-fadeIn">
 
           {/* Header */}
           <div className="bg-indigo-600 p-4 flex justify-between items-center">
@@ -73,11 +110,18 @@ export default function ChatWidget() {
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-slate-900 custom-scrollbar">
             {messages.map((msg, index) => (
               <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[80%] p-3 rounded-lg text-sm leading-relaxed ${msg.role === 'user'
+                <div className={`max-w-[85%] ${msg.role === 'user'
                   ? 'bg-indigo-600 text-white rounded-br-none'
                   : 'bg-slate-700 text-slate-200 rounded-bl-none'
-                  }`}>
+                  } p-3 rounded-lg text-sm leading-relaxed`}>
                   {msg.content}
+                  {msg.listings?.length > 0 && (
+                    <div className="mt-3">
+                      {msg.listings.map((listing) => (
+                        <ListingCard key={listing.id} listing={listing} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
