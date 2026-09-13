@@ -1,4 +1,5 @@
 import Listing from '../models/listing.model.js';
+import { getListingFee } from '../utils/fees.js';
 
 const SITE_URL = (process.env.SITE_URL || process.env.CLIENT_URL || 'https://oasis-space.vercel.app')
   .split(',')[0]
@@ -97,7 +98,7 @@ export const getLlmsFull = async (req, res, next) => {
     }
     lines.push('');
     lines.push(`- Listing page URL pattern: ${SITE_URL}/listing/:id`);
-    lines.push(`- Listing fee: ₹1,100 (rent) / ₹5,100 (sale) — see ${SITE_URL}/faq`);
+    lines.push(`- Listing fee: FREE (rent) / ₹${getListingFee('sale').toLocaleString('en-IN')} (sale) — see ${SITE_URL}/faq`);
 
     const text = lines.join('\n');
     res.set('Content-Type', 'text/plain; charset=utf-8');

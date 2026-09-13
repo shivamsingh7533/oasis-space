@@ -36,7 +36,7 @@ const orderSchema = new mongoose.Schema(
       index: true,
     },
     // What kind of payment:
-    //  - 'listing_fee'  : seller pays to publish a listing (₹1,100 rent / ₹5,100 sale)
+    //  - 'listing_fee'  : seller pays to publish a listing (rent is free; sale ₹5,100)
     //  - 'booking'      : legacy buyer booking (pre-fee-model orders)
     type: {
       type: String,

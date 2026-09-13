@@ -21,9 +21,9 @@ export default function About() {
         <section className="flex flex-col gap-3 rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
           <h2 className="text-xl font-bold" style={{ color: 'var(--text-heading)' }}>Our Mission</h2>
           <p className="text-sm md:text-base leading-relaxed" style={{ color: 'var(--text-primary)' }}>
-            Real estate portals are full of stale and duplicate listings. OasisSpace solves this by making every listing
-            a committed, paid action: sellers go through verification and pay a one-time listing fee before a property
-            goes live. That small friction removes the noise and keeps our marketplace honest for buyers, tenants and agents.
+            Real estate portals are full of stale and duplicate listings. OasisSpace solves this by keeping listings honest:
+            sellers go through verification, and Sale listings require a one-time fee while Rent listings publish free.
+            That small friction removes the noise and keeps our marketplace honest for buyers, tenants and agents.
           </p>
         </section>
 
@@ -33,7 +33,7 @@ export default function About() {
             <FaRupeeSign className="text-lg mb-2" style={{ color: 'var(--accent-color, #60a5fa)' }} />
             <h3 className="font-bold mb-1" style={{ color: 'var(--text-heading)' }}>Transparent Pricing</h3>
             <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-              One-time ₹1,100 for rent, ₹5,100 for sale. No hidden commissions — browse and contact landlords free.
+              Rent listings publish free. One-time ₹5,100 for Sale. No hidden commissions — browse and contact landlords free.
             </p>
           </div>
           <div className="rounded-2xl p-5" style={{ backgroundColor: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>

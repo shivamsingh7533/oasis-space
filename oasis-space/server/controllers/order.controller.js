@@ -42,6 +42,12 @@ export const createOrder = async (req, res, next) => {
 
     const fee = getListingFee(listing.type);
 
+    // Rent listings publish free — there is no fee to pay (protects against
+    // bypassing the guard with a ₹0 Razorpay order).
+    if (fee === 0) {
+      return next(errorHandler(400, 'Rent listings publish free — no payment required.'));
+    }
+
     const existingPaid = await Order.findOne({
       userRef: req.user.id,
       listingRef: listingId,

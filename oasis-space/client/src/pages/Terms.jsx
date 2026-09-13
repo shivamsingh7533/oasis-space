@@ -36,7 +36,7 @@ export default function Terms() {
             <section>
                 <h2 className='text-xl font-bold text-green-400 mb-3'>4. Fees and Payments</h2>
                 <p className='text-slate-300'>
-                    Listing properties for Rent incurs a fee of ₹1,100, and for Sale incurs ₹5,100. All payments are processed securely via Razorpay. Fees are non-refundable once the listing is live.
+                    Listing properties for Rent is free and your Rent listing goes live immediately. Listing for Sale incurs a one-time fee of ₹5,100. All payments are processed securely via Razorpay. Fees are non-refundable once the listing is live.
                 </p>
             </section>
 

@@ -71,9 +71,11 @@ const listingSchema = new mongoose.Schema(
     },
     
     // 👇✅ EXISTING: STATUS FIELD FOR ANALYTICS
+    // 'pending' = unpaid draft created by the seller; visible only after the
+    // listing fee is paid (order.controller verifyPayment publishes it to 'available').
     status: {
         type: String,
-        enum: ['available', 'sold', 'rented'],
+        enum: ['pending', 'available', 'sold', 'rented'],
         default: 'available',
     },
   },

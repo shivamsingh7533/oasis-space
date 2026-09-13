@@ -349,9 +349,15 @@ export default function SellerDashboard() {
                   </td>
                   <td className='p-5'>
                     {listing.status === 'pending' ? (
-                      <span className='text-xs font-bold uppercase px-2 py-1.5 rounded-lg border bg-slate-900 text-yellow-400 border-yellow-500/50'>
-                        Pending fee
-                      </span>
+                      getListingFee(listing.type) > 0 ? (
+                        <span className='text-xs font-bold uppercase px-2 py-1.5 rounded-lg border bg-slate-900 text-yellow-400 border-yellow-500/50'>
+                          Pending fee
+                        </span>
+                      ) : (
+                        <span className='text-xs font-bold uppercase px-2 py-1.5 rounded-lg border bg-slate-900 text-yellow-400 border-yellow-500/50'>
+                          Pending — publish free
+                        </span>
+                      )
                     ) : (
                     <select value={listing.status || 'available'} onChange={(e) => handleStatusChange(listing._id, e.target.value)} className={`text-xs font-bold uppercase px-2 py-1.5 rounded-lg border bg-slate-900 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 ${listing.status === 'sold' ? 'text-green-500 border-green-500/50' : listing.status === 'rented' ? 'text-orange-500 border-orange-500/50' : 'text-blue-400 border-blue-500/50'}`}>
                       <option value="available">Available</option>
@@ -370,13 +376,23 @@ export default function SellerDashboard() {
                   <td className='p-5'>
                     <div className='flex justify-center gap-2'>
                       {listing.status === 'pending' ? (
-                        <button
-                          onClick={() => setPayingListing(listing)}
-                          className='p-2.5 bg-indigo-600 text-white hover:bg-indigo-500 rounded-xl transition-all shadow-sm flex items-center gap-1.5 text-xs font-bold uppercase'
-                          title='Pay listing fee to publish'
-                        >
-                          <FaCreditCard /> Pay ₹{getListingFee(listing.type).toLocaleString('en-IN')}
-                        </button>
+                        getListingFee(listing.type) > 0 ? (
+                          <button
+                            onClick={() => setPayingListing(listing)}
+                            className='p-2.5 bg-indigo-600 text-white hover:bg-indigo-500 rounded-xl transition-all shadow-sm flex items-center gap-1.5 text-xs font-bold uppercase'
+                            title='Pay listing fee to publish'
+                          >
+                            <FaCreditCard /> Pay ₹{getListingFee(listing.type).toLocaleString('en-IN')}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleStatusChange(listing._id, 'available')}
+                            className='p-2.5 bg-green-600 text-white hover:bg-green-500 rounded-xl transition-all shadow-sm flex items-center gap-1.5 text-xs font-bold uppercase'
+                            title='Publish this rent listing free'
+                          >
+                            Publish Free
+                          </button>
+                        )
                       ) : (
                         <>
                           <Link to={`/update-listing/${listing._id}`} className='p-2.5 bg-slate-700 text-blue-400 hover:bg-blue-500 hover:text-white rounded-xl transition-all shadow-sm' title='Edit'>

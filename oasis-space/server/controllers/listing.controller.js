@@ -2,6 +2,7 @@ import Listing from '../models/listing.model.js';
 import User from '../models/user.model.js';
 import Order from '../models/order.model.js';
 import { errorHandler } from '../utils/error.js';
+import { getListingFee } from '../utils/fees.js';
 import { GoogleGenerativeAI } from "@google/generative-ai"; // ✅ AI Import
 
 // Whitelist applied on create — never trust raw req.body keys like userRef/featured/status.
@@ -45,7 +46,9 @@ export const createListing = async (req, res, next) => {
     // Server-authoritative fields — never taken from the client.
     newListingData.userRef = req.user.id;
     newListingData.featured = false;
-    newListingData.status = 'pending';
+    // Rent listings publish FREE and instantly. Sale listings start as a
+    // fee-pending draft and only go live after the Razorpay payment is verified.
+    newListingData.status = getListingFee(type) === 0 ? 'available' : 'pending';
 
     const listing = await Listing.create(newListingData);
     return res.status(201).json(listing);
@@ -251,7 +254,8 @@ export const updateListingStatus = async (req, res, next) => {
 
     // Draft listings can't be published/moved to sold/rented until the listing fee is paid.
     // The only publish path is the paid Razorpay flow (order.controller verifyPayment).
-    if (listing.status === 'pending' && req.body.status !== 'pending') {
+    // Rent is free: fee-less listings may change status without a paid order.
+    if (listing.status === 'pending' && req.body.status !== 'pending' && getListingFee(listing.type) > 0) {
       const paid = await Order.exists({
         listingRef: listing._id,
         userRef: listing.userRef,

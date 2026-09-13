@@ -208,6 +208,45 @@ export default function CreateListing() {
   if (createdListing) {
     const fee = getListingFee(createdListing.type);
     const feeLabel = createdListing.type === 'rent' ? 'Rent' : 'Sale';
+
+    // Rent listings publish FREE and instantly — no payment needed.
+    if (fee === 0) {
+      return (
+        <div className='min-h-screen flex items-center justify-center p-4 py-10' style={{ backgroundColor: 'var(--bg-primary)' }}>
+          <div className='max-w-lg w-full rounded-lg shadow-2xl p-8 border' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
+            <div className='flex flex-col items-center text-center mb-6'>
+              <div className='bg-green-500/10 p-4 rounded-full mb-4 border border-green-500/30'>
+                <FaCheckCircle className='text-4xl text-green-500' />
+              </div>
+              <h2 className='text-2xl font-bold text-white mb-2'>Your Rent Listing is LIVE!</h2>
+              <p className='text-slate-400 text-sm mb-4'>
+                <span className='font-semibold text-slate-200'>{createdListing.name}</span> is now published for everyone to see. Rent listings are free — there's nothing to pay.
+              </p>
+            </div>
+            <div className='bg-slate-800/60 rounded-2xl border border-slate-700 p-5 mb-6 text-center'>
+              <span className='px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wide bg-green-500/20 text-green-400 border border-green-500/30'>
+                Published — Free
+              </span>
+            </div>
+            <button
+              onClick={() => navigate('/seller-dashboard')}
+              className='w-full justify-center flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-5 py-4 rounded-xl font-bold transition-all shadow-lg shadow-green-900/30 border border-green-500/50'
+            >
+              Go to Seller Dashboard
+            </button>
+            <p className='text-center mt-4'>
+              <button
+                onClick={() => navigate('/')}
+                className='text-slate-400 hover:text-slate-200 text-sm font-semibold transition'
+              >
+                Or see it on the Home page
+              </button>
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className='min-h-screen flex items-center justify-center p-4 py-10' style={{ backgroundColor: 'var(--bg-primary)' }}>
         <div className='max-w-lg w-full rounded-lg shadow-2xl p-8 border' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
@@ -240,7 +279,7 @@ export default function CreateListing() {
               <span className='text-3xl font-black text-white'>&#8377;{fee.toLocaleString('en-IN')}</span>
             </div>
             <p className='text-[11px] text-slate-500 mt-3 leading-relaxed'>
-              Sale listings: &#8377;{LISTING_FEES.sale.toLocaleString('en-IN')} &nbsp;&middot;&nbsp; Rent listings: &#8377;{LISTING_FEES.rent.toLocaleString('en-IN')}. The fee is charged once via Razorpay. Your listing goes live right after payment.
+              Sale listings: &#8377;{LISTING_FEES.sale.toLocaleString('en-IN')} &nbsp;&middot;&nbsp; Rent listings: <span className='text-green-400 font-semibold'>FREE</span>. The fee is charged once via Razorpay. Your listing goes live right after payment.
             </p>
           </div>
 

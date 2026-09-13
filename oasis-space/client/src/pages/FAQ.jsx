@@ -5,7 +5,7 @@ export default function FAQ() {
   const faqs = [
     {
       question: "How do I list my property on OasisSpace?",
-      answer: "First, you need to register and become a 'Verified Seller'. Once approved, go to your profile, click 'List a Property', fill in the details, upload photos, and pay the listing fee."
+      answer: "First, you need to register and become a 'Verified Seller'. Once approved, go to your profile, click 'List a Property', fill in the details, and upload photos. Rent listings publish instantly for free; Sale listings pay a one-time fee, then go live."
     },
     {
       question: "Is it free to browse properties?",
@@ -13,7 +13,7 @@ export default function FAQ() {
     },
     {
       question: "What are the charges for listing a property?",
-      answer: "We charge a one-time fee of ₹1,100 for Rent listings and ₹5,100 for Sale listings. This ensures only genuine owners list on our platform."
+      answer: "Rent listings are completely FREE to publish — they go live instantly. For Sale listings, we charge a one-time fee of ₹5,100 via Razorpay. This ensures only genuine owners list on our platform."
     },
     {
       question: "How does the AI Assistant work?",

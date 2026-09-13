@@ -1,7 +1,7 @@
 // Central business fee config — single source of truth for listing fees.
 // Matches the published pricing in FAQ.jsx / Terms.jsx.
 export const LISTING_FEES = {
-  rent: 1100,
+  rent: 0, // Rent listings publish FREE (instant, no payment required)
   sale: 5100,
 };
 

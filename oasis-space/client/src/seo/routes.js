@@ -8,12 +8,12 @@ const pageRoutes = {
   '/search': {
     title: 'Search Homes, Apartments & Villas With Filters | OasisSpace',
     description:
-      'Search buy and rent properties across India. Filter by city, price, bedrooms and more. Free to browse — verified sellers only, paid listing fee keeps OasisSpace genuine.',
+      'Search buy and rent properties across India. Filter by city, price, bedrooms and more. Free to browse — rent listings publish free, verified sellers only.',
   },
   '/about': {
     title: 'About OasisSpace — Our Mission, Fees & Founder',
     description:
-      'OasisSpace is an AI-powered real estate marketplace built by Shivam Singh. Learn how we keep Only genuine properties online with a one-time \u20B91,100 rent / \u20B95,100 sale listing fee.',
+      'OasisSpace is an AI-powered real estate marketplace built by Shivam Singh. Rent listings publish free; Sale listings carry a one-time \u20B95,100 listing fee that keeps OasisSpace genuine.',
   },
   '/privacy': {
     title: 'Privacy Policy | OasisSpace',
@@ -26,7 +26,7 @@ const pageRoutes = {
   '/faq': {
     title: 'Frequently Asked Questions | OasisSpace',
     description:
-      'Answers on how to list a property, listing fees (\u20B91,100 rent, \u20B95,100 sale), how the AI assistant works, editing listings and contacting support.',
+      'Answers on how to list a property (rent listings publish free, \u20B95,100 one-time for sale), how the AI assistant works, editing listings and contacting support.',
     jsonLd: [
       {
         '@context': 'https://schema.org',
@@ -37,7 +37,7 @@ const pageRoutes = {
             name: 'How do I list my property on OasisSpace?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: "Register and become a verified seller, go to your profile, click 'List a Property', fill in the details, upload photos, and pay the one-time listing fee. The property goes live immediately after payment.",
+              text: "Register and become a verified seller, go to your profile, click 'List a Property', fill in the details and upload photos. Rent listings publish instantly for free; Sale listings go live immediately after paying the one-time fee.",
             },
           },
           {
@@ -53,7 +53,7 @@ const pageRoutes = {
             name: 'What are the charges for listing a property?',
             acceptedAnswer: {
               '@type': 'Answer',
-              text: 'We charge a one-time fee of \u20B91,100 for rent listings and \u20B95,100 for sale listings. This ensures only genuine owners list on the platform.',
+              text: 'Rent listings publish completely free and go live instantly. For Sale listings we charge a one-time fee of \u20B95,100 via Razorpay. This ensures only genuine owners list on the platform.',
             },
           },
           {

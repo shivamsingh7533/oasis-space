@@ -51,7 +51,7 @@ Whether you're a property seeker, seller, or admin, OasisSpace provides an intui
 - ✍️ **AI Description Generator** — Auto-generate SEO-friendly property descriptions using Google Gemini
 
 ### 💳 **Payment Integration**
-- ₹1,100 listing fee for **Rent** properties, ₹5,100 for **Sale** (paid via Razorpay)
+- Free **Rent** listings (publish instantly), ₹5,100 one-time fee for **Sale** (paid via Razorpay)
 - Listings are created as drafts and are only published to the marketplace once the fee is paid
 - 📜 Complete order history with transaction tracking + real admin revenue stats
 - 🧮 **EMI/Mortgage Calculator** — Estimate monthly payments instantly

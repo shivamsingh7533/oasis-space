@@ -7,7 +7,7 @@ export const AUTHOR_JOB_TITLE = 'Founder & Full-Stack Developer';
 export const AUTHOR = `${AUTHOR_NAME} — ${AUTHOR_JOB_TITLE}, ${SITE_NAME}`;
 
 export const DEFAULT_DESCRIPTION =
-  'OasisSpace is India\u2019s AI-powered real estate marketplace where you can buy, rent or sell homes, apartments and villas. Search with filters, chat with our AI assistant, compare EMI, and pay securely online for only \u20B91,100 (Rent) or \u20B95,100 (Sale) when listing a property.';
+  'OasisSpace is India\u2019s AI-powered real estate marketplace where you can buy, rent or sell homes, apartments and villas. Search with filters, chat with our AI assistant, compare EMI, and list your property \u2014 Rent is free, Sale pays a one-time \u20B95,100 via Razorpay.';
 
 export const DEFAULT_TITLE = 'Buy, Rent & Sell Homes Online in India | OasisSpace';
 
