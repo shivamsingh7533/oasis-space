@@ -1,15 +1,15 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "OasisSpace backend API",
+  "description": "OasisSpace backend API — Auth, Listings, Payments, AI chat, Push notifications",
   "type": "module",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["real-estate", "marketplace", "api", "oasisspace"],
+  "author": "Shivam Singh — Founder & Full-Stack Developer, OasisSpace",
   "license": "ISC",
   "dependencies": {
     "@getbrevo/brevo": "^2.5.0",

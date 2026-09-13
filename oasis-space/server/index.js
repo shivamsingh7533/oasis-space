@@ -13,6 +13,7 @@ import chatRouter from './routes/chat.route.js';
 import orderRouter from './routes/order.route.js';
 import notificationRouter from './routes/notification.route.js';
 import pushRouter from './routes/push.route.js';
+import seoRouter from './routes/seo.route.js';
 import { globalLimiter, authLimiter, chatLimiter } from './utils/limiters.js';
 
 dotenv.config();
@@ -84,6 +85,9 @@ app.use('/api/listing', globalLimiter, listingRouter);
 app.use('/api/order', globalLimiter, orderRouter);
 app.use('/api/notification', globalLimiter, notificationRouter);
 app.use('/api/push', globalLimiter, pushRouter);
+
+// SEO / LLMO endpoints (sitemap.xml + llms-full.txt) — lightweight, crawlable
+app.use('/api/seo', globalLimiter, seoRouter);
 
 // Health Check
 app.get('/ping', (req, res) => {

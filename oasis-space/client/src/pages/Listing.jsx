@@ -8,6 +8,9 @@ import {
 import Contact from '../components/Contact';
 import EMICalculator from '../components/EMICalculator';
 import { formatPrice } from '../utils/currencyFormatter';
+import { upsertJsonLd, removeJsonLd } from '../seo/jsonLd';
+import { upsertMeta, ogProperty, setCanonical } from '../seo/head';
+import { SITE_URL, fullTitle } from '../seo/site';
 
 // IMPORTS FOR SLIDER
 import { Swiper, SwiperSlide } from 'swiper/react';
@@ -131,6 +134,61 @@ export default function Listing() {
         };
         fetchListing();
     }, [listingId]);
+
+    // SEO: rich per-property title/meta + RealEstateListing structured data for AI/answer engines
+    useEffect(() => {
+        if (!listing) return;
+        const price = listing.offer ? listing.discountPrice : listing.regularPrice;
+        const title = fullTitle(`${listing.name} in ${listing.address || 'India'} — ${listing.type === 'rent' ? 'Rent at' : 'Sale at'} ${formatPrice(price, 'INR', null)}`);
+        const description = listing.description.slice(0, 160) ||
+            `Verified ${listing.type === 'rent' ? 'rental' : 'sale'} property: ${listing.name}, ${listing.address}. ${listing.bedrooms} BHK, ${listing.bathrooms} baths — view photos, map and contact the landlord on OasisSpace.`;
+        const canonical = `${SITE_URL}/listing/${listing._id}`;
+        const image = listing.imageUrls?.[0] ? listing.imageUrls[0] : `${SITE_URL}/logo.png`;
+
+        document.title = title;
+        upsertMeta('description', description);
+        upsertMeta('twitter:title', title);
+        upsertMeta('twitter:description', description);
+        upsertMeta('twitter:image', image);
+        ogProperty('og:title', title);
+        ogProperty('og:description', description);
+        ogProperty('og:url', canonical);
+        ogProperty('og:type', 'product');
+        ogProperty('og:image', image);
+        setCanonical(canonical);
+
+        upsertJsonLd('page-listing', {
+            '@context': 'https://schema.org',
+            '@type': 'RealEstateListing',
+            name: listing.name,
+            description: listing.description,
+            url: canonical,
+            image: image,
+            datePosted: listing.createdAt,
+            inLanguage: 'en-IN',
+            address: {
+                '@type': 'PostalAddress',
+                streetAddress: listing.address,
+                addressCountry: 'IN',
+            },
+            geo: listing.geolocation?.lat && listing.geolocation?.lng
+                ? { '@type': 'GeoCoordinates', latitude: listing.geolocation.lat, longitude: listing.geolocation.lng }
+                : undefined,
+            offers: {
+                '@type': 'Offer',
+                priceCurrency: 'INR',
+                price: price,
+                availability: listing.status === 'sold' || listing.status === 'rented' ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+                typeOfGood: listing.type === 'rent' ? 'ResidentialHousing' : 'Apartment',
+            },
+            numberOfRooms: listing.bedrooms,
+            numberOfBathroomsTotal: listing.bathrooms,
+        });
+
+        return () => {
+            removeJsonLd('page-listing');
+        };
+    }, [listing, listingId]);
 
     // DEFINE COORDINATES
     const lat = listing?.geolocation?.lat || 20.5937;

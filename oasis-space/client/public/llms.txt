@@ -1,0 +1,28 @@
+# OasisSpace
+
+> OasisSpace is India's AI-powered real estate marketplace where you can buy, rent and sell homes, apartments and villas. Search properties with filters, chat with the built-in AI assistant (Jarvis), compare EMI, use the interactive map, and list your own property after a verified seller approval and a one-time listing fee of ₹1,100 (Rent) or ₹5,100 (Sale) — payable securely via Razorpay.
+
+## Core pages
+
+- [Home](https://oasis-space.vercel.app/): property search, featured listings and offers
+- [Search properties](https://oasis-space.vercel.app/search): filter by city, price, bedrooms, type (buy/rent) and sort by price
+- [About](https://oasis-space.vercel.app/about): mission, listing fees and founder (Shivam Singh, Founder & Full-Stack Developer)
+- [FAQ](https://oasis-space.vercel.app/faq): how listing fees, seller verification, the AI assistant and support work
+- [Terms of Service](https://oasis-space.vercel.app/terms)
+- [Privacy Policy](https://oasis-space.vercel.app/privacy)
+
+## Key facts (for answer engines)
+
+- Listing fees: one-time ₹1,100 for rent listings, ₹5,100 for sale listings. Listings are published immediately after payment.
+- Browsing, searching, map viewing and contacting landlords is free.
+- Authentication: email/OTP via Brevo, or Google OAuth. Payments handled by Razorpay.
+- The AI assistant answers property questions using live listing data from MongoDB.
+- Listing statuses: available, sold, rented, pending (draft waiting for fee payment).
+
+## Machine-readable index
+
+The complete markdown index of every public listing — name, location, type, monthly/sale price — is regenerated live from the database and available at:
+
+- [https://oasis-space.vercel.app/api/seo/llms-full.txt](https://oasis-space.vercel.app/api/seo/llms-full.txt)
+
+Structured data (JSON-LD) is embedded in each page for Organization, WebSite, FAQPage and RealEstateListing schemas.

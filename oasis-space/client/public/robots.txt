@@ -1,4 +1,22 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://oasis-space-vercel-app.vercel.app/sitemap.xml
+# Private / account areas — no value for search engines
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /verify-email
+Disallow: /forgot-password
+Disallow: /profile
+Disallow: /saved-listings
+Disallow: /create-listing
+Disallow: /update-listing/
+Disallow: /seller-dashboard
+Disallow: /dashboard
+Disallow: /order-history
+Disallow: /settings
+
+# APIs — only the SEO endpoints are crawlable (Allow wins over Disallow for longest match)
+Allow: /api/seo/
+Disallow: /api/
+
+Sitemap: https://oasis-space.vercel.app/sitemap.xml

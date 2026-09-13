@@ -1,6 +1,9 @@
 {
   "short_name": "OasisSpace",
   "name": "OasisSpace Real Estate",
+  "description": "Buy, rent and sell homes online in India — AI-powered property search, EMI calculator, and secure listing with one-time fees.",
+  "lang": "en",
+  "id": "/",
   "icons": [
     {
       "src": "/icon-192.png",
@@ -18,5 +21,6 @@
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#0f172a",
-  "background_color": "#0f172a"
+  "background_color": "#0f172a",
+  "categories": ["real_estate", "lifestyle", "utilities"]
 }

@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import Home from './pages/Home'; // Synchronous for maximum LCP speed and avoiding Preloader flash
 import Header from './components/Header';
 import Footer from './components/Footer';
+import RouteHead from './components/RouteHead';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import Preloader from './components/Preloader';
@@ -33,6 +34,9 @@ const FAQ = lazy(() => import('./pages/FAQ'));
 export default function App() {
   return (
     <BrowserRouter>
+      {/* Route-level SEO head manager (title, meta, canonical, OG, structured data) */}
+      <RouteHead />
+
       {/* ✅ FIX: Added 'w-full' and 'overflow-x-hidden' to force full width */}
       <div className="flex flex-col min-h-screen w-full overflow-x-hidden relative" style={{ backgroundColor: 'var(--bg-primary)' }}>
 

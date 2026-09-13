@@ -81,6 +81,13 @@ Whether you're a property seeker, seller, or admin, OasisSpace provides an intui
 - ⚡ Fast, app-like experience
 - 🔔 Works offline with service workers
 
+### 🔎 **Found on the open web (SEO / AEO / LLMO)**
+- 🗺️ `sitemap.xml` (static core + dynamic `/api/seo/sitemap.xml` with every live listing)
+- 🤖 `robots.txt` tuned for both classic SEO bots and AI/LLM crawlers
+- 📄 `llms.txt` + live `llms-full.txt` index so ChatGPT/Perplexity/Gemini understand the platform
+- 🧩 JSON-LD structured data: WebSite + SearchAction, Organization, FAQPage, RealEstateListing
+- 👤 Consistent E-E-A-T author identity (Shivam Singh — Founder & Full-Stack Developer) across meta, manifest, packages and README
+
 ---
 
 ## 🛠️ Tech Stack
@@ -130,6 +137,7 @@ oasis-space/
 │   │   │   ├── Header.jsx     # Navigation header
 │   │   │   ├── Footer.jsx     # Footer component
 │   │   │   ├── ChatWidget.jsx # AI Chatbot widget
+│   │   │   ├── RouteHead.jsx  # Route-level SEO head manager
 │   │   │   ├── RazorpayBtn.jsx# Payment button
 │   │   │   ├── EMICalculator.jsx # Mortgage calculator
 │   │   │   ├── ListingItem.jsx# Property card
@@ -145,6 +153,7 @@ oasis-space/
 │   │   ├── redux/             # State management
 │   │   │   ├── store.js       # Redux store config
 │   │   │   └── user/          # User slice
+│   │   ├── seo/               # SEO/AEO config (site constants, routes, JSON-LD helpers)
 │   │   ├── App.jsx            # Root component
 │   │   ├── firebase.js        # Firebase config
 │   │   └── supabase.js        # Supabase config
@@ -318,6 +327,12 @@ Navigate to `http://localhost:5173`
 | POST | `/api/order/cancel/:id` | Cancel a booking (fee orders rejected) |
 | DELETE | `/api/order/delete/:id` | Remove an order from history |
 
+### SEO / LLMO (crawlable, served as raw XML/text)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/seo/sitemap.xml` | Dynamic sitemap incl. every public listing |
+| GET | `/api/seo/llms-full.txt` | Live markdown index of public listings for LLMs |
+
 ### Chat
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -377,9 +392,10 @@ This project is open source and available under the [MIT License](LICENSE).
 ## 👨‍💻 Author
 
 <p align="center">
-  <strong>Shivam Singh</strong><br/>
+  <strong>Shivam Singh</strong> — Founder &amp; Full-Stack Developer<br/>
+  <small><em>Identity is kept identical across the website meta, PWA manifest, package metadata, GitHub profile and Search Console for consistent author indexing.</em></small><br/>
   <a href="https://github.com/shivamsingh7533">GitHub</a> •
-  <a href="https://oasis-space.vercel.app/">Portfolio</a>
+  <a href="https://oasis-space.vercel.app/">Website</a>
 </p>
 
 ---
