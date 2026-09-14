@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { passwordError } from '../utils/passwordRules';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -53,6 +54,14 @@ export default function ForgotPassword() {
   // ✅ Step 2: Verify OTP & Reset Password
   const handleResetPassword = async (e) => {
     e.preventDefault();
+
+    const pwErr = passwordError(password);
+    if (pwErr) {
+      setError(true);
+      setMessage(pwErr);
+      return;
+    }
+
     setLoading(true);
     setError(false);
     setMessage('');
@@ -136,11 +145,12 @@ export default function ForgotPassword() {
 
                 <input
                     type='password'
-                    placeholder='New Password'
+                    placeholder='New Password (8–20 chars)'
                     className='bg-slate-700 border border-slate-600 text-slate-200 placeholder:text-slate-400 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all'
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={8}
+                    maxLength={20}
                 />
             
                 <button 

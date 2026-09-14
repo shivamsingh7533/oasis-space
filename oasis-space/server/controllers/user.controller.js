@@ -8,6 +8,7 @@ import { errorHandler } from '../utils/error.js';
 import jwt from 'jsonwebtoken';
 import sendEmail from '../utils/sendEmail.js'; // ✅ Using Brevo API
 import { sendPushNotification } from '../utils/sendPush.js';
+import { validatePassword } from '../utils/password.js';
 
 const SELLER_STATUSES = ['regular', 'pending', 'approved', 'rejected'];
 
@@ -30,7 +31,8 @@ export const updateUser = async (req, res, next) => {
   // Fixes the bug where Profile.jsx sent `password: ''` on every save and
   // wiped the hash, locking the account out permanently.
   if (req.body.password && typeof req.body.password === 'string' && req.body.password.trim().length > 0) {
-    if (req.body.password.length < 8) return next(errorHandler(400, 'Password must be at least 8 characters'));
+    const passwordMsg = validatePassword(req.body.password);
+    if (passwordMsg) return next(errorHandler(400, passwordMsg));
     updates.password = bcryptjs.hashSync(req.body.password, 10);
   }
 

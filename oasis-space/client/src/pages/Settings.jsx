@@ -9,6 +9,7 @@ import {
 } from '../redux/user/userSlice';
 import { setTheme } from '../redux/theme/themeSlice';
 import { setCurrency } from '../redux/currency/currencySlice';
+import { passwordError } from '../utils/passwordRules';
 
 export default function Settings() {
     const { currentUser, loading } = useSelector((state) => state.user);
@@ -30,7 +31,8 @@ export default function Settings() {
 
     const handlePasswordUpdate = async (e) => {
         e.preventDefault();
-        if (password.length < 6) return setError('Password must be at least 6 characters');
+        const err = passwordError(password);
+        if (err) return setError(err);
         
         try {
             dispatch(updateUserStart());
@@ -126,12 +128,13 @@ export default function Settings() {
                                 <input
                                     type='password'
                                     value={password}
-                                    placeholder='New Password (min 6 chars)'
+                                    maxLength={20}
+                                    placeholder='New Password (8–20 chars)'
                                     className='bg-slate-800 border border-slate-700 p-3 rounded-lg text-white focus:outline-none focus:border-blue-500'
                                     onChange={(e) => setPassword(e.target.value)}
                                 />
                                 <button
-                                    disabled={loading || password.length < 6}
+                                    disabled={loading || password.length < 8}
                                     className='bg-blue-600 hover:bg-blue-500 text-white font-bold p-3 rounded-lg transition disabled:opacity-50'
                                 >
                                     {loading ? 'Updating...' : 'Update Password'}

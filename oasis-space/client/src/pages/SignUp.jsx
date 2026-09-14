@@ -4,6 +4,7 @@ import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css'; 
 import OAuth from '../components/OAuth'; // Ye component folder me hai
+import { passwordError } from '../utils/passwordRules';
 
 // ✅ CORRECT IMPORT: (Kyunki VerifyEmail.jsx bhi 'pages' folder me hi hai)
 import VerifyEmailModal from './VerifyEmail'; 
@@ -49,11 +50,8 @@ export default function SignUp() {
     }
     
     // Password Strength
-    const password = formData.password;
-    if (password.length < 8) { setError("Password must be at least 8 characters long."); return; }
-    if (!/[A-Z]/.test(password)) { setError("Password must contain at least one uppercase letter (A-Z)."); return; }
-    if (!/[0-9]/.test(password)) { setError("Password must contain at least one number (0-9)."); return; }
-    if (!/[!@#$%^&*]/.test(password)) { setError("Password must contain at least one special character (!@#$%^&*)."); return; }
+    const err = passwordError(formData.password);
+    if (err) { setError(err); return; }
 
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match!");
@@ -159,7 +157,7 @@ export default function SignUp() {
           </div>
 
           <div className='relative'>
-            <input type={showPassword ? "text" : "password"} placeholder='Password' className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all w-full text-sm sm:text-base' id='password' onChange={handleChange} value={formData.password || ''} required />
+            <input type={showPassword ? "text" : "password"} placeholder='Password' maxLength={20} className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all w-full text-sm sm:text-base' id='password' onChange={handleChange} value={formData.password || ''} required />
             <div className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-slate-200 text-base p-1' onClick={() => setShowPassword(!showPassword)}>
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </div>
@@ -167,7 +165,7 @@ export default function SignUp() {
           <p className='text-[10px] text-slate-400 px-1 -mt-1'>* Min 8 chars, 1 uppercase, 1 number, 1 special char</p>
 
           <div className='relative'>
-            <input type={showConfirmPassword ? "text" : "password"} placeholder='Confirm Password' className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all w-full text-sm sm:text-base' id='confirmPassword' onChange={handleChange} value={formData.confirmPassword || ''} required />
+            <input type={showConfirmPassword ? "text" : "password"} placeholder='Confirm Password' maxLength={20} className='border border-slate-600 bg-slate-700 text-slate-200 placeholder:text-slate-400 p-2.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 transition-all w-full text-sm sm:text-base' id='confirmPassword' onChange={handleChange} value={formData.confirmPassword || ''} required />
             <div className='absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-slate-200 text-base p-1' onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
               {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
             </div>

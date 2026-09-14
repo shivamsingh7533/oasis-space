@@ -8,6 +8,7 @@ import {
 } from '../redux/user/userSlice';
 import { Link, useNavigate } from 'react-router-dom';
 import { avatarFallback } from '../utils/avatarFallback';
+import { passwordError } from '../utils/passwordRules';
 import {
     FaTimes, FaCamera, FaUserEdit, FaSignOutAlt, FaList,
     FaHeart, FaUserShield, FaUserTag, FaPhone, FaLock,
@@ -122,6 +123,10 @@ export default function Profile({ onClose }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (formData.password) {
+            const err = passwordError(formData.password);
+            if (err) { dispatch(updateUserFailure(err)); return; }
+        }
         await updateProfile(formData);
     };
 
@@ -278,10 +283,11 @@ export default function Profile({ onClose }) {
                                 <input
                                     type='password'
                                     id='password'
+                                    maxLength={20}
                                     disabled={isGoogleUser}
                                     className={`w-full bg-slate-900 border border-slate-600 p-2 pl-9 rounded text-sm text-white focus:border-blue-500 outline-none ${isGoogleUser ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                    placeholder={isGoogleUser ? "Password managed by Google" : "New Password"}
+                                    placeholder={isGoogleUser ? "Password managed by Google" : "New Password (8–20 chars)"}
                                 />
                             </div>
 

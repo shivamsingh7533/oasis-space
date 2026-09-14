@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { errorHandler } from '../utils/error.js';
 import sendEmail from '../utils/sendEmail.js';
+import { validatePassword } from '../utils/password.js';
 
 // --- 💎 1. PREMIUM EMAIL TEMPLATES (HTML/CSS) ---
 
@@ -138,7 +139,8 @@ export const signup = async (req, res, next) => {
   const cleanEmail = email.trim().toLowerCase();
 
   if (cleanUsername.length < 3) return next(errorHandler(400, 'Username must be at least 3 characters'));
-  if (password.length < 8) return next(errorHandler(400, 'Password must be at least 8 characters'));
+  const passwordMsg = validatePassword(password);
+  if (passwordMsg) return next(errorHandler(400, passwordMsg));
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) return next(errorHandler(400, 'Please enter a valid email'));
 
   try {
@@ -325,7 +327,8 @@ export const forgotPassword = async (req, res, next) => {
 export const resetPassword = async (req, res, next) => {
   const { email, otp, password } = req.body;
   if (!email || !otp || !password) return next(errorHandler(400, 'Email, OTP and new password are required'));
-  if (password.length < 8) return next(errorHandler(400, 'Password must be at least 8 characters'));
+  const passwordMsg = validatePassword(password);
+  if (passwordMsg) return next(errorHandler(400, passwordMsg));
 
   try {
     const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+otp +otpExpires');
