@@ -42,21 +42,15 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
-        // ✅ Runtime caching for API and external images
+        // ✅ Runtime caching for external image proxy only. Supabase storage images
+        // are intentionally NOT intercepted: a failing derivation would reject the
+        // thumbnail request (no-response / net::ERR_FAILED) instead of degrading.
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/wsrv\.nl\/.*/i,
             handler: 'CacheFirst',
             options: {
               cacheName: 'image-proxy-cache',
-              expiration: { maxEntries: 60, maxAgeSeconds: 30 * 24 * 60 * 60 },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/.*supabase.*\/storage\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'supabase-images',
               expiration: { maxEntries: 60, maxAgeSeconds: 30 * 24 * 60 * 60 },
             },
           },

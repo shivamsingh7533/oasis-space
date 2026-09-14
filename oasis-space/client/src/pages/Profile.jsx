@@ -7,6 +7,7 @@ import {
     signOutUserStart,
 } from '../redux/user/userSlice';
 import { Link, useNavigate } from 'react-router-dom';
+import { avatarFallback } from '../utils/avatarFallback';
 import {
     FaTimes, FaCamera, FaUserEdit, FaSignOutAlt, FaList,
     FaHeart, FaUserShield, FaUserTag, FaPhone, FaLock,
@@ -224,7 +225,7 @@ export default function Profile({ onClose }) {
                 <div className='flex flex-col items-center pt-8 pb-4 px-6 bg-slate-800/50'>
                     <input onChange={(e) => setFile(e.target.files[0])} type='file' ref={fileRef} hidden accept='image/*' />
                     <div className='relative group cursor-pointer' onClick={() => fileRef.current.click()}>
-                        <img src={formData.avatar || currentUser.avatar} alt='profile' className='w-20 h-20 rounded-full object-cover border-4 border-slate-600 shadow-lg group-hover:border-slate-500 transition' />
+                        <img src={formData.avatar || currentUser.avatar} onError={avatarFallback} alt='profile' className='w-20 h-20 rounded-full object-cover border-4 border-slate-600 shadow-lg group-hover:border-slate-500 transition' />
                         <div className='absolute bottom-0 right-0 bg-slate-700 p-1.5 rounded-full border border-slate-500 text-white text-xs group-hover:bg-blue-600 transition'><FaCamera /></div>
                     </div>
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { HiCheck, HiX } from 'react-icons/hi';
 import { FaTrash, FaUserTie } from 'react-icons/fa';
+import { avatarFallback } from '../utils/avatarFallback';
 
 export default function DashUsers() {
   const { currentUser } = useSelector((state) => state.user);
@@ -78,7 +79,7 @@ export default function DashUsers() {
                 
                 {/* User Info */}
                 <div className="flex items-start gap-4">
-                    <img src={user.avatar} alt={user.username} className="w-14 h-14 rounded-full object-cover border-2 border-slate-600"/>
+                    <img src={user.avatar} onError={avatarFallback} alt={user.username} className="w-14 h-14 rounded-full object-cover border-2 border-slate-600"/>
                     <div className='flex-1 min-w-0'>
                         <h3 className="text-lg font-bold text-white truncate flex items-center gap-2">
                             {user.username}

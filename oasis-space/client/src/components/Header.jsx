@@ -1,12 +1,15 @@
 import { Link } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useEffect, useState } from 'react';
 import { FaBars, FaTimes, FaUserShield, FaHeart, FaChartLine, FaBell, FaTrash, FaCog } from 'react-icons/fa'; // ✅ Added FaCog
 
 import Profile from '../pages/Profile';
+import { signOutUserStart, deleteUserSuccess } from '../redux/user/userSlice';
+import { avatarFallback } from '../utils/avatarFallback';
 
 export default function Header() {
     const { currentUser } = useSelector((state) => state.user);
+    const dispatch = useDispatch();
 
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [showProfile, setShowProfile] = useState(false);
@@ -53,6 +56,16 @@ export default function Header() {
             const fetchNotifs = async () => {
                 try {
                     const res = await fetch('/api/notification');
+
+                    // Stale/expired server session while Redux still thinks we're
+                    // logged in -> clear it once so the 401 loop stops.
+                    if (res.status === 401) {
+                        dispatch(signOutUserStart());
+                        await fetch('/api/auth/signout');
+                        dispatch(deleteUserSuccess({}));
+                        return;
+                    }
+
                     const data = await res.json();
                     if (Array.isArray(data)) setNotifications(data);
                 } catch (error) { console.log(error); }
@@ -62,7 +75,7 @@ export default function Header() {
             const interval = setInterval(fetchNotifs, 10000); // Check every 10s
             return () => clearInterval(interval);
         }
-    }, [currentUser]);
+    }, [currentUser, dispatch]);
 
     // 3. Mark Notifications as Read
     const handleRead = async () => {
@@ -219,6 +232,7 @@ export default function Header() {
                                             className='rounded-full h-9 w-9 object-cover border-2 hover:opacity-80 transition'
                                             style={{ borderColor: 'var(--border-primary)' }}
                                             src={currentUser.avatar}
+                                            onError={avatarFallback}
                                             alt='profile'
                                             width="36"
                                             height="36"
@@ -355,6 +369,7 @@ export default function Header() {
                                     className='rounded-full h-10 w-10 object-cover border-2'
                                     style={{ borderColor: 'var(--border-primary)' }}
                                     src={currentUser.avatar}
+                                    onError={avatarFallback}
                                     alt='profile'
                                     width="40"
                                     height="40"

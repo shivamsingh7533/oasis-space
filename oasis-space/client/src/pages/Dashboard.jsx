@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { FaMoneyBillWave, FaChartLine, FaUsers, FaHome, FaTrash, FaEdit, FaUserShield, FaUserTag, FaUser, FaStar, FaRegStar, FaCheckCircle, FaTag, FaClock, FaBuilding, FaUserCheck } from 'react-icons/fa';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { formatPrice } from '../utils/currencyFormatter';
+import { avatarFallback } from '../utils/avatarFallback';
 
 export default function Dashboard() {
     const { currentUser } = useSelector((state) => state.user);
@@ -464,7 +465,7 @@ export default function Dashboard() {
 
                                     {/* USER DETAILS */}
                                     <div className='flex items-center gap-4 mb-4 mt-2'>
-                                        <img src={user.avatar} className='w-16 h-16 rounded-full object-cover border-4 border-slate-700 shadow-md' alt={user.username} />
+                                        <img src={user.avatar} onError={avatarFallback} className='w-16 h-16 rounded-full object-cover border-4 border-slate-700 shadow-md' alt={user.username} />
                                         <div>
                                             <h3 className='text-white font-bold text-lg truncate w-32 md:w-40'>{user.username}</h3>
                                             <p className='text-slate-400 text-xs truncate w-32 md:w-40'>{user.email}</p>

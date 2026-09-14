@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { FaPaperPlane, FaUserCircle, FaSpinner, FaCheckCircle, FaWhatsapp } from 'react-icons/fa';
+import { avatarFallback } from '../utils/avatarFallback';
 
 export default function Contact({ listing }) {
   const { currentUser } = useSelector((state) => state.user);
@@ -90,7 +91,7 @@ export default function Contact({ listing }) {
           {/* OWNER INFO HEADER */}
           <div className='flex items-center gap-3 border-b border-slate-700 pb-3'>
             {landlord.avatar ? (
-              <img src={landlord.avatar} alt="owner" className='w-10 h-10 rounded-full object-cover bg-slate-600 border border-slate-500' />
+              <img src={landlord.avatar} onError={avatarFallback} alt="owner" className='w-10 h-10 rounded-full object-cover bg-slate-600 border border-slate-500' />
             ) : (
               <FaUserCircle className='text-4xl text-slate-400' />
             )}
