@@ -167,6 +167,23 @@ export const getListings = async (req, res, next) => {
     const sortKey = { created_at: 'createdAt', createdAt: 'createdAt', price: 'regularPrice', price_desc: 'regularPrice' }[req.query.sort] || 'createdAt';
     const order = req.query.order === 'asc' ? 'asc' : 'desc';
 
+    // Numeric filters apply only when present and finite ('' / missing / NaN are skipped).
+    const num = (v) => (v !== undefined && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null);
+    const minPrice = num(req.query.minPrice);
+    const maxPrice = num(req.query.maxPrice);
+    const bedrooms = num(req.query.bedrooms);
+    const city = (req.query.city || '').trim();
+
+    // "Effective price" = the discounted price on offer listings, the regular price
+    // otherwise (same rule the AI search tool uses).
+    const priceExpr = {
+      $cond: [
+        { $and: [{ $eq: ['$offer', true] }, { $gt: ['$discountPrice', 0] }] },
+        '$discountPrice',
+        '$regularPrice',
+      ],
+    };
+
     const filter = {
       $or: [
         { name: { $regex: searchRegex } },
@@ -179,6 +196,24 @@ export const getListings = async (req, res, next) => {
       featured,
       status: { $nin: ['sold', 'rented', 'pending'] }
     };
+
+    // Minimum bedrooms (0 → exact Studio match, N>0 → "N or more").
+    if (bedrooms === 0) filter.bedrooms = { $eq: 0 };
+    else if (bedrooms !== null && bedrooms > 0) filter.bedrooms = { $gte: bedrooms };
+
+    // City chips: word-boundary, case-insensitive match on the address.
+    if (city) {
+      const escapedCity = city.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      filter.address = { $regex: new RegExp(`\\b${escapedCity}\\b`, 'i') };
+    }
+
+    // Price range on the effective price.
+    if (minPrice !== null || maxPrice !== null) {
+      const priceAnd = [];
+      if (minPrice !== null) priceAnd.push({ $expr: { $gte: [priceExpr, minPrice] } });
+      if (maxPrice !== null) priceAnd.push({ $expr: { $lte: [priceExpr, maxPrice] } });
+      filter.$and = priceAnd;
+    }
 
     const [listings, total] = await Promise.all([
       Listing.find(filter)

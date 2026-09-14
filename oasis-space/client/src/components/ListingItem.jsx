@@ -6,7 +6,7 @@ import { updateUserSuccess } from '../redux/user/userSlice';
 import { useState } from 'react';
 import { formatPrice } from '../utils/currencyFormatter';
 
-export default function ListingItem({ listing }) {
+export default function ListingItem({ listing, dense = false }) {
   const { currentUser } = useSelector((state) => state.user);
   const { currency, rates } = useSelector((state) => state.currency); // Get Global Currency State
   const dispatch = useDispatch();
@@ -51,7 +51,7 @@ export default function ListingItem({ listing }) {
   };
 
   return (
-    <div className='shadow-md hover:shadow-2xl transition-all overflow-hidden rounded-2xl w-full sm:w-[300px] group relative border' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
+    <div className='shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden rounded-2xl w-full sm:w-[300px] group relative border' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
       {/* 🧠 ACCESSIBILITY FIX: The button is no longer inside the Link */}
 
       {/* 1. Global Link covering the entire card */}
@@ -62,7 +62,7 @@ export default function ListingItem({ listing }) {
       />
 
       {/* IMAGE SECTION (Enhanced) */}
-      <div className='relative overflow-hidden h-[180px] rounded-t-2xl z-0' style={{ backgroundColor: 'var(--bg-tertiary)' }}>
+      <div className={`relative overflow-hidden ${dense ? 'h-[140px]' : 'h-[180px]'} rounded-t-2xl z-0`} style={{ backgroundColor: 'var(--bg-tertiary)' }}>
 
         {/* 1. BLUR SKELETON (Jab tak image load na ho) */}
         {!imageLoaded && (
@@ -86,13 +86,16 @@ export default function ListingItem({ listing }) {
           `}
         />
 
+        {/* Scrim so badges stay legible on bright photos */}
+        <div className='absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-black/45 to-transparent z-10' />
+
         {/* Performance Fix: Removed backdrop-blur-sm to eradicate mobile scroll lagging */}
-        <div className='absolute top-3 left-3 bg-slate-900/90 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-sm z-20' style={{ borderColor: 'var(--border-primary)' }}>
+        <div className={`absolute top-3 left-3 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider shadow-sm z-20 ${listing.type === 'rent' ? 'bg-emerald-600' : 'bg-indigo-600'}`}>
           {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
         </div>
 
         {listing.offer && (
-          <div className='absolute top-3 left-20 bg-green-800/90 text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-sm z-20'>
+          <div className='absolute top-3 left-[4.8rem] bg-rose-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase shadow-sm z-20'>
             Offer
           </div>
         )}
@@ -105,7 +108,7 @@ export default function ListingItem({ listing }) {
             handleWishlist(e);
           }}
           aria-label={isSaved ? "Remove from wishlist" : "Add to wishlist"}
-          className='absolute top-3 right-3 bg-white/90 p-1.5 rounded-full shadow-lg cursor-pointer hover:bg-white transition z-30 focus:outline-none ring-slate-500 focus-visible:ring-2'
+          className='absolute top-3 right-3 bg-white/95 p-2 rounded-full shadow-lg cursor-pointer hover:bg-white hover:scale-110 transition z-30 focus:outline-none ring-slate-500 focus-visible:ring-2'
         >
           {isSaved ? <FaHeart className='text-red-500 text-sm' /> : <FaRegHeart className='text-gray-500 text-sm' />}
         </button>
@@ -130,7 +133,7 @@ export default function ListingItem({ listing }) {
         </p>
 
         <div className='flex items-center justify-between mt-1'>
-          <p className='font-bold text-lg' style={{ color: 'var(--text-heading)' }}>
+          <p className={`font-bold ${dense ? 'text-base' : 'text-lg'}`} style={{ color: 'var(--text-heading)' }}>
             {formatPrice(listing.offer ? listing.discountPrice : listing.regularPrice, currency, rates)}
             {listing.type === 'rent' && <span className='text-xs font-normal' style={{ color: 'var(--text-muted)' }}> / mo</span>}
           </p>
@@ -146,6 +149,10 @@ export default function ListingItem({ listing }) {
             <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{listing.bathrooms} Baths</span>
           </div>
         </div>
+
+        <span className='text-[11px] font-semibold' style={{ color: 'var(--text-muted)' }}>
+          {listing.furnished ? 'Furnished' : 'Unfurnished'} · {listing.parking ? 'Parking' : 'No Parking'}
+        </span>
 
       </div>
     </div >
