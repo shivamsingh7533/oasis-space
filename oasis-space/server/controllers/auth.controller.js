@@ -64,7 +64,7 @@ const cookieOptions = {
   httpOnly: true,
   secure: isProduction,
   sameSite: isProduction ? 'None' : 'Lax',
-  maxAge: 24 * 60 * 60 * 1000 // 1 Day
+  maxAge: 7 * 24 * 60 * 60 * 1000 // 7 Days — matches JWT lifetime, avoids daily surprise logouts
 };
 const clearCookieOptions = {
   httpOnly: true,
@@ -73,7 +73,7 @@ const clearCookieOptions = {
 };
 
 const signSessionToken = (id) => {
-  // Session tokens expire after 7 days (cookie itself lasts 1 day).
+  // Session tokens expire after 7 days — cookie matched to the same lifetime.
   // `purpose: 'session'` disambiguates from seller magic-link tokens (purpose: 'seller').
   const secret = (process.env.JWT_SECRET || '').trim();
   return jwt.sign({ id, purpose: 'session' }, secret, { expiresIn: '7d' });
