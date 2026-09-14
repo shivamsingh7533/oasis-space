@@ -8,7 +8,12 @@
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
-  "keywords": ["real-estate", "marketplace", "api", "oasisspace"],
+  "keywords": [
+    "real-estate",
+    "marketplace",
+    "api",
+    "oasisspace"
+  ],
   "author": "Shivam Singh — Founder & Full-Stack Developer, OasisSpace",
   "license": "ISC",
   "dependencies": {
@@ -21,6 +26,7 @@
     "express": "^4.19.2",
     "express-rate-limit": "^8.3.1",
     "groq-sdk": "^0.37.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^7.6.3",
     "razorpay": "^2.9.6",

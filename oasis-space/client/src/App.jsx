@@ -25,6 +25,7 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const OrderHistory = lazy(() => import('./pages/OrderHistory'));
 const Settings = lazy(() => import('./pages/Settings')); // ✅ Settings Page
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 // Footer Pages
 const Privacy = lazy(() => import('./pages/Privacy'));
@@ -83,6 +84,9 @@ export default function App() {
                 {/* Settings */}
                 <Route path='/settings' element={<Settings />} />
               </Route>
+
+              {/* Catch-all — any unknown URL renders a proper 404 */}
+              <Route path='*' element={<NotFound />} />
             </Routes>
           </Suspense>
         </main>

@@ -41,6 +41,13 @@ Documented behaviours when the happy path breaks. Each item maps to a code guard
 - **Mongo down**: `connectDB()` retries every 5 s (never silently serves without DB).
 - **Missing VAPID keys**: `webpush.setVapidDetails` skipped with a warning; `/api/push/vapidPublicKey` errors; the browser prompt degrades gracefully (dismiss).
 - **Missing Supabase key**: `supabase.js` warns and uploads fail with a clear message instead of a silent crash.
+
+## Web security (hardening)
+- **Login brute force**: 5 failed password attempts inside a 15-min window lock that account for 15 min (per-account in-memory guard); every failed attempt also sleeps ~1 s. Unknown emails return a generic `401 Invalid email or password` (no enumeration). Lock is 429 with remaining minutes; `authLimiter` still caps per-IP on top.
+- **Security headers (Vercel SPA)**: `Content-Security-Policy` (script: self + Razorpay checkout; img/connect allowlists Supabase, wsrv.nl, Leaflet tiles, Firebase, Pixabay fallbacks, currency API; `frame-src` Razorpay + Firebase auth; no `unsafe-inline` scripts), `X-Content-Type-Options: nosniff`, `X-Frame-Options`, `Referrer-Policy`, HSTS, Permissions-Policy.
+- **Server headers (helmet)**: `nosniff`, `Referrer-Policy`, `Cross-Origin-Opener-Policy: same-origin-allow-popups` (keeps the Google OAuth popup working), `Cross-Origin-Resource-Policy: same-origin`, HSTS in production. CSP deliberately lives on the Vercel frontend, not the API.
+- **CSP pitfall**: no inline `<script>` in `index.html` (the PWA `beforeinstallprompt` hook lives in `Header.jsx`); JSON-LD stays inlined (`application/ld+json` is data, not blocked by CSP).
+- **Unknown routes**: catch-all `*` → styled 404 page so arbitrary URLs never render a blank screen.
 - **Image failure**: `ListingItem` & gallery fall back to a Pixabay CDN placeholder; proxy `wsrv.nl` used for optimization, skipped for `data:` URIs.
 - **CORS**: configured origins + any `*.vercel.app`; `Cross-Origin-Opener-Policy` header set for Google auth popup; `trust proxy` on for cookies behind forwarders.
 - **Currency conversion**: `formatPrice(price, target, rates)` degrades to INR formatting when `rates` are missing or the currency is INR (~ the app is INR-primary; WhatsApp share + EMI stay ₹).

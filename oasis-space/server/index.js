@@ -6,6 +6,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
+import helmet from 'helmet';
 import webpush from 'web-push';
 
 // Import Routes
@@ -66,11 +67,13 @@ app.use(cors({
   credentials: true,
 }));
 
-// ✅ Fix for Cross-Origin-Opener-Policy (Google Auth Popup Fix)
-app.use((req, res, next) => {
-  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-  next();
-});
+// ✅ SECURITY HEADERS — CSP handled on the frontend (Vercel), so keep it off here.
+// COOP stays same-origin-allow-popups for the Google OAuth popup flow.
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+  hsts: process.env.NODE_ENV === 'production' ? { maxAge: 31536000 } : false,
+}));
 
 // ✅ Trust Proxy (Critical for Render/Vercel/Heroku cookies)
 app.set('trust proxy', 1);

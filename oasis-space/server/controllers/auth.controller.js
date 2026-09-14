@@ -79,6 +79,49 @@ const signSessionToken = (id) => {
   return jwt.sign({ id, purpose: 'session' }, secret, { expiresIn: '7d' });
 };
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// --- LOGIN BRUTE-FORCE GUARD (per-account, in-memory) ---
+// 5 failed attempts inside a 15 min window lock the account for 15 min.
+// Every failed attempt also pays a ~1s delay to slow automated guessing.
+// In-memory is fine for a single instance; authLimiter still throttles per-IP.
+const MAX_LOGIN_FAILS = 5;
+const LOCK_WINDOW_MS = 15 * 60 * 1000;
+const LOCKOUT_MS = 15 * 60 * 1000;
+const FAIL_DELAY_MS = 1000;
+const loginGuard = new Map(); // normalized email -> { fails, lastFailAt, lockedUntil }
+
+const normalizeEmail = (email) => (email || '').trim().toLowerCase();
+
+const getLoginLock = (email) => {
+  const rec = loginGuard.get(normalizeEmail(email));
+  if (!rec) return null;
+  if (rec.lockedUntil && rec.lockedUntil > Date.now()) return rec;
+  if (rec.lockedUntil) loginGuard.delete(normalizeEmail(email)); // lock expired
+  return null;
+};
+
+const recordLoginFail = async (email) => {
+  const key = normalizeEmail(email);
+  const now = Date.now();
+  const prev = loginGuard.get(key) || { fails: 0, lastFailAt: 0, lockedUntil: 0 };
+  if (prev.lockedUntil > now) {
+    await sleep(FAIL_DELAY_MS);
+    return prev;
+  }
+  const fails = now - prev.lastFailAt > LOCK_WINDOW_MS ? 1 : prev.fails + 1;
+  const rec = {
+    fails,
+    lastFailAt: now,
+    lockedUntil: fails >= MAX_LOGIN_FAILS ? now + LOCKOUT_MS : 0,
+  };
+  loginGuard.set(key, rec);
+  await sleep(FAIL_DELAY_MS);
+  return rec;
+};
+
+const clearLoginFails = (email) => loginGuard.delete(normalizeEmail(email));
+
 const toSafeUser = (doc) => {
   // otp / otpExpires / password are `select: false`, so this is always clean.
   return doc.toObject();
@@ -210,19 +253,44 @@ export const google = async (req, res, next) => {
 export const signin = async (req, res, next) => {
   const { email, password } = req.body;
   if (!email || !password) return next(errorHandler(400, 'Email and password are required'));
-  try {
-    const user = await User.findOne({ email: email.trim().toLowerCase() }).select('+password');
-    if (!user) return next(errorHandler(404, 'User not found'));
 
-    if (!user.password) return next(errorHandler(400, 'Please login with Google'));
+  // Per-account lockout — block before doing any work so the attack is cheap to stop.
+  const lock = getLoginLock(email);
+  if (lock) {
+    const mins = Math.ceil((lock.lockedUntil - Date.now()) / 60000);
+    return next(errorHandler(429, `Too many failed attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`));
+  }
+
+  try {
+    const user = await User.findOne({ email: normalizeEmail(email) }).select('+password');
+
+    // Generic message (no account enumeration) + same delay as wrong-password.
+    if (!user) {
+      await recordLoginFail(email);
+      return next(errorHandler(401, 'Invalid email or password'));
+    }
+
+    // Google-only account — keep the helpful hint, but still throttle probing.
+    if (!user.password) {
+      await recordLoginFail(email);
+      return next(errorHandler(400, 'Please login with Google'));
+    }
 
     if (!user.isVerified) {
       return next(errorHandler(403, 'Please verify your email first. Check your inbox for the OTP.'));
     }
 
     const validPassword = bcryptjs.compareSync(password, user.password);
-    if (!validPassword) return next(errorHandler(401, 'Wrong credentials'));
+    if (!validPassword) {
+      const rec = await recordLoginFail(email);
+      if (rec.lockedUntil > Date.now()) {
+        const mins = Math.ceil((rec.lockedUntil - Date.now()) / 60000);
+        return next(errorHandler(429, `Too many failed attempts. Try again in ${mins} minute${mins === 1 ? '' : 's'}.`));
+      }
+      return next(errorHandler(401, 'Invalid email or password'));
+    }
 
+    clearLoginFails(email);
     const token = signSessionToken(user._id);
 
     res.cookie('access_token', token, cookieOptions).status(200).json(toSafeUser(user));

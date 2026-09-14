@@ -84,18 +84,6 @@
   <!-- LCP Preload: Hero Background Image (WebP Compressed) -->
   <link rel="preload" href="/home.webp" as="image" type="image/webp" fetchpriority="high" />
 
-  <script>
-    // Global variable banaya taaki Header.jsx isse access kar sake
-    window.deferredPrompt = null;
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-      // 1. Browser ka default mini-infobar roko
-      e.preventDefault();
-      // 2. Event ko global window object mein save karo
-      window.deferredPrompt = e;
-      console.log("⚡ PWA Event Caught Globally in index.html!");
-    });
-  </script>
   <title>OasisSpace</title>
 </head>
 
