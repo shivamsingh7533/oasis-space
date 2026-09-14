@@ -7,6 +7,7 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import ListingItem from '../components/ListingItem';
 import { FaSearch } from 'react-icons/fa';
+import { enhanceImageUrl, FALLBACK_IMAGE } from '../utils/imageSource';
 import Preloader from '../components/Preloader';
 import NotificationPrompt from '../components/NotificationPrompt'; // ✅ Push Prompt Injection
 import { useSelector } from 'react-redux';
@@ -176,11 +177,12 @@ export default function Home() {
                   >
                     {/* EXPLICT LAZY LOAD IMAGE instead of CSS Background */}
                     <img
-                      src={listing.imageUrls?.[0]?.startsWith('data:') ? listing.imageUrls[0] : `https://wsrv.nl/?url=${encodeURIComponent(listing.imageUrls[0] || '')}&output=webp&w=600&q=80`}
+                      src={enhanceImageUrl(listing.imageUrls?.[0], 900) || FALLBACK_IMAGE}
                       alt={listing.name}
                       width="600"
                       height="400"
                       loading="lazy"
+                      onError={(e) => { if (e.currentTarget.src !== FALLBACK_IMAGE) e.currentTarget.src = FALLBACK_IMAGE; }}
                       className="absolute inset-0 w-full h-full object-cover z-0"
                     />
                     <div className='absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent z-10'></div>

@@ -5,6 +5,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { updateUserSuccess } from '../redux/user/userSlice';
 import { useState } from 'react';
 import { formatPrice } from '../utils/currencyFormatter';
+import { imageSourceFor } from '../utils/imageSource';
 
 export default function ListingItem({ listing, dense = false }) {
   const { currentUser } = useSelector((state) => state.user);
@@ -13,7 +14,7 @@ export default function ListingItem({ listing, dense = false }) {
 
   // IMAGE ENHANCER STATES
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
+  const [stage, setStage] = useState(0);
 
   // Redux se check karein ki property saved hai ya nahi
   const isSaved = currentUser?.savedListings?.includes(listing._id);
@@ -71,16 +72,15 @@ export default function ListingItem({ listing, dense = false }) {
           </div>
         )}
 
-        {/* 2. MAIN IMAGE (Using .hd-image class with wsrv.nl proxy — skip proxy for data: URIs) */}
+{/* 2. MAIN IMAGE (proxy + staged fallback) */}
         <img
-          src={imageError ? 'https://cdn.pixabay.com/photo/2016/11/18/17/46/house-1836070_1280.jpg' : (listing.imageUrls[0] ? (listing.imageUrls[0].startsWith('data:') ? listing.imageUrls[0] : `https://wsrv.nl/?url=${encodeURIComponent(listing.imageUrls[0])}&output=webp&w=600&q=80`) : 'https://via.placeholder.com/500')}
+          src={imageSourceFor(listing.imageUrls[0], stage, 600)}
           alt={`Cover image for ${listing.name || 'property'}`}
           width="300"
           height="180"
           loading="lazy"
           onLoad={() => setImageLoaded(true)}
-          onError={() => { setImageError(true); setImageLoaded(true); }}
-          // ✅ CHANGE: Added 'hd-image' class here
+          onError={() => { setStage((s) => Math.min(s + 1, 2)); setImageLoaded(true); }}
           className={`h-full w-full object-cover transition-all duration-700 
               ${imageLoaded ? 'opacity-100 group-hover:scale-110 hd-image' : 'opacity-0'}
           `}

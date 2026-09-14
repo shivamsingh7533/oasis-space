@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FaRobot, FaPaperPlane, FaTimes, FaCommentDots, FaBed, FaBath } from 'react-icons/fa';
+import { enhanceImageUrl } from '../utils/imageSource';
+
+const PLACEHOLDER = 'https://via.placeholder.com/500';
 
 const cardImage = (imageUrl) => {
-  if (!imageUrl) return 'https://via.placeholder.com/500';
-  if (imageUrl.startsWith('data:')) return imageUrl;
-  return `https://wsrv.nl/?url=${encodeURIComponent(imageUrl)}&output=webp&w=600&q=80`;
+  if (!imageUrl) return PLACEHOLDER;
+  return enhanceImageUrl(imageUrl, 400) || PLACEHOLDER;
 };
 
 function ListingCard({ listing }) {
@@ -17,6 +19,7 @@ function ListingCard({ listing }) {
       <img
         src={cardImage(listing.image)}
         alt={listing.name}
+        onError={(e) => { if (!e.currentTarget.dataset.failed) { e.currentTarget.dataset.failed = '1'; e.currentTarget.src = PLACEHOLDER; } }}
         className="w-16 h-16 rounded-lg object-cover bg-slate-700 border border-slate-600 flex-shrink-0"
       />
       <div className="min-w-0 flex-1">
