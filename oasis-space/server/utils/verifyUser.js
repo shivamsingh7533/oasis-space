@@ -12,7 +12,7 @@ export const verifyToken = (req, res, next) => {
     const token = req.cookies.access_token;
 
     if (!token) {
-      // ✅ No token → user isn't logged in
+      // ✅ No token → user isn't logged in; return 401 with clear message
       return res.status(401).json({ success: false, message: 'Unauthorized — please log in again.' });
     }
 
@@ -23,7 +23,7 @@ export const verifyToken = (req, res, next) => {
 
     jwt.verify(token, process.env.JWT_SECRET.trim(), (err, user) => {
       if (err) {
-        // ✅ Token expired/invalid → force re-login
+        // ✅ Token expired/invalid → 401 with clear message, don't return bare 403
         return res.status(401).json({ success: false, message: 'Session expired — please log in again.' });
       }
       if (!user || !user.id) return next(errorHandler(403, 'Forbidden: Invalid Token'));
