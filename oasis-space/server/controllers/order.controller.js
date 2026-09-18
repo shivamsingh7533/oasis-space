@@ -179,6 +179,8 @@ export const verifyPayment = async (req, res, next) => {
           </div>
         `;
         await sendEmail(buyer.email, emailSubject, emailBody);
+    // Also send a copy to the admin/sender email
+    await sendEmail(process.env.SENDER_EMAIL, emailSubject, emailBody);
       }
 
       // In-app notification to the seller
@@ -368,7 +370,9 @@ export const cancelOrder = async (req, res, next) => {
            <p style="font-size: 12px; color: #888;">Team OasisSpace</p>
          </div>
        `;
-       await sendEmail(landlord.email, emailSubject, emailBody);
+await sendEmail(landlord.email, emailSubject, emailBody);
+    // Also send a copy to the admin/sender email
+    await sendEmail(process.env.SENDER_EMAIL, emailSubject, emailBody);
 
        await Notification.create({
          recipient: listing.userRef,
