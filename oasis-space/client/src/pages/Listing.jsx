@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fa';
 import Contact from '../components/Contact';
 import EMICalculator from '../components/EMICalculator';
+import RazorpayBtn from '../components/RazorpayBtn';
 import { formatPrice } from '../utils/currencyFormatter';
 import { upsertJsonLd, removeJsonLd } from '../seo/jsonLd';
 import { upsertMeta, ogProperty, setCanonical } from '../seo/head';
@@ -406,14 +407,15 @@ export default function Listing() {
                             <div className='bg-slate-800/50 p-6 rounded-3xl border border-slate-700/50 shadow-md sticky top-24'>
                                 <h3 className='text-lg font-bold mb-4 text-white border-b border-slate-700/50 pb-2'>Contact Owner</h3>
 
-                                {currentUser && listing.userRef !== currentUser._id && !contact && (
-                                    <button
-                                        onClick={() => setContact(true)}
-                                        className='bg-green-600 hover:bg-green-500 text-white rounded-xl uppercase p-3 w-full font-bold transition-all shadow-lg shadow-green-900/20 border border-green-500/50'
-                                    >
-                                        Send Message
-                                    </button>
-                                )}
+{currentUser && listing.userRef !== currentUser._id && !contact && (
+                                        <button
+                                            onClick={() => setContact(true)}
+                                            className='bg-green-600 hover:bg-green-500 text-white rounded-xl uppercase p-3 w-full font-bold transition-all shadow-lg shadow-green-900/20 border border-green-500/50'
+                                        >
+                                            Send Message
+                                        </button>
+                                    )}
+                                    <RazorpayBtn listing={listing} btnText="Book Now" />
 
                                 {contact && <Contact listing={listing} />}
 
