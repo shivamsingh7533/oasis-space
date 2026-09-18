@@ -385,6 +385,9 @@ export default function Listing() {
                                     )}
                                 </div>
 
+                                {/* Book Now button for listing fee payment */}
+                                <RazorpayBtn listing={listing} btnText="Book Now" />
+
                                 {/* BUYERS EXPRESS INTEREST BY MESSAGING THE OWNER (see Contact card below) */}
                             </div>
 
@@ -415,9 +418,7 @@ export default function Listing() {
                                             Send Message
                                         </button>
                                     )}
-                                    <RazorpayBtn listing={listing} btnText="Book Now" />
-
-                                {contact && <Contact listing={listing} />}
+{contact && <Contact listing={listing} />}
 
                                 {!currentUser && (
                                     <p className='text-sm text-red-400 mt-2 text-center bg-red-500/10 p-3 rounded-xl border border-red-500/20'>
