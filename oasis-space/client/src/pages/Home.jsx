@@ -100,7 +100,7 @@ export default function Home() {
       <div className='min-h-screen' style={{ backgroundColor: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
 
         {/* --- HERO SECTION --- */}
-        <div className="relative w-full h-[550px] flex flex-col items-center justify-center overflow-hidden">
+        <div className="relative w-full min-h-[550px] flex flex-col items-center justify-center overflow-hidden">
 
           {/* LCP PRIORITY IMAGE (Replaces background-image for instant loading, WebP Compressed) */}
           <img
@@ -166,7 +166,7 @@ export default function Home() {
               navigation
               autoplay={{ delay: 4000, disableOnInteraction: false }}
               pagination={{ clickable: true }}
-              className='h-[280px] sm:h-[400px] rounded-2xl overflow-hidden shadow-2xl border'
+              className='h-[260px] sm:h-[380px] rounded-2xl overflow-hidden shadow-2xl border'
               style={{ borderColor: 'var(--border-primary)' }}
             >
               {featuredListings.map((listing) => (

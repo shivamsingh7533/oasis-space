@@ -62,6 +62,12 @@ const DEFAULT_PARAMS = {
 
 const inr = (n) => `₹${Number(n).toLocaleString('en-IN')}`;
 
+// Validate price inputs - ensure min is less than max
+const validatePriceRange = (min, max) => {
+  if (min !== '' && max !== '' && Number(min) >= Number(max)) return false;
+  return true;
+};
+
 const SectionLabel = ({ children }) => (
   <span className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
     {children}
