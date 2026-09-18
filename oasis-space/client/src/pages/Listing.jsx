@@ -399,6 +399,7 @@ export default function Listing() {
                             )}
 
                             {/* DESCRIPTION */}
+                                <RazorpayBtn listing={listing} btnText="Book Now" />
                             <div className='bg-slate-800/50 p-6 rounded-3xl border border-slate-700/50 shadow-md'>
                                 <span className='font-bold text-lg text-white block mb-3 border-b border-slate-700/50 pb-2'>Description</span>
                                 <p className='text-slate-300 leading-relaxed text-sm'>
