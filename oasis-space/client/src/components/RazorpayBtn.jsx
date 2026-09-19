@@ -76,7 +76,7 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
         amount: orderData.order.amount,
         currency: orderData.order.currency,
         name: "OasisSpace",
-        description: isBooking ? `Token booking for ${listing.name}` : `Publishing fee for ${listing.name}`,
+        description: isBooking ? `Booking for ${listing.name}` : `Publishing fee for ${listing.name}`,
         image: "https://cdn-icons-png.flaticon.com/512/1040/1040993.png",
         order_id: orderData.order.id, // Backend Order ID
         

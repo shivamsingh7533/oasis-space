@@ -385,17 +385,17 @@ export default function Listing() {
                                     )}
                                 </div>
 
-                                {/* Book Property button for buyers (token booking to reserve property) */}
+                                {/* Book Property button for buyers to reserve property */}
                                 {listing.userRef !== currentUser?._id && listing.status === 'available' && (
                                     <div className='mt-2'>
                                         <RazorpayBtn 
                                             listing={listing} 
                                             orderType="booking"
-                                            btnText="Book Property (₹999 Token)" 
+                                            btnText="Book Now (₹999)" 
                                             customStyle="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white p-3.5 rounded-xl uppercase font-bold shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 text-sm tracking-wide cursor-pointer"
                                         />
                                         <p className='text-[11px] text-slate-400 text-center mt-1.5'>
-                                            ⚡ Refundable token to schedule priority visit & lock deal
+                                            ⚡ 100% Refundable advance to schedule priority visit & lock deal
                                         </p>
                                     </div>
                                 )}
