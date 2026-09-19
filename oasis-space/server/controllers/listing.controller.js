@@ -5,6 +5,13 @@ import { errorHandler } from '../utils/error.js';
 import { getListingFee } from '../utils/fees.js';
 import { GoogleGenerativeAI } from "@google/generative-ai"; // ✅ AI Import
 
+import Notification from '../models/notification.model.js';
+import sendEmail from '../utils/sendEmail.js';
+import { sendPushNotification } from '../utils/sendPush.js';
+
+const escapeHtml = (str = '') =>
+  String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 // Whitelist applied on create — never trust raw req.body keys like userRef/featured/status.
 const CREATE_FIELDS = [
   'name', 'description', 'address', 'regularPrice', 'discountPrice',
@@ -23,20 +30,37 @@ const toBools = {
   'false': false, '0': false, 'no': false, 'off': false,
 };
 
-// 1. Create Listing — always created as a PAYMENT-PENDING draft.
-//    It becomes publicly visible ('available') only after the listing fee is paid.
+// 1. Create Listing — MANDATORY Seller Subscription required.
+//    Only users with an active Seller Pro Pack (quota > 0) can list properties.
+//    When the 10th listing is published, automated email and notification alerts are dispatched.
 export const createListing = async (req, res, next) => {
   try {
     const type = req.body.type;
 
-    let sellerUser = null;
-    if (type === 'sale') {
-      sellerUser = await User.findById(req.user.id);
-      if (sellerUser.sellerStatus !== 'approved' && sellerUser.role !== 'admin') {
-        return next(errorHandler(403, 'Permission Denied! Only Approved Sellers can list properties for SALE.'));
-      }
-    } else if (type !== 'rent') {
+    if (type !== 'rent' && type !== 'sale') {
       return next(errorHandler(400, "Listing type must be either 'rent' or 'sale'."));
+    }
+
+    const sellerUser = await User.findById(req.user.id);
+    if (!sellerUser) return next(errorHandler(404, 'User not found!'));
+
+    if (sellerUser.role !== 'admin' && sellerUser.sellerStatus !== 'approved') {
+      return next(errorHandler(403, 'Permission Denied! Only Approved Sellers can list properties.'));
+    }
+
+    // --- MANDATORY SUBSCRIPTION CHECK FOR ALL SELLERS (EXCEPT ADMIN) ---
+    if (sellerUser.role !== 'admin') {
+      const sub = sellerUser.sellerSubscription;
+      const isSubActive = sub && sub.status === 'active' && sub.endDate && new Date(sub.endDate) > new Date();
+      const hasQuota = isSubActive && (sub.usedQuota < sub.totalQuota);
+
+      if (!hasQuota) {
+        const isExhausted = sub && (sub.status === 'exhausted' || (sub.totalQuota > 0 && sub.usedQuota >= sub.totalQuota));
+        const msg = isExhausted
+          ? 'Your Seller Pack quota is exhausted (10/10 properties listed). Please reclaim your Seller Pack to list more properties.'
+          : 'Active Seller Pack required to list properties! Please purchase the Seller Pro Pack (₹5,100 for 10 listings) to proceed.';
+        return next(errorHandler(403, msg));
+      }
     }
 
     const newListingData = {};
@@ -47,28 +71,58 @@ export const createListing = async (req, res, next) => {
     // Server-authoritative fields — never taken from the client.
     newListingData.userRef = req.user.id;
     newListingData.featured = false;
-    
-    // Status assignment:
-    // Rent listings publish FREE and instantly.
-    // Sale listings: If seller has active sellerSubscription with quota remaining, publish FREE & instantly ('available') and deduct 1 from quota.
-    // Otherwise, start as fee-pending draft ('pending').
-    if (type === 'rent') {
-      newListingData.status = 'available';
-    } else {
-      const sub = sellerUser && sellerUser.sellerSubscription;
-      const isSubActive = sub && sub.status === 'active' && sub.endDate && new Date(sub.endDate) > new Date();
-      const hasQuota = isSubActive && (sub.usedQuota < sub.totalQuota);
+    newListingData.status = 'available'; // Subscribed sellers publish instantly!
 
-      if (hasQuota) {
-        newListingData.status = 'available';
-        sellerUser.sellerSubscription.usedQuota += 1;
-        if (sellerUser.sellerSubscription.usedQuota >= sellerUser.sellerSubscription.totalQuota) {
-          sellerUser.sellerSubscription.status = 'exhausted';
+    // Deduct 1 credit from quota for non-admins
+    if (sellerUser.role !== 'admin') {
+      sellerUser.sellerSubscription.usedQuota += 1;
+      const reachedLimit = sellerUser.sellerSubscription.usedQuota >= sellerUser.sellerSubscription.totalQuota;
+
+      if (reachedLimit) {
+        sellerUser.sellerSubscription.status = 'exhausted';
+
+        // 1. Dispatch automated quota exhaustion email
+        if (sellerUser.email) {
+          const emailSubject = `⚠️ Action Required: Your OasisSpace Seller Pack Quota is Complete (10/10 Listings Used)`;
+          const emailBody = `
+            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;">
+              <h2 style="color: #dc2626;">Your 10 Listing Credits Have Been Used!</h2>
+              <p>Hello <strong>${escapeHtml(sellerUser.username)}</strong>,</p>
+              <p>You have successfully published your 10th property on OasisSpace. Your current <strong>Seller Pro Pack quota is now fully exhausted (10/10 used)</strong>.</p>
+              <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
+                <p style="margin: 0; color: #991b1b; font-weight: bold;">⚠️ Future property listings will be paused until your pack is reclaimed.</p>
+              </div>
+              <p>To continue posting properties with instant live publishing, please reclaim or renew your Seller Pack for <strong>₹5,100 (10 more listings)</strong>.</p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${process.env.CLIENT_URL || 'https://oasis-space.vercel.app'}/seller-dashboard" 
+                   style="background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
+                  Reclaim Seller Pack on Dashboard &rarr;
+                </a>
+              </div>
+              <p style="font-size: 12px; color: #888;">Team OasisSpace &bull; Built for serious real estate professionals</p>
+            </div>
+          `;
+          await sendEmail(sellerUser.email, emailSubject, emailBody);
+          await sendEmail(process.env.SENDER_EMAIL, emailSubject, emailBody);
         }
-        await sellerUser.save();
-      } else {
-        newListingData.status = 'pending';
+
+        // 2. In-App Notification
+        await Notification.create({
+          recipient: sellerUser._id,
+          sender: sellerUser._id,
+          message: `⚠️ Quota complete! You have used all 10 listing credits. Reclaim your Seller Pack on the dashboard to continue listing properties.`,
+          relatedId: null,
+        });
+
+        // 3. Web Push Notification
+        await sendPushNotification(sellerUser._id, {
+          title: '⚠️ Seller Pack Quota Exhausted',
+          body: 'You have used all 10 listing credits. Reclaim your Seller Pack on the dashboard.',
+          icon: '/icon-192.png'
+        });
       }
+
+      await sellerUser.save();
     }
 
     const listing = await Listing.create(newListingData);

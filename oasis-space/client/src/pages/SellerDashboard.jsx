@@ -131,6 +131,39 @@ export default function SellerDashboard() {
         const remaining = isActive ? Math.max(0, (sub.totalQuota || 0) - (sub.usedQuota || 0)) : 0;
         const total = sub?.totalQuota || 0;
         const percent = total > 0 ? Math.min(100, Math.round(((sub?.usedQuota || 0) / total) * 100)) : 0;
+        const isExhausted = (sub?.status === 'exhausted') || (isActive && remaining === 0);
+
+        if (isExhausted) {
+          return (
+            <div className='p-6 rounded-2xl border shadow-xl mb-8 bg-gradient-to-r from-red-950/40 via-slate-900 to-amber-950/30 border-red-500/40'>
+              <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
+                <div className='space-y-2 flex-1'>
+                  <div className='flex items-center gap-3'>
+                    <span className='p-2 bg-red-500/20 text-red-400 rounded-lg text-lg'>
+                      ⚠️
+                    </span>
+                    <h2 className='text-xl font-bold text-white'>
+                      Seller Pack Quota Complete <span className='text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider ml-2 bg-red-500/20 text-red-300 border border-red-500/40'>
+                        10/10 Used
+                      </span>
+                    </h2>
+                  </div>
+                  <p className='text-slate-300 text-sm'>
+                    You have used all <span className='font-bold text-white'>{total} listing credits</span>. New property listings are paused. <strong>Reclaim your Seller Pack</strong> for ₹5,100 to get 10 more listings!
+                  </p>
+                </div>
+                <div className='w-full md:w-auto'>
+                  <RazorpayBtn
+                    orderType="seller_subscription"
+                    btnText="Reclaim Seller Pack (₹5,100 for 10)"
+                    onSuccess={() => fetchDashboardData()}
+                    customStyle="w-full md:w-auto px-6 py-3.5 bg-gradient-to-r from-red-600 via-amber-600 to-orange-500 hover:from-red-500 hover:to-orange-400 text-white rounded-xl font-bold transition shadow-lg shadow-red-500/25 flex items-center justify-center gap-2 text-sm cursor-pointer whitespace-nowrap"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        }
 
         return (
           <div className='p-6 rounded-2xl border shadow-xl mb-8 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950/40 border-indigo-500/30'>
@@ -142,7 +175,7 @@ export default function SellerDashboard() {
                   </span>
                   <h2 className='text-xl font-bold text-white'>
                     Seller Pro Pack <span className='text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider ml-2 bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'>
-                      {isActive ? (remaining > 0 ? 'Active' : 'Quota Exhausted') : 'Get Pack'}
+                      {isActive ? 'Active' : 'Get Pack'}
                     </span>
                   </h2>
                 </div>
@@ -169,7 +202,7 @@ export default function SellerDashboard() {
               <div className='w-full md:w-auto flex flex-col sm:flex-row gap-3'>
                 <RazorpayBtn
                   orderType="seller_subscription"
-                  btnText={isActive ? (remaining > 0 ? "Top-up 10 Credits (₹5,100)" : "Renew Pack (₹5,100)") : "Buy Seller Pack (₹5,100 for 10)"}
+                  btnText={isActive ? "Top-up 10 Credits (₹5,100)" : "Buy Seller Pack (₹5,100 for 10)"}
                   onSuccess={() => fetchDashboardData()}
                   customStyle="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold transition shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 text-sm cursor-pointer whitespace-nowrap"
                 />

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../supabase';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { FaCloudUploadAlt, FaTrashAlt, FaCheckCircle, FaArrowLeft } from 'react-icons/fa';
+import { FaCloudUploadAlt, FaTrashAlt, FaCheckCircle, FaArrowLeft, FaCrown } from 'react-icons/fa';
 import { compressImage } from '../utils/compressImage';
 import RazorpayBtn from '../components/RazorpayBtn';
 import { getListingFee, LISTING_FEES } from '../utils/fees';
@@ -318,6 +318,83 @@ export default function CreateListing() {
               className='text-slate-400 hover:text-slate-200 text-sm font-semibold transition'
             >
               Pay later — go to Seller Dashboard
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const sub = currentUser?.sellerSubscription;
+  const isSubActive = sub && sub.status === 'active' && sub.endDate && new Date(sub.endDate) > new Date();
+  const hasQuota = isSubActive && (sub.usedQuota < sub.totalQuota);
+  const isExhausted = Boolean(sub) && (sub.status === 'exhausted' || (sub.totalQuota > 0 && sub.usedQuota >= sub.totalQuota));
+
+  // --- MANDATORY SUBSCRIPTION PAYWALL SCREEN ---
+  if (currentUser?.role !== 'admin' && !hasQuota) {
+    return (
+      <div className='min-h-screen flex items-center justify-center p-4 py-12' style={{ backgroundColor: 'var(--bg-primary)' }}>
+        <div className='max-w-xl w-full rounded-3xl shadow-2xl p-8 border text-center relative overflow-hidden' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
+          <div className='absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-400'></div>
+
+          <div className='w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center mx-auto mb-5 text-2xl text-indigo-400 shadow-inner'>
+            <FaCrown />
+          </div>
+
+          <span className='px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 inline-block mb-3'>
+            {isExhausted ? 'Quota Exhausted' : 'Seller Subscription Required'}
+          </span>
+
+          <h1 className='text-2xl sm:text-3xl font-black text-white mb-3'>
+            {isExhausted ? 'Your 10 Listing Credits are Exhausted' : 'Seller Pack Required to List'}
+          </h1>
+
+          <p className='text-slate-300 text-sm leading-relaxed mb-6 max-w-md mx-auto'>
+            {isExhausted
+              ? 'You have published all 10 properties included in your Seller Pro Pack. Reclaim another pack below to unlock 10 more listings.'
+              : 'To guarantee verified, genuine property listings across OasisSpace, an active Seller Pro Pack is required to list properties.'}
+          </p>
+
+          <div className='bg-slate-900/60 rounded-2xl border border-slate-700/60 p-6 mb-6 text-left'>
+            <div className='flex justify-between items-start mb-4 border-b border-slate-800 pb-3'>
+              <div>
+                <h3 className='font-bold text-white text-base'>Seller Pro Pack</h3>
+                <p className='text-xs text-slate-400'>10 Property Listings Quota</p>
+              </div>
+              <div className='text-right'>
+                <span className='text-2xl font-black text-emerald-400'>₹5,100</span>
+                <p className='text-[10px] text-slate-400'>₹510 / property &bull; 1 Year</p>
+              </div>
+            </div>
+
+            <ul className='space-y-2.5 text-xs text-slate-300'>
+              <li className='flex items-center gap-2'>
+                <span className='text-emerald-400 font-bold'>✓</span> List up to <strong>10 Properties</strong> (Sale or Rent)
+              </li>
+              <li className='flex items-center gap-2'>
+                <span className='text-emerald-400 font-bold'>✓</span> <strong>Instant Live Publishing</strong> (No waiting for review)
+              </li>
+              <li className='flex items-center gap-2'>
+                <span className='text-emerald-400 font-bold'>✓</span> <strong>Verified Seller Badge</strong> on all listings
+              </li>
+              <li className='flex items-center gap-2'>
+                <span className='text-emerald-400 font-bold'>✓</span> <strong>1-Year Validity</strong> from purchase date
+              </li>
+            </ul>
+          </div>
+
+          <RazorpayBtn
+            orderType="seller_subscription"
+            btnText={isExhausted ? "Reclaim Seller Pack (₹5,100 for 10)" : "Get Seller Pack (₹5,100 for 10 Listings)"}
+            customStyle="w-full py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-bold transition-all shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 text-sm uppercase tracking-wide cursor-pointer"
+          />
+
+          <p className='mt-4'>
+            <button
+              onClick={() => navigate('/seller-dashboard')}
+              className='text-slate-400 hover:text-slate-200 text-xs font-semibold transition'
+            >
+              Go to Seller Dashboard &rarr;
             </button>
           </p>
         </div>
