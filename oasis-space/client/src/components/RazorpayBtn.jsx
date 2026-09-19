@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import PaymentLoading from './PaymentLoading';
 import { FaCreditCard } from 'react-icons/fa';
 
-export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle = "", onSuccess }) {
+export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle = "", onSuccess, orderType = "listing_fee" }) {
   const { currentUser } = useSelector((state) => state.user);
   const [paymentStatus, setPaymentStatus] = useState(null); // null | 'processing' | 'success' | 'failed'
   const navigate = useNavigate();
+
+  const isBooking = orderType === 'booking' || btnText.toLowerCase().includes('book');
 
   // 1. Script Load Function
   const loadRazorpayScript = () => {
@@ -36,11 +38,14 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
     }
 
     try {
-      // B. Create Order (Backend Call) — fee is computed server-side, never trust the client amount
+      // B. Create Order (Backend Call) — amount is computed server-side
       const orderRes = await fetch('/api/order/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listingId: listing._id })
+        body: JSON.stringify({
+          listingId: listing._id,
+          orderType: isBooking ? 'booking' : 'listing_fee',
+        })
       });
 
       const orderData = await orderRes.json();
@@ -71,7 +76,7 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
         amount: orderData.order.amount,
         currency: orderData.order.currency,
         name: "OasisSpace",
-        description: `Publishing fee for ${listing.name}`,
+        description: isBooking ? `Token booking for ${listing.name}` : `Publishing fee for ${listing.name}`,
         image: "https://cdn-icons-png.flaticon.com/512/1040/1040993.png",
         order_id: orderData.order.id, // Backend Order ID
         

@@ -5,6 +5,9 @@ export const LISTING_FEES = {
   sale: 5100,
 };
 
+// Buyer token booking amount to reserve/express interest in a property
+export const BOOKING_TOKEN_FEE = 999;
+
 export const getListingFee = (type) => (type === 'rent' ? LISTING_FEES.rent : LISTING_FEES.sale);
 
 export const FEES_CURRENCY = 'INR';

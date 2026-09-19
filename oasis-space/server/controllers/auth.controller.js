@@ -124,8 +124,11 @@ const recordLoginFail = async (email) => {
 const clearLoginFails = (email) => loginGuard.delete(normalizeEmail(email));
 
 const toSafeUser = (doc) => {
-  // otp / otpExpires / password are `select: false`, so this is always clean.
-  return doc.toObject();
+  const userObj = doc.toObject ? doc.toObject() : { ...doc };
+  delete userObj.password;
+  delete userObj.otp;
+  delete userObj.otpExpires;
+  return userObj;
 };
 
 // --- CONTROLLER LOGIC ---

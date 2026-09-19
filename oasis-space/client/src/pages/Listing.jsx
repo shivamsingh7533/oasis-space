@@ -385,10 +385,20 @@ export default function Listing() {
                                     )}
                                 </div>
 
-                                {/* Book Now button for listing fee payment */}
-                                <RazorpayBtn listing={listing} btnText="Book Now" />
-
-                                {/* BUYERS EXPRESS INTEREST BY MESSAGING THE OWNER (see Contact card below) */}
+                                {/* Book Property button for buyers (token booking to reserve property) */}
+                                {listing.userRef !== currentUser?._id && listing.status === 'available' && (
+                                    <div className='mt-2'>
+                                        <RazorpayBtn 
+                                            listing={listing} 
+                                            orderType="booking"
+                                            btnText="Book Property (₹999 Token)" 
+                                            customStyle="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white p-3.5 rounded-xl uppercase font-bold shadow-lg shadow-indigo-500/25 transition-all flex items-center justify-center gap-2 text-sm tracking-wide cursor-pointer"
+                                        />
+                                        <p className='text-[11px] text-slate-400 text-center mt-1.5'>
+                                            ⚡ Refundable token to schedule priority visit & lock deal
+                                        </p>
+                                    </div>
+                                )}
                             </div>
 
                             {/* EMI CALCULATOR */}
@@ -399,7 +409,6 @@ export default function Listing() {
                             )}
 
                             {/* DESCRIPTION */}
-                                <RazorpayBtn listing={listing} btnText="Book Now" />
                             <div className='bg-slate-800/50 p-6 rounded-3xl border border-slate-700/50 shadow-md'>
                                 <span className='font-bold text-lg text-white block mb-3 border-b border-slate-700/50 pb-2'>Description</span>
                                 <p className='text-slate-300 leading-relaxed text-sm'>

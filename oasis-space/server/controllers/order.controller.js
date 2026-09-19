@@ -7,7 +7,7 @@ import crypto from 'crypto';
 import { errorHandler } from '../utils/error.js';
 import sendEmail from '../utils/sendEmail.js';
 import { sendPushNotification } from '../utils/sendPush.js';
-import { getListingFee, FEES_CURRENCY } from '../utils/fees.js';
+import { getListingFee, BOOKING_TOKEN_FEE, FEES_CURRENCY } from '../utils/fees.js';
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
@@ -18,11 +18,11 @@ const razorpay = new Razorpay({
 const escapeHtml = (str = '') =>
   String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-// 1. CREATE ORDER — listing-fee payment to publish a pending listing.
-//    Amount is computed SERVER-SIDE from the listing type (never trusted from the client).
+// 1. CREATE ORDER — handles both seller listing fees and buyer token bookings.
+//    Amounts are computed SERVER-SIDE (never trusted from the client).
 export const createOrder = async (req, res, next) => {
   try {
-    const { listingId } = req.body;
+    const { listingId, orderType = 'listing_fee' } = req.body;
 
     if (!listingId) {
       return next(errorHandler(400, "Listing ID is required!"));
@@ -31,13 +31,45 @@ export const createOrder = async (req, res, next) => {
     const listing = await Listing.findById(listingId);
     if (!listing) return next(errorHandler(404, 'Listing not found!'));
 
+    // --- A. BUYER BOOKING ORDER ---
+    if (orderType === 'booking') {
+      // Owner cannot book their own property
+      if (listing.userRef === req.user.id) {
+        return next(errorHandler(400, 'You cannot book your own property.'));
+      }
+
+      // Property must be available (cannot book sold, rented, or pending draft)
+      if (listing.status !== 'available') {
+        return next(errorHandler(400, 'This property is not currently available for booking.'));
+      }
+
+      const options = {
+        amount: BOOKING_TOKEN_FEE * 100, // Convert to paise (e.g. ₹999 -> 99900)
+        currency: FEES_CURRENCY,
+        receipt: `rcpt_bk_${listingId.toString().slice(-6)}_${Date.now().toString().slice(-6)}`,
+        notes: {
+          listingId: listingId.toString(),
+          userId: req.user.id,
+          type: 'booking',
+        }
+      };
+
+      const order = await razorpay.orders.create(options);
+      if (!order) {
+        return next(errorHandler(500, "Razorpay Order Creation Failed"));
+      }
+
+      return res.status(200).json({
+        success: true,
+        order,
+        type: 'booking',
+      });
+    }
+
+    // --- B. SELLER LISTING FEE ORDER ---
     // Only the listing owner can publish their own property.
     if (listing.userRef !== req.user.id) {
       return next(errorHandler(403, 'You can only pay the listing fee for your own property.'));
-    }
-
-    if (listing.status !== 'pending') {
-      return next(errorHandler(400, 'This listing is not awaiting a listing fee.'));
     }
 
     const fee = getListingFee(listing.type);
@@ -46,6 +78,10 @@ export const createOrder = async (req, res, next) => {
     // bypassing the guard with a ₹0 Razorpay order).
     if (fee === 0) {
       return next(errorHandler(400, 'Rent listings publish free — no payment required.'));
+    }
+
+    if (listing.status !== 'pending') {
+      return next(errorHandler(400, 'This listing is not awaiting a listing fee.'));
     }
 
     const existingPaid = await Order.findOne({
@@ -63,7 +99,7 @@ export const createOrder = async (req, res, next) => {
       currency: FEES_CURRENCY,
       receipt: `receipt_listing_${listingId}`,
       notes: {
-        listingId: listingId,
+        listingId: listingId.toString(),
         userId: req.user.id,
         type: 'listing_fee',
       }
@@ -78,6 +114,7 @@ export const createOrder = async (req, res, next) => {
     res.status(200).json({
       success: true,
       order,
+      type: 'listing_fee',
     });
   } catch (error) {
     console.log("Create Order Error:", error);
@@ -106,7 +143,15 @@ export const verifyPayment = async (req, res, next) => {
       return res.status(400).json({ success: false, message: "Invalid Signature! Payment Verification Failed." });
     }
 
-    // A. Fetch Razorpay Order to get type + listing from notes
+    // A. Idempotency — a payment/order id can only be processed once
+    const alreadyProcessed = await Order.findOne({
+      $or: [{ paymentId: razorpay_payment_id }, { orderId: razorpay_order_id }],
+    });
+    if (alreadyProcessed) {
+      return res.status(200).json({ success: true, message: "Payment already verified." });
+    }
+
+    // B. Fetch Razorpay Order to get type + listing from notes
     const rzpOrder = await razorpay.orders.fetch(razorpay_order_id);
     const notes = rzpOrder.notes || {};
     const listingId = notes.listingId;
@@ -127,14 +172,6 @@ export const verifyPayment = async (req, res, next) => {
       if (rzpOrder.amount / 100 !== expectedFee) {
         return next(errorHandler(400, 'Payment amount does not match the listing fee.'));
       }
-    }
-
-    // B. Idempotency — a payment/order id can only be processed once
-    const alreadyProcessed = await Order.findOne({
-      $or: [{ paymentId: razorpay_payment_id }, { orderId: razorpay_order_id }],
-    });
-    if (alreadyProcessed) {
-      return res.status(200).json({ success: true, message: "Payment already verified." });
     }
 
     const buyer = await User.findById(req.user.id);
