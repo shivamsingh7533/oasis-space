@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../supabase';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateUserSuccess } from '../redux/user/userSlice';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FaCloudUploadAlt, FaTrashAlt } from 'react-icons/fa';
 import { compressImage } from '../utils/compressImage';
 
 export default function UpdateListing() {
   const { currentUser } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const params = useParams();
 
@@ -33,6 +35,7 @@ export default function UpdateListing() {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [originalType, setOriginalType] = useState('rent');
 
   // --- 1. FETCH DATA (Existing Feature) ---
   useEffect(() => {
@@ -50,6 +53,7 @@ export default function UpdateListing() {
           data.imageLabels = new Array(data.imageUrls.length).fill('');
         }
         setFormData(data);
+        setOriginalType(data.type || 'rent');
       } catch (error) {
         console.log(error);
       }
@@ -135,10 +139,27 @@ export default function UpdateListing() {
     setFormData({ ...formData, imageLabels: newLabels });
   };
 
+  const sub = currentUser?.sellerSubscription;
+  const isSubActive = sub && sub.status === 'active' && sub.endDate && new Date(sub.endDate) > new Date();
+  const hasQuota = isSubActive && (sub.usedQuota < sub.totalQuota);
+
   // --- 3. FORM HANDLERS ---
   const handleChange = (e) => {
-    if (e.target.id === 'sale' || e.target.id === 'rent') {
-      setFormData({ ...formData, type: e.target.id });
+    if (e.target.id === 'sale') {
+      if (currentUser?.role !== 'admin') {
+        if (currentUser?.sellerStatus !== 'approved') {
+          alert("Permission Denied! You must be an Approved Seller to convert this listing to Sale.");
+          return;
+        }
+        if (originalType === 'rent' && !hasQuota) {
+          alert("Active Seller Pack required! You cannot convert a Rent property to Sale without an active subscription quota (₹5,100 for 10 listings). Please purchase a pack from your Seller Dashboard.");
+          return;
+        }
+      }
+      setFormData({ ...formData, type: 'sale' });
+    }
+    if (e.target.id === 'rent') {
+      setFormData({ ...formData, type: 'rent' });
     }
     if (['parking', 'furnished', 'offer'].includes(e.target.id)) {
       setFormData({ ...formData, [e.target.id]: e.target.checked });
@@ -215,6 +236,9 @@ export default function UpdateListing() {
       if (data.success === false) {
         setError(data.message);
       } else {
+        if (data.sellerSubscription) {
+          dispatch(updateUserSuccess({ ...currentUser, sellerSubscription: data.sellerSubscription }));
+        }
         navigate(`/listing/${data._id}`);
       }
     } catch (error) {
@@ -282,6 +306,14 @@ export default function UpdateListing() {
                 <label htmlFor='offer' className='text-slate-300 cursor-pointer'>Offer</label>
               </div>
             </div>
+
+            {/* Converting Rent to Sale Warning Banner */}
+            {originalType === 'rent' && formData.type === 'sale' && (
+              <div className='p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs flex items-center gap-2.5 shadow-sm'>
+                <span className='text-base'>⚠️</span>
+                <span><strong>Converting Rent to Sale:</strong> Saving this update will consume 1 of your remaining Sale listing credits from your Seller Pro Pack.</span>
+              </div>
+            )}
 
             {/* Beds/Baths */}
             <div className='flex gap-4 flex-wrap'>

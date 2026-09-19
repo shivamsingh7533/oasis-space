@@ -30,9 +30,53 @@ const toBools = {
   'false': false, '0': false, 'no': false, 'off': false,
 };
 
-// 1. Create Listing — MANDATORY Seller Subscription required.
-//    Only users with an active Seller Pro Pack (quota > 0) can list properties.
-//    When the 10th listing is published, automated email and notification alerts are dispatched.
+// Helper to trigger automated quota exhaustion alerts
+async function triggerQuotaExhaustionAlert(sellerUser) {
+  sellerUser.sellerSubscription.status = 'exhausted';
+
+  // 1. Dispatch automated quota exhaustion email
+  if (sellerUser.email) {
+    const emailSubject = `⚠️ Action Required: Your OasisSpace Seller Pack Quota is Complete (10/10 Listings Used)`;
+    const emailBody = `
+      <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;">
+        <h2 style="color: #dc2626;">Your 10 Listing Credits Have Been Used!</h2>
+        <p>Hello <strong>${escapeHtml(sellerUser.username)}</strong>,</p>
+        <p>You have successfully published your 10th property on OasisSpace. Your current <strong>Seller Pro Pack quota is now fully exhausted (10/10 used)</strong>.</p>
+        <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
+          <p style="margin: 0; color: #991b1b; font-weight: bold;">⚠️ Future property listings will be paused until your pack is reclaimed.</p>
+        </div>
+        <p>To continue posting properties with instant live publishing, please reclaim or renew your Seller Pack for <strong>₹5,100 (10 more listings)</strong>.</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.CLIENT_URL || 'https://oasis-space.vercel.app'}/seller-dashboard" 
+             style="background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
+            Reclaim Seller Pack on Dashboard &rarr;
+          </a>
+        </div>
+        <p style="font-size: 12px; color: #888;">Team OasisSpace &bull; Built for serious real estate professionals</p>
+      </div>
+    `;
+    await sendEmail(sellerUser.email, emailSubject, emailBody);
+    await sendEmail(process.env.SENDER_EMAIL, emailSubject, emailBody);
+  }
+
+  // 2. In-App Notification
+  await Notification.create({
+    recipient: sellerUser._id,
+    sender: sellerUser._id,
+    message: `⚠️ Quota complete! You have used all 10 listing credits. Reclaim your Seller Pack on the dashboard to continue listing properties.`,
+    relatedId: null,
+  });
+
+  // 3. Web Push Notification
+  await sendPushNotification(sellerUser._id, {
+    title: '⚠️ Seller Pack Quota Exhausted',
+    body: 'You have used all 10 listing credits. Reclaim your Seller Pack on the dashboard.',
+    icon: '/icon-192.png'
+  });
+}
+
+// 1. Create Listing — Rent listings are FREE & require no subscription.
+//    Sale listings require Approved Seller status and an active Seller Pro Pack.
 export const createListing = async (req, res, next) => {
   try {
     const type = req.body.type;
@@ -44,22 +88,24 @@ export const createListing = async (req, res, next) => {
     const sellerUser = await User.findById(req.user.id);
     if (!sellerUser) return next(errorHandler(404, 'User not found!'));
 
-    if (sellerUser.role !== 'admin' && sellerUser.sellerStatus !== 'approved') {
-      return next(errorHandler(403, 'Permission Denied! Only Approved Sellers can list properties.'));
-    }
+    // --- SALE LISTINGS: Approved seller status & active pack quota required ---
+    if (type === 'sale') {
+      if (sellerUser.role !== 'admin' && sellerUser.sellerStatus !== 'approved') {
+        return next(errorHandler(403, 'Permission Denied! Only Approved Sellers can list properties for SALE.'));
+      }
 
-    // --- MANDATORY SUBSCRIPTION CHECK FOR ALL SELLERS (EXCEPT ADMIN) ---
-    if (sellerUser.role !== 'admin') {
-      const sub = sellerUser.sellerSubscription;
-      const isSubActive = sub && sub.status === 'active' && sub.endDate && new Date(sub.endDate) > new Date();
-      const hasQuota = isSubActive && (sub.usedQuota < sub.totalQuota);
+      if (sellerUser.role !== 'admin') {
+        const sub = sellerUser.sellerSubscription;
+        const isSubActive = sub && sub.status === 'active' && sub.endDate && new Date(sub.endDate) > new Date();
+        const hasQuota = isSubActive && (sub.usedQuota < sub.totalQuota);
 
-      if (!hasQuota) {
-        const isExhausted = sub && (sub.status === 'exhausted' || (sub.totalQuota > 0 && sub.usedQuota >= sub.totalQuota));
-        const msg = isExhausted
-          ? 'Your Seller Pack quota is exhausted (10/10 properties listed). Please reclaim your Seller Pack to list more properties.'
-          : 'Active Seller Pack required to list properties! Please purchase the Seller Pro Pack (₹5,100 for 10 listings) to proceed.';
-        return next(errorHandler(403, msg));
+        if (!hasQuota) {
+          const isExhausted = sub && (sub.status === 'exhausted' || (sub.totalQuota > 0 && sub.usedQuota >= sub.totalQuota));
+          const msg = isExhausted
+            ? 'Your Seller Pack quota is exhausted (10/10 properties listed). Please reclaim your Seller Pack to list more properties.'
+            : 'Active Seller Pack required to list properties for Sale! Please purchase the Seller Pro Pack (₹5,100 for 10 listings) to proceed.';
+          return next(errorHandler(403, msg));
+        }
       }
     }
 
@@ -71,55 +117,15 @@ export const createListing = async (req, res, next) => {
     // Server-authoritative fields — never taken from the client.
     newListingData.userRef = req.user.id;
     newListingData.featured = false;
-    newListingData.status = 'available'; // Subscribed sellers publish instantly!
+    newListingData.status = 'available'; // Rent & subscribed Sale listings publish instantly!
 
-    // Deduct 1 credit from quota for non-admins
-    if (sellerUser.role !== 'admin') {
+    // Deduct 1 credit from quota for non-admin SALE listings
+    if (type === 'sale' && sellerUser.role !== 'admin') {
       sellerUser.sellerSubscription.usedQuota += 1;
       const reachedLimit = sellerUser.sellerSubscription.usedQuota >= sellerUser.sellerSubscription.totalQuota;
 
       if (reachedLimit) {
-        sellerUser.sellerSubscription.status = 'exhausted';
-
-        // 1. Dispatch automated quota exhaustion email
-        if (sellerUser.email) {
-          const emailSubject = `⚠️ Action Required: Your OasisSpace Seller Pack Quota is Complete (10/10 Listings Used)`;
-          const emailBody = `
-            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 10px;">
-              <h2 style="color: #dc2626;">Your 10 Listing Credits Have Been Used!</h2>
-              <p>Hello <strong>${escapeHtml(sellerUser.username)}</strong>,</p>
-              <p>You have successfully published your 10th property on OasisSpace. Your current <strong>Seller Pro Pack quota is now fully exhausted (10/10 used)</strong>.</p>
-              <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 4px;">
-                <p style="margin: 0; color: #991b1b; font-weight: bold;">⚠️ Future property listings will be paused until your pack is reclaimed.</p>
-              </div>
-              <p>To continue posting properties with instant live publishing, please reclaim or renew your Seller Pack for <strong>₹5,100 (10 more listings)</strong>.</p>
-              <div style="text-align: center; margin: 30px 0;">
-                <a href="${process.env.CLIENT_URL || 'https://oasis-space.vercel.app'}/seller-dashboard" 
-                   style="background: #2563eb; color: #ffffff; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">
-                  Reclaim Seller Pack on Dashboard &rarr;
-                </a>
-              </div>
-              <p style="font-size: 12px; color: #888;">Team OasisSpace &bull; Built for serious real estate professionals</p>
-            </div>
-          `;
-          await sendEmail(sellerUser.email, emailSubject, emailBody);
-          await sendEmail(process.env.SENDER_EMAIL, emailSubject, emailBody);
-        }
-
-        // 2. In-App Notification
-        await Notification.create({
-          recipient: sellerUser._id,
-          sender: sellerUser._id,
-          message: `⚠️ Quota complete! You have used all 10 listing credits. Reclaim your Seller Pack on the dashboard to continue listing properties.`,
-          relatedId: null,
-        });
-
-        // 3. Web Push Notification
-        await sendPushNotification(sellerUser._id, {
-          title: '⚠️ Seller Pack Quota Exhausted',
-          body: 'You have used all 10 listing credits. Reclaim your Seller Pack on the dashboard.',
-          icon: '/icon-192.png'
-        });
+        await triggerQuotaExhaustionAlert(sellerUser);
       }
 
       await sellerUser.save();
@@ -163,20 +169,53 @@ export const updateListing = async (req, res, next) => {
     const isAdmin = user.role === 'admin';
     const updates = {};
 
-    // Non-admin sellers cannot: self-feature, change status, change type (rent→sale bypass),
-    // or reassign ownership. Those are admin/approval-gated operations.
+    // Check type change: prevent rent -> sale bypass, decrement quota if changed
+    if (req.body.type !== undefined) {
+      if (req.body.type !== 'rent' && req.body.type !== 'sale') {
+        return next(errorHandler(400, "Listing type must be either 'rent' or 'sale'."));
+      }
+
+      if (req.body.type !== listing.type) {
+        // Converting Rent -> Sale requires active Seller Pack quota
+        if (listing.type === 'rent' && req.body.type === 'sale') {
+          if (!isAdmin) {
+            if (user.sellerStatus !== 'approved') {
+              return next(errorHandler(403, 'Permission Denied! Only Approved Sellers can list properties for SALE.'));
+            }
+
+            const sub = user.sellerSubscription;
+            const isSubActive = sub && sub.status === 'active' && sub.endDate && new Date(sub.endDate) > new Date();
+            const hasQuota = isSubActive && (sub.usedQuota < sub.totalQuota);
+
+            if (!hasQuota) {
+              const isExhausted = sub && (sub.status === 'exhausted' || (sub.totalQuota > 0 && sub.usedQuota >= sub.totalQuota));
+              const msg = isExhausted
+                ? 'Your Seller Pack quota is exhausted (10/10 properties listed). Cannot change rent property to sale. Please reclaim your Seller Pack.'
+                : 'Active Seller Pack required to change property to Sale! Please purchase the Seller Pro Pack (₹5,100 for 10 listings).';
+              return next(errorHandler(403, msg));
+            }
+
+            // Deduct 1 credit from quota
+            user.sellerSubscription.usedQuota += 1;
+            const reachedLimit = user.sellerSubscription.usedQuota >= user.sellerSubscription.totalQuota;
+            if (reachedLimit) {
+              await triggerQuotaExhaustionAlert(user);
+            }
+            await user.save();
+          }
+        }
+        updates.type = req.body.type;
+      }
+    }
+
+    // Admin-only fields
     if (isAdmin) {
       if (req.body.userRef !== undefined) updates.userRef = req.body.userRef;
       if (req.body.featured !== undefined) updates.featured = req.body.featured;
-      if (req.body.type !== undefined) updates.type = req.body.type;
       if (req.body.status !== undefined) updates.status = req.body.status;
     }
 
-    const editable = isAdmin
-      ? [...UPDATE_FIELDS_SELLER, 'featured', 'status', 'type', 'userRef']
-      : UPDATE_FIELDS_SELLER;
-
-    for (const field of editable) {
+    for (const field of UPDATE_FIELDS_SELLER) {
       if (req.body[field] !== undefined) updates[field] = req.body[field];
     }
 
@@ -185,7 +224,10 @@ export const updateListing = async (req, res, next) => {
       updates,
       { new: true, runValidators: true }
     );
-    res.status(200).json(updatedListing);
+    res.status(200).json({
+      ...updatedListing.toObject(),
+      sellerSubscription: user.sellerSubscription,
+    });
   } catch (error) {
     next(error);
   }

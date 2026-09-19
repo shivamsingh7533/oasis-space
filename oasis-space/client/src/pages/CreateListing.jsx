@@ -178,6 +178,9 @@ export default function CreateListing() {
       if (formData.imageUrls.length < 1) return setError('At least one image is required');
       if (+formData.regularPrice < +formData.discountPrice) return setError('Discount price must be lower than regular price');
       if (!currentUser) return setError('Please login to create a listing');
+      if (formData.type === 'sale' && currentUser?.role !== 'admin' && !hasQuota) {
+        return setError('Active Seller Pro Pack required to post Sale listings! Please purchase the pack to proceed.');
+      }
 
       setLoading(true); setError(false);
 
@@ -194,6 +197,10 @@ export default function CreateListing() {
       if (data.success === false) {
         setError(data.message);
       } else {
+        if (data.status === 'available') {
+          navigate(`/listing/${data._id}`);
+          return;
+        }
         // Draft saved → show the fee-payment step to publish.
         setCreatedListing(data);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -312,10 +319,10 @@ export default function CreateListing() {
             />
           </div>
 
-          <p className='text-center mt-4'>
+          <p className='text-center mt-3'>
             <button
               onClick={() => navigate('/seller-dashboard')}
-              className='text-slate-400 hover:text-slate-200 text-sm font-semibold transition'
+              className='text-slate-400 hover:text-slate-200 text-xs font-semibold transition'
             >
               Pay later — go to Seller Dashboard
             </button>
@@ -330,78 +337,6 @@ export default function CreateListing() {
   const hasQuota = isSubActive && (sub.usedQuota < sub.totalQuota);
   const isExhausted = Boolean(sub) && (sub.status === 'exhausted' || (sub.totalQuota > 0 && sub.usedQuota >= sub.totalQuota));
 
-  // --- MANDATORY SUBSCRIPTION PAYWALL SCREEN ---
-  if (currentUser?.role !== 'admin' && !hasQuota) {
-    return (
-      <div className='min-h-screen flex items-center justify-center p-4 py-12' style={{ backgroundColor: 'var(--bg-primary)' }}>
-        <div className='max-w-xl w-full rounded-3xl shadow-2xl p-8 border text-center relative overflow-hidden' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
-          <div className='absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-600 via-indigo-500 to-emerald-400'></div>
-
-          <div className='w-16 h-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center mx-auto mb-5 text-2xl text-indigo-400 shadow-inner'>
-            <FaCrown />
-          </div>
-
-          <span className='px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 inline-block mb-3'>
-            {isExhausted ? 'Quota Exhausted' : 'Seller Subscription Required'}
-          </span>
-
-          <h1 className='text-2xl sm:text-3xl font-black text-white mb-3'>
-            {isExhausted ? 'Your 10 Listing Credits are Exhausted' : 'Seller Pack Required to List'}
-          </h1>
-
-          <p className='text-slate-300 text-sm leading-relaxed mb-6 max-w-md mx-auto'>
-            {isExhausted
-              ? 'You have published all 10 properties included in your Seller Pro Pack. Reclaim another pack below to unlock 10 more listings.'
-              : 'To guarantee verified, genuine property listings across OasisSpace, an active Seller Pro Pack is required to list properties.'}
-          </p>
-
-          <div className='bg-slate-900/60 rounded-2xl border border-slate-700/60 p-6 mb-6 text-left'>
-            <div className='flex justify-between items-start mb-4 border-b border-slate-800 pb-3'>
-              <div>
-                <h3 className='font-bold text-white text-base'>Seller Pro Pack</h3>
-                <p className='text-xs text-slate-400'>10 Property Listings Quota</p>
-              </div>
-              <div className='text-right'>
-                <span className='text-2xl font-black text-emerald-400'>₹5,100</span>
-                <p className='text-[10px] text-slate-400'>₹510 / property &bull; 1 Year</p>
-              </div>
-            </div>
-
-            <ul className='space-y-2.5 text-xs text-slate-300'>
-              <li className='flex items-center gap-2'>
-                <span className='text-emerald-400 font-bold'>✓</span> List up to <strong>10 Properties</strong> (Sale or Rent)
-              </li>
-              <li className='flex items-center gap-2'>
-                <span className='text-emerald-400 font-bold'>✓</span> <strong>Instant Live Publishing</strong> (No waiting for review)
-              </li>
-              <li className='flex items-center gap-2'>
-                <span className='text-emerald-400 font-bold'>✓</span> <strong>Verified Seller Badge</strong> on all listings
-              </li>
-              <li className='flex items-center gap-2'>
-                <span className='text-emerald-400 font-bold'>✓</span> <strong>1-Year Validity</strong> from purchase date
-              </li>
-            </ul>
-          </div>
-
-          <RazorpayBtn
-            orderType="seller_subscription"
-            btnText={isExhausted ? "Reclaim Seller Pack (₹5,100 for 10)" : "Get Seller Pack (₹5,100 for 10 Listings)"}
-            customStyle="w-full py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl font-bold transition-all shadow-xl shadow-indigo-600/30 flex items-center justify-center gap-2 text-sm uppercase tracking-wide cursor-pointer"
-          />
-
-          <p className='mt-4'>
-            <button
-              onClick={() => navigate('/seller-dashboard')}
-              className='text-slate-400 hover:text-slate-200 text-xs font-semibold transition'
-            >
-              Go to Seller Dashboard &rarr;
-            </button>
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className='min-h-screen flex items-center justify-center p-4 py-10' style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className='max-w-4xl w-full rounded-lg shadow-2xl p-8 border' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
@@ -410,11 +345,9 @@ export default function CreateListing() {
 
         {/* Quota Status Badge */}
         {(() => {
-          const sub = currentUser?.sellerSubscription;
-          const isActive = sub && sub.status === 'active' && sub.endDate && new Date(sub.endDate) > new Date();
-          const remaining = isActive ? Math.max(0, (sub.totalQuota || 0) - (sub.usedQuota || 0)) : 0;
+          const remaining = isSubActive ? Math.max(0, (sub.totalQuota || 0) - (sub.usedQuota || 0)) : 0;
 
-          if (isActive && remaining > 0) {
+          if (isSubActive && remaining > 0) {
             return (
               <div className='mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between'>
                 <div className='flex items-center gap-3'>
@@ -427,6 +360,27 @@ export default function CreateListing() {
                 <span className='text-xs font-bold bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-500/30 whitespace-nowrap'>
                   {remaining} Free Left
                 </span>
+              </div>
+            );
+          } else if (formData.type === 'sale' && currentUser?.role !== 'admin' && !hasQuota) {
+            return (
+              <div className='mb-6 p-6 rounded-2xl bg-gradient-to-r from-blue-900/40 via-indigo-900/40 to-purple-900/40 border border-indigo-500/40 shadow-xl'>
+                <div className='flex items-center justify-between mb-3'>
+                  <div className='flex items-center gap-2'>
+                    <span className='text-xl'>🚀</span>
+                    <h3 className='font-bold text-white text-base'>Seller Pro Pack Required for Sale Listings</h3>
+                  </div>
+                  <span className='text-xs bg-emerald-500/20 text-emerald-400 px-2.5 py-1 rounded-full font-bold border border-emerald-500/30'>Save 90%</span>
+                </div>
+                <p className='text-xs text-slate-300 mb-4 leading-relaxed'>
+                  To list properties for <strong>Sale</strong> on OasisSpace, an active Seller Pro Pack is required. Get <strong>10 Sale Listings</strong> for just <strong>₹5,100</strong> (effective ₹510 each) with instant publishing and 1-year validity!
+                </p>
+                <RazorpayBtn
+                  orderType="seller_subscription"
+                  btnText="Get Seller Pack (₹5,100 for 10 Listings)"
+                  onSuccess={() => navigate('/seller-dashboard')}
+                  customStyle="w-full justify-center flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-5 py-3 rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/25 cursor-pointer text-xs uppercase tracking-wide"
+                />
               </div>
             );
           }
@@ -593,8 +547,15 @@ export default function CreateListing() {
             </div>
 
             {/* SUBMIT BUTTON */}
-            <button disabled={loading || uploading} className='mt-auto p-4 bg-green-600 text-white rounded-lg uppercase hover:bg-green-700 disabled:opacity-80 transition shadow-lg font-bold'>
-              {loading ? 'Creating...' : 'Create Listing'}
+            <button
+              disabled={loading || uploading}
+              className={`mt-auto p-4 text-white rounded-lg uppercase transition shadow-lg font-bold ${
+                formData.type === 'sale' && currentUser?.role !== 'admin' && !hasQuota
+                  ? 'bg-slate-700 text-slate-400 cursor-not-allowed border border-slate-600'
+                  : 'bg-green-600 hover:bg-green-700 disabled:opacity-80'
+              }`}
+            >
+              {loading ? 'Creating...' : formData.type === 'rent' ? 'Publish Rent Listing (Free)' : (currentUser?.role !== 'admin' && !hasQuota) ? 'Seller Pack Required to Post Sale' : 'Publish Sale Listing'}
             </button>
             {error && <p className='text-red-400 text-sm text-center'>{error}</p>}
           </div>

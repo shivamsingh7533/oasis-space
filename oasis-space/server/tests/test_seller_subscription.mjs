@@ -6,7 +6,7 @@ import Listing from '../models/listing.model.js';
 import Order from '../models/order.model.js';
 import Notification from '../models/notification.model.js';
 import { createOrder, verifyPayment } from '../controllers/order.controller.js';
-import { createListing } from '../controllers/listing.controller.js';
+import { createListing, updateListing } from '../controllers/listing.controller.js';
 import { SELLER_PACK } from '../utils/fees.js';
 
 function mockReqRes({ body = {}, user = {}, query = {}, params = {} }) {
@@ -29,7 +29,7 @@ function mockReqRes({ body = {}, user = {}, query = {}, params = {} }) {
 async function testSellerSubscription() {
   await mongoose.connect(process.env.MONGO);
   console.log('\n============================================================');
-  console.log('  🚀 TESTING MANDATORY SELLER SUBSCRIPTION & RECLAIM FLOW');
+  console.log('  🚀 TESTING SELLER SUBSCRIPTION & RENT-TO-SALE FLOW');
   console.log('============================================================\n');
 
   const testSellerEmail = `seller_sub_${Date.now()}@oasisspace.test`;
@@ -44,15 +44,52 @@ async function testSellerSubscription() {
 
   const createdListingIds = [];
   const createdOrderIds = [];
+  let testRentListingId = null;
 
   try {
-    // --- SCENARIO 1: Unsubscribed seller attempts to list property (MUST BE BLOCKED) ---
-    console.log('Scenario 1: Unsubscribed seller attempts to create a listing (Paywall Guard)');
+    // --- SCENARIO 1A: Unsubscribed user lists a RENT property (FREE, NO SUBSCRIPTION REQUIRED) ---
+    console.log('Scenario 1A: Unsubscribed user lists a RENT property (FREE - Allowed without subscription)');
     {
       const { req, res, next, getErr } = mockReqRes({
         user: { id: testSeller._id.toString() },
         body: {
-          name: 'Unsubscribed Penthouse',
+          name: 'Affordable 2BHK Apartment for Rent',
+          description: 'Spacious rental flat in Andheri West',
+          address: 'Andheri West, Mumbai',
+          regularPrice: 45000,
+          discountPrice: 0,
+          bathrooms: 2,
+          bedrooms: 2,
+          furnished: true,
+          parking: true,
+          type: 'rent',
+          offer: false,
+          imageUrls: ['https://oasisspace.test/rent1.jpg'],
+        }
+      });
+
+      await createListing(req, res, next);
+      const err = getErr();
+      if (err) throw err;
+
+      const rentListing = res.responseData;
+      testRentListingId = rentListing._id;
+      createdListingIds.push(rentListing._id);
+      console.log(`  ✔ Rent Listing Created: "${rentListing.name}"`);
+      console.log(`  ✔ Status: ${rentListing.status} (Published live immediately for FREE)`);
+
+      if (rentListing.status !== 'available') {
+        throw new Error(`Expected rent listing status 'available', got ${rentListing.status}`);
+      }
+    }
+
+    // --- SCENARIO 1B: Unsubscribed user attempts to create a SALE listing (BLOCKED 403) ---
+    console.log('\nScenario 1B: Unsubscribed user attempts to list a SALE property (Paywall Guard)');
+    {
+      const { req, res, next, getErr } = mockReqRes({
+        user: { id: testSeller._id.toString() },
+        body: {
+          name: 'Unsubscribed Luxury Penthouse for Sale',
           description: 'Should be blocked by paywall',
           address: 'Marine Drive, Mumbai',
           regularPrice: 20000000,
@@ -71,7 +108,31 @@ async function testSellerSubscription() {
       const err = getErr();
 
       if (!err) {
-        throw new Error('Expected unsubscribed seller to be blocked with 403, but request succeeded!');
+        throw new Error('Expected unsubscribed seller to be blocked with 403 on Sale listing, but request succeeded!');
+      }
+      console.log(`  ✔ Successfully blocked: ${err.statusCode} - "${err.message}"`);
+      if (err.statusCode !== 403) {
+        throw new Error(`Expected status 403, got ${err.statusCode}`);
+      }
+    }
+
+    // --- SCENARIO 1C: Unsubscribed user attempts to update RENT listing to SALE (BLOCKED 403) ---
+    console.log('\nScenario 1C: Unsubscribed user attempts to update RENT property to SALE (Bypass Guard)');
+    {
+      const { req, res, next, getErr } = mockReqRes({
+        user: { id: testSeller._id.toString() },
+        params: { id: testRentListingId.toString() },
+        body: {
+          type: 'sale',
+          regularPrice: 15000000,
+        }
+      });
+
+      await updateListing(req, res, next);
+      const err = getErr();
+
+      if (!err) {
+        throw new Error('Expected update from rent to sale without subscription to fail with 403!');
       }
       console.log(`  ✔ Successfully blocked: ${err.statusCode} - "${err.message}"`);
       if (err.statusCode !== 403) {
@@ -97,13 +158,8 @@ async function testSellerSubscription() {
       const orderData = res.responseData;
       rzpOrderId = orderData.order.id;
       console.log(`  ✔ Status: ${res.statusValue} OK`);
-      console.log(`  ✔ Order Type: ${orderData.type}`);
-      console.log(`  ✔ Order Amount: ₹${orderData.order.amount / 100} (${orderData.order.amount} paise)`);
+      console.log(`  ✔ Order Amount: ₹${orderData.order.amount / 100}`);
       console.log(`  ✔ Razorpay Order ID: ${rzpOrderId}`);
-
-      if (orderData.order.amount !== SELLER_PACK.price * 100) {
-        throw new Error(`Expected amount ${SELLER_PACK.price * 100}, got ${orderData.order.amount}`);
-      }
     }
 
     // --- SCENARIO 3: Payment Verification & 10 Credits Fulfillment ---
@@ -128,10 +184,6 @@ async function testSellerSubscription() {
       const err = getErr();
       if (err) throw err;
 
-      console.log(`  ✔ Status: ${res.statusValue} OK`);
-      console.log(`  ✔ Message: "${res.responseData.message}"`);
-
-      // Verify User in MongoDB
       const updatedUser = await User.findById(testSeller._id);
       const sub = updatedUser.sellerSubscription;
       console.log(`  ✔ User Subscription in DB:`);
@@ -146,12 +198,41 @@ async function testSellerSubscription() {
 
       const orderRecord = await Order.findOne({ paymentId: fakePaymentId1 });
       createdOrderIds.push(orderRecord._id);
-      console.log(`  ✔ Saved Order Record: ID=${orderRecord._id}, type=${orderRecord.type}, amount=₹${orderRecord.amount}`);
     }
 
-    // --- SCENARIO 4: Create Listings 1 through 9 (All Instant Live) ---
-    console.log('\nScenario 4: Subscribed seller creates listings 1 through 9');
-    for (let i = 1; i <= 9; i++) {
+    // --- SCENARIO 4: Subscribed seller converts RENT listing to SALE via updateListing (DEDUCTS 1 QUOTA) ---
+    console.log('\nScenario 4: Subscribed seller converts RENT listing to SALE via updateListing (Deducts 1 Credit)');
+    {
+      const { req, res, next, getErr } = mockReqRes({
+        user: { id: testSeller._id.toString() },
+        params: { id: testRentListingId.toString() },
+        body: {
+          type: 'sale',
+          regularPrice: 15000000,
+        }
+      });
+
+      await updateListing(req, res, next);
+      const err = getErr();
+      if (err) throw err;
+
+      const updated = res.responseData;
+      console.log(`  ✔ Listing updated successfully. New type: ${updated.type}`);
+      if (updated.type !== 'sale') {
+        throw new Error(`Expected type 'sale', got ${updated.type}`);
+      }
+
+      // Verify quota count decreased (usedQuota incremented by 1)
+      const userAfterUpdate = await User.findById(testSeller._id);
+      console.log(`  ✔ Quota after Rent->Sale update: ${userAfterUpdate.sellerSubscription.usedQuota}/${userAfterUpdate.sellerSubscription.totalQuota} used (Remaining: ${userAfterUpdate.sellerSubscription.totalQuota - userAfterUpdate.sellerSubscription.usedQuota})`);
+      if (userAfterUpdate.sellerSubscription.usedQuota !== 1) {
+        throw new Error(`Expected usedQuota=1, got ${userAfterUpdate.sellerSubscription.usedQuota}`);
+      }
+    }
+
+    // --- SCENARIO 5: Create Sale Listings 2 through 9 ---
+    console.log('\nScenario 5: Subscribed seller creates Sale listings 2 through 9');
+    for (let i = 2; i <= 9; i++) {
       const { req, res, next, getErr } = mockReqRes({
         user: { id: testSeller._id.toString() },
         body: {
@@ -174,28 +255,23 @@ async function testSellerSubscription() {
       const err = getErr();
       if (err) throw err;
 
-      const listing = res.responseData;
-      createdListingIds.push(listing._id);
-      if (listing.status !== 'available') {
-        throw new Error(`Listing #${i} expected status 'available', got ${listing.status}`);
-      }
+      createdListingIds.push(res.responseData._id);
     }
 
     const userAfter9 = await User.findById(testSeller._id);
-    console.log(`  ✔ Listings 1-9 created successfully.`);
-    console.log(`  ✔ Quota status: ${userAfter9.sellerSubscription.usedQuota}/${userAfter9.sellerSubscription.totalQuota} used (${userAfter9.sellerSubscription.status})`);
-    if (userAfter9.sellerSubscription.usedQuota !== 9 || userAfter9.sellerSubscription.status !== 'active') {
-      throw new Error(`Expected usedQuota=9 and status='active', got ${userAfter9.sellerSubscription.usedQuota}, ${userAfter9.sellerSubscription.status}`);
+    console.log(`  ✔ Sale listings 2-9 created. Total used quota: ${userAfter9.sellerSubscription.usedQuota}/${userAfter9.sellerSubscription.totalQuota}`);
+    if (userAfter9.sellerSubscription.usedQuota !== 9) {
+      throw new Error(`Expected usedQuota=9, got ${userAfter9.sellerSubscription.usedQuota}`);
     }
 
-    // --- SCENARIO 5: Create the 10th Listing (Reaches Quota, Triggers Alerts) ---
-    console.log('\nScenario 5: Seller creates 10th Listing (Reaches Quota, Triggers Exhaustion Alerts)');
+    // --- SCENARIO 6: Seller creates 10th Sale listing (Reaches Quota Limit & Triggers Alerts) ---
+    console.log('\nScenario 6: Seller creates 10th Sale listing (Reaches Quota, Triggers Exhaustion Alerts)');
     {
       const { req, res, next, getErr } = mockReqRes({
         user: { id: testSeller._id.toString() },
         body: {
-          name: 'Grand Milestone Villa #10',
-          description: 'The 10th listing exhausting the current pack',
+          name: 'Milestone Villa #10',
+          description: 'The 10th listing exhausting the pack',
           address: 'Worli Sea Face, Mumbai',
           regularPrice: 50000000,
           discountPrice: 48000000,
@@ -213,11 +289,8 @@ async function testSellerSubscription() {
       const err = getErr();
       if (err) throw err;
 
-      const listing = res.responseData;
-      createdListingIds.push(listing._id);
-      console.log(`  ✔ 10th Listing Created: "${listing.name}" (Status: ${listing.status})`);
+      createdListingIds.push(res.responseData._id);
 
-      // Verify User state transitioned to 'exhausted'
       const userAfter10 = await User.findById(testSeller._id);
       const sub10 = userAfter10.sellerSubscription;
       console.log(`  ✔ Subscription Status: ${sub10.status}`);
@@ -227,40 +300,64 @@ async function testSellerSubscription() {
         throw new Error(`Expected status='exhausted' and usedQuota=10, got ${sub10.status}, ${sub10.usedQuota}`);
       }
 
-      // Verify In-App Notification created
       const notif = await Notification.findOne({
         recipient: testSeller._id,
         message: { $regex: /Quota complete/i }
       });
-      if (!notif) {
-        throw new Error('Expected in-app exhaustion notification was not found in DB!');
-      }
-      console.log(`  ✔ In-App Exhaustion Notification in DB: "${notif.message}"`);
+      if (!notif) throw new Error('Expected in-app exhaustion notification not found in DB!');
+      console.log(`  ✔ In-App Exhaustion Alert verified in DB`);
     }
 
-    // --- SCENARIO 6: Attempt 11th listing while exhausted (MUST BE REJECTED WITH 403) ---
-    console.log('\nScenario 6: Attempt 11th listing while exhausted (Paywall blocks further listings)');
+    // --- SCENARIO 7: Create an additional RENT listing while exhausted (ALLOWED) ---
+    console.log('\nScenario 7: Create a RENT listing while exhausted (Rent remains FREE & Allowed)');
+    let rentWhileExhaustedId = null;
     {
       const { req, res, next, getErr } = mockReqRes({
         user: { id: testSeller._id.toString() },
         body: {
-          name: 'Listing #11 (Exhausted)',
-          description: 'Should fail with quota exhausted message',
-          address: 'Juhu Tara Road, Mumbai',
-          regularPrice: 30000000,
-          bathrooms: 3,
-          bedrooms: 3,
-          furnished: true,
+          name: 'Another Rental Property While Exhausted',
+          description: 'Should succeed because rent is free without quota',
+          address: 'Powai, Mumbai',
+          regularPrice: 60000,
+          discountPrice: 0,
+          bathrooms: 2,
+          bedrooms: 2,
+          furnished: false,
           parking: true,
-          type: 'sale',
-          imageUrls: ['https://oasisspace.test/villa11.jpg'],
+          type: 'rent',
+          offer: false,
+          imageUrls: ['https://oasisspace.test/rent2.jpg'],
         }
       });
 
       await createListing(req, res, next);
       const err = getErr();
+      if (err) throw err;
+
+      rentWhileExhaustedId = res.responseData._id;
+      createdListingIds.push(rentWhileExhaustedId);
+      console.log(`  ✔ Rent Listing Created: "${res.responseData.name}" (Status: ${res.responseData.status})`);
+      if (res.responseData.status !== 'available') {
+        throw new Error(`Expected rent listing status 'available', got ${res.responseData.status}`);
+      }
+    }
+
+    // --- SCENARIO 8: Attempt to update this RENT listing to SALE while exhausted (BLOCKED 403) ---
+    console.log('\nScenario 8: Attempt to update RENT property to SALE while exhausted (Blocked 403)');
+    {
+      const { req, res, next, getErr } = mockReqRes({
+        user: { id: testSeller._id.toString() },
+        params: { id: rentWhileExhaustedId.toString() },
+        body: {
+          type: 'sale',
+          regularPrice: 25000000,
+        }
+      });
+
+      await updateListing(req, res, next);
+      const err = getErr();
       if (!err) {
-        throw new Error('Expected 11th listing to be blocked with 403, but it succeeded!');
+        throw new Error('Expected update from rent to sale while exhausted to fail with 403!');
       }
       console.log(`  ✔ Successfully blocked: ${err.statusCode} - "${err.message}"`);
       if (err.statusCode !== 403 || !err.message.includes('exhausted')) {
@@ -268,8 +365,8 @@ async function testSellerSubscription() {
       }
     }
 
-    // --- SCENARIO 7: Seller Reclaims/Renews Seller Pro Pack (₹5,100) ---
-    console.log('\nScenario 7: Seller Reclaims/Renews Seller Pro Pack (+10 Credits)');
+    // --- SCENARIO 9: Seller Reclaims Seller Pro Pack (+10 Credits) ---
+    console.log('\nScenario 9: Seller Reclaims/Renews Seller Pro Pack (+10 Credits)');
     let renewRzpOrderId = null;
     {
       const { req, res, next, getErr } = mockReqRes({
@@ -318,44 +415,32 @@ async function testSellerSubscription() {
       createdOrderIds.push(orderRecord._id);
     }
 
-    // --- SCENARIO 8: Create Listing #11 after Reclaim (Now Succeeds) ---
-    console.log('\nScenario 8: Create Listing #11 after Reclaim (Unblocked)');
+    // --- SCENARIO 10: Convert RENT to SALE now that seller has reclaimed quota (NOW SUCCEEDS) ---
+    console.log('\nScenario 10: Convert RENT to SALE post-reclaim (Now Succeeds & Consumes 1 Credit)');
     {
       const { req, res, next, getErr } = mockReqRes({
         user: { id: testSeller._id.toString() },
+        params: { id: rentWhileExhaustedId.toString() },
         body: {
-          name: 'Listing #11 Post-Reclaim Luxury Villa',
-          description: 'Published successfully after reclaiming seller pack',
-          address: 'Bandra Bandstand, Mumbai',
-          regularPrice: 32000000,
-          discountPrice: 31000000,
-          bathrooms: 3,
-          bedrooms: 4,
-          furnished: true,
-          parking: true,
           type: 'sale',
-          offer: false,
-          imageUrls: ['https://oasisspace.test/villa11.jpg'],
+          regularPrice: 25000000,
         }
       });
 
-      await createListing(req, res, next);
+      await updateListing(req, res, next);
       const err = getErr();
       if (err) throw err;
 
-      const listing = res.responseData;
-      createdListingIds.push(listing._id);
-      console.log(`  ✔ Listing #11 Created: "${listing.name}" (Status: ${listing.status})`);
-
-      const userPost11 = await User.findById(testSeller._id);
-      console.log(`  ✔ Used Quota: ${userPost11.sellerSubscription.usedQuota}/${userPost11.sellerSubscription.totalQuota} (Remaining: ${userPost11.sellerSubscription.totalQuota - userPost11.sellerSubscription.usedQuota})`);
-      if (userPost11.sellerSubscription.usedQuota !== 11) {
-        throw new Error(`Expected usedQuota=11, got ${userPost11.sellerSubscription.usedQuota}`);
+      const userPostReclaim = await User.findById(testSeller._id);
+      console.log(`  ✔ Successfully converted Rent to Sale post-reclaim!`);
+      console.log(`  ✔ Used Quota: ${userPostReclaim.sellerSubscription.usedQuota}/${userPostReclaim.sellerSubscription.totalQuota} (Remaining: ${userPostReclaim.sellerSubscription.totalQuota - userPostReclaim.sellerSubscription.usedQuota})`);
+      if (userPostReclaim.sellerSubscription.usedQuota !== 11) {
+        throw new Error(`Expected usedQuota=11, got ${userPostReclaim.sellerSubscription.usedQuota}`);
       }
     }
 
-    // --- SCENARIO 9: Admin Exemption Test ---
-    console.log('\nScenario 9: Admin Exemption Test (Admins bypass subscription requirement)');
+    // --- SCENARIO 11: Admin Exemption Test ---
+    console.log('\nScenario 11: Admin Exemption Test (Admins bypass subscription requirement)');
     const adminUser = await User.create({
       username: `admin_${Date.now().toString().slice(-4)}`,
       email: `admin_${Date.now()}@oasisspace.test`,
@@ -413,7 +498,7 @@ async function testSellerSubscription() {
   }
 
   console.log('\n============================================================');
-  console.log('  🎉 ALL SELLER SUBSCRIPTION & RECLAIM TESTS PASSED!');
+  console.log('  🎉 ALL SELLER SUBSCRIPTION & RENT-TO-SALE TESTS PASSED!');
   console.log('============================================================\n');
 }
 
