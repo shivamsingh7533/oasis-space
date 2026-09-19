@@ -7,10 +7,11 @@ const orderSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-    listingRef: { // Property the payment is for
+    listingRef: { // Property the payment is for (optional for seller subscriptions)
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Listing',
-      required: true,
+      required: false,
+      default: null,
       index: true,
     },
     amount: {
@@ -36,11 +37,12 @@ const orderSchema = new mongoose.Schema(
       index: true,
     },
     // What kind of payment:
-    //  - 'listing_fee'  : seller pays to publish a listing (rent is free; sale ₹5,100)
-    //  - 'booking'      : legacy buyer booking (pre-fee-model orders)
+    //  - 'listing_fee'        : seller pays to publish a listing (rent is free; sale ₹5,100)
+    //  - 'booking'            : buyer ₹999 advance token booking
+    //  - 'seller_subscription': seller buys ₹5,100 pack for 10 sale listings
     type: {
       type: String,
-      enum: ['listing_fee', 'booking'],
+      enum: ['listing_fee', 'booking', 'seller_subscription'],
       default: 'booking',
       index: true,
     },

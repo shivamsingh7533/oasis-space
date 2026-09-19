@@ -29,9 +29,10 @@ export const createListing = async (req, res, next) => {
   try {
     const type = req.body.type;
 
+    let sellerUser = null;
     if (type === 'sale') {
-      const user = await User.findById(req.user.id);
-      if (user.sellerStatus !== 'approved' && user.role !== 'admin') {
+      sellerUser = await User.findById(req.user.id);
+      if (sellerUser.sellerStatus !== 'approved' && sellerUser.role !== 'admin') {
         return next(errorHandler(403, 'Permission Denied! Only Approved Sellers can list properties for SALE.'));
       }
     } else if (type !== 'rent') {
@@ -46,9 +47,29 @@ export const createListing = async (req, res, next) => {
     // Server-authoritative fields — never taken from the client.
     newListingData.userRef = req.user.id;
     newListingData.featured = false;
-    // Rent listings publish FREE and instantly. Sale listings start as a
-    // fee-pending draft and only go live after the Razorpay payment is verified.
-    newListingData.status = getListingFee(type) === 0 ? 'available' : 'pending';
+    
+    // Status assignment:
+    // Rent listings publish FREE and instantly.
+    // Sale listings: If seller has active sellerSubscription with quota remaining, publish FREE & instantly ('available') and deduct 1 from quota.
+    // Otherwise, start as fee-pending draft ('pending').
+    if (type === 'rent') {
+      newListingData.status = 'available';
+    } else {
+      const sub = sellerUser && sellerUser.sellerSubscription;
+      const isSubActive = sub && sub.status === 'active' && sub.endDate && new Date(sub.endDate) > new Date();
+      const hasQuota = isSubActive && (sub.usedQuota < sub.totalQuota);
+
+      if (hasQuota) {
+        newListingData.status = 'available';
+        sellerUser.sellerSubscription.usedQuota += 1;
+        if (sellerUser.sellerSubscription.usedQuota >= sellerUser.sellerSubscription.totalQuota) {
+          sellerUser.sellerSubscription.status = 'exhausted';
+        }
+        await sellerUser.save();
+      } else {
+        newListingData.status = 'pending';
+      }
+    }
 
     const listing = await Listing.create(newListingData);
     return res.status(201).json(listing);

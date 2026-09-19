@@ -37,6 +37,38 @@ const userSchema = new mongoose.Schema(
         enum: ['regular', 'pending', 'approved', 'rejected'],
         default: 'regular',
     },
+    // --- SELLER SUBSCRIPTION PACK (₹5,100 for 10 listings) ---
+    sellerSubscription: {
+      status: {
+        type: String,
+        enum: ['none', 'active', 'expired', 'exhausted'],
+        default: 'none',
+      },
+      totalQuota: {
+        type: Number,
+        default: 0,
+      },
+      usedQuota: {
+        type: Number,
+        default: 0,
+      },
+      startDate: {
+        type: Date,
+        default: null,
+      },
+      endDate: {
+        type: Date,
+        default: null,
+      },
+      paymentId: {
+        type: String,
+        default: null,
+      },
+      orderId: {
+        type: String,
+        default: null,
+      },
+    },
     // --- WISHLIST ---
     savedListings: {
       type: [mongoose.Schema.Types.ObjectId], 

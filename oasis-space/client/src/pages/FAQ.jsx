@@ -13,7 +13,7 @@ export default function FAQ() {
     },
     {
       question: "What are the charges for listing a property?",
-      answer: "Rent listings are completely FREE to publish — they go live instantly. For Sale listings, we charge a one-time fee of ₹5,100 via Razorpay. This ensures only genuine owners list on our platform."
+      answer: "Rent listings are completely FREE to publish — they go live instantly. For Sale listings, we offer a Seller Pro Pack of ₹5,100 for up to 10 properties (effective cost ₹510/property with 1-year validity) which publish instantly. Individual sale listings are ₹5,100. This ensures only verified, genuine owners and agents list on our platform."
     },
     {
       question: "How does the AI Assistant work?",

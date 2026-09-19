@@ -16,12 +16,12 @@ import Notification from '../models/notification.model.js';
 // Utils
 import { validatePassword } from '../utils/password.js';
 import { verifyToken } from '../utils/verifyUser.js';
-import { getListingFee, BOOKING_TOKEN_FEE } from '../utils/fees.js';
+import { getListingFee, BOOKING_TOKEN_FEE, SELLER_PACK } from '../utils/fees.js';
 
 // Controllers
 import { signup, verifyEmail, signin, forgotPassword, resetPassword } from '../controllers/auth.controller.js';
 import { createOrder, verifyPayment, cancelOrder } from '../controllers/order.controller.js';
-import { updateListingStatus } from '../controllers/listing.controller.js';
+import { updateListingStatus, createListing } from '../controllers/listing.controller.js';
 
 // Test statistics
 let totalTests = 0;
@@ -622,6 +622,82 @@ async function runTestSuite() {
         err && err.statusCode === 400 && err.message.includes('Listing fee payments cannot be cancelled online'),
         'Cancellation Guard: Blocks online cancellation of listing_fee orders (400)'
       );
+    }
+
+    // -------------------------------------------------------------
+    // SUITE 11: Seller Subscription Pack (₹5,100 for 10 Properties)
+    // -------------------------------------------------------------
+    console.log('\n\x1b[36m--- [SUITE 11] Seller Subscription Pack (₹5,100 / 10 Listings) ---\x1b[0m');
+
+    let subRzpOrderId = null;
+    // Create Seller Subscription Order
+    {
+      const { req, res, next, getErr } = mockReqRes({
+        user: { id: sellerUser._id.toString() },
+        body: { orderType: 'seller_subscription' }
+      });
+      await createOrder(req, res, next);
+      const err = getErr();
+      assert(!err && res.statusValue === 200, 'Seller Pack: Creates order without requiring listingId (200)');
+      assert(res.data.order.amount === SELLER_PACK.price * 100, 'Seller Pack: Enforces ₹5,100 price server-side (510000 paise)');
+      assert(res.data.type === 'seller_subscription', 'Seller Pack: Order type is seller_subscription');
+      subRzpOrderId = res.data.order.id;
+    }
+
+    // Verify Seller Subscription Payment
+    const fakeSubPaymentId = `pay_sub_qa_${Date.now()}`;
+    const subSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(`${subRzpOrderId}|${fakeSubPaymentId}`)
+      .digest('hex');
+
+    {
+      const { req, res, next, getErr } = mockReqRes({
+        user: { id: sellerUser._id.toString() },
+        body: {
+          razorpay_order_id: subRzpOrderId,
+          razorpay_payment_id: fakeSubPaymentId,
+          razorpay_signature: subSignature,
+        }
+      });
+      await verifyPayment(req, res, next);
+      const err = getErr();
+      assert(!err && res.statusValue === 200, 'Seller Pack: Verifies authentic HMAC signature (200)');
+      assert(res.data.type === 'seller_subscription', 'Seller Pack: Response type is seller_subscription');
+
+      const refreshedSeller = await User.findById(sellerUser._id);
+      const sub = refreshedSeller.sellerSubscription;
+      assert(sub && sub.status === 'active', 'Seller Pack: User subscription status activated in DB');
+      assert(sub.totalQuota === 10, 'Seller Pack: Grants 10 listing credits in totalQuota');
+      assert(sub.usedQuota === 0, 'Seller Pack: Initial usedQuota is 0');
+    }
+
+    // Subscribed seller creates Sale listing -> Publishes Live Instantly!
+    {
+      const { req, res, next, getErr } = mockReqRes({
+        user: { id: sellerUser._id.toString() },
+        body: {
+          name: `${RUN_ID} Subscribed Instant Live Penthouse`,
+          description: 'Luxury penthouse published instantly via Seller Pack',
+          address: 'Worli Sea Face, Mumbai',
+          regularPrice: 50000000,
+          discountPrice: 48000000,
+          bathrooms: 4,
+          bedrooms: 4,
+          furnished: true,
+          parking: true,
+          type: 'sale',
+          offer: false,
+          imageUrls: ['https://example.com/penthouse.jpg'],
+        }
+      });
+      await createListing(req, res, next);
+      const err = getErr();
+      assert(!err && res.statusValue === 201, 'Seller Pack: Subscribed seller creates Sale listing (201)');
+      assert(res.data.status === 'available', 'Seller Pack: Listing goes LIVE instantly without pending fee');
+
+      const sellerAfterListing = await User.findById(sellerUser._id);
+      assert(sellerAfterListing.sellerSubscription.usedQuota === 1, 'Seller Pack: Quota decremented by 1 in MongoDB (usedQuota: 1/10)');
     }
 
   } catch (unexpectedErr) {

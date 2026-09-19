@@ -287,8 +287,30 @@ export default function CreateListing() {
             listing={createdListing}
             btnText={`Pay ₹${fee.toLocaleString('en-IN')} & Publish`}
             onSuccess={() => navigate('/seller-dashboard')}
-            customStyle="w-full justify-center flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-5 py-4 rounded-xl font-bold transition-all shadow-lg shadow-green-900/30 border border-green-500/50"
+            customStyle="w-full justify-center flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-5 py-3.5 rounded-xl font-bold transition-all border border-slate-600 mb-3"
           />
+
+          <div className='relative flex py-2 items-center mb-3'>
+            <div className='flex-grow border-t border-slate-700'></div>
+            <span className='flex-shrink mx-4 text-xs uppercase tracking-wider text-slate-400 font-bold'>OR BEST VALUE</span>
+            <div className='flex-grow border-t border-slate-700'></div>
+          </div>
+
+          <div className='p-4 rounded-xl bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border border-indigo-500/30 mb-2 text-left'>
+            <div className='flex items-center justify-between mb-2'>
+              <span className='font-bold text-white text-sm'>🚀 Seller Pro Pack</span>
+              <span className='text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded font-bold'>Save 90%</span>
+            </div>
+            <p className='text-xs text-slate-300 mb-3'>
+              Get <strong>10 Sale Listings</strong> for just <strong>₹5,100</strong> (effective ₹510 each). 1-year validity with instant publishing!
+            </p>
+            <RazorpayBtn
+              orderType="seller_subscription"
+              btnText="Buy Seller Pack (₹5,100 for 10)"
+              onSuccess={() => navigate('/seller-dashboard')}
+              customStyle="w-full justify-center flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-5 py-3.5 rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/25 cursor-pointer"
+            />
+          </div>
 
           <p className='text-center mt-4'>
             <button
@@ -307,7 +329,32 @@ export default function CreateListing() {
     <div className='min-h-screen flex items-center justify-center p-4 py-10' style={{ backgroundColor: 'var(--bg-primary)' }}>
       <div className='max-w-4xl w-full rounded-lg shadow-2xl p-8 border' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
 
-        <h1 className='text-3xl font-bold text-center text-white mb-8'>Create a Listing</h1>
+        <h1 className='text-3xl font-bold text-center text-white mb-6'>Create a Listing</h1>
+
+        {/* Quota Status Badge */}
+        {(() => {
+          const sub = currentUser?.sellerSubscription;
+          const isActive = sub && sub.status === 'active' && sub.endDate && new Date(sub.endDate) > new Date();
+          const remaining = isActive ? Math.max(0, (sub.totalQuota || 0) - (sub.usedQuota || 0)) : 0;
+
+          if (isActive && remaining > 0) {
+            return (
+              <div className='mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between'>
+                <div className='flex items-center gap-3'>
+                  <span className='text-emerald-400 text-lg'>✨</span>
+                  <div>
+                    <p className='text-sm font-bold text-white'>Seller Pro Pack Active</p>
+                    <p className='text-xs text-slate-300'>You have <span className='text-emerald-400 font-bold'>{remaining}</span> Sale listing credits remaining. Sale properties publish instantly for FREE!</p>
+                  </div>
+                </div>
+                <span className='text-xs font-bold bg-emerald-500/20 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-500/30 whitespace-nowrap'>
+                  {remaining} Free Left
+                </span>
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         <form onSubmit={handleSubmit} className='flex flex-col sm:flex-row gap-6'>
 

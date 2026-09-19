@@ -7,7 +7,7 @@ import crypto from 'crypto';
 import { errorHandler } from '../utils/error.js';
 import sendEmail from '../utils/sendEmail.js';
 import { sendPushNotification } from '../utils/sendPush.js';
-import { getListingFee, BOOKING_TOKEN_FEE, FEES_CURRENCY } from '../utils/fees.js';
+import { getListingFee, BOOKING_TOKEN_FEE, SELLER_PACK, FEES_CURRENCY } from '../utils/fees.js';
 
 // Initialize Razorpay
 const razorpay = new Razorpay({
@@ -24,6 +24,33 @@ export const createOrder = async (req, res, next) => {
   try {
     const { listingId, orderType = 'listing_fee' } = req.body;
 
+    // --- A. SELLER SUBSCRIPTION PACK ORDER (₹5,100 for 10 Sale Listings) ---
+    if (orderType === 'seller_subscription') {
+      const options = {
+        amount: SELLER_PACK.price * 100, // 510000 paise = ₹5,100
+        currency: FEES_CURRENCY,
+        receipt: `rcpt_sub_${req.user.id.slice(-6)}_${Date.now().toString().slice(-6)}`,
+        notes: {
+          type: 'seller_subscription',
+          userId: req.user.id,
+          quota: String(SELLER_PACK.listingQuota),
+          planName: SELLER_PACK.name,
+        }
+      };
+
+      const order = await razorpay.orders.create(options);
+      if (!order) {
+        return next(errorHandler(500, "Razorpay Order Creation Failed"));
+      }
+
+      return res.status(200).json({
+        success: true,
+        order,
+        type: 'seller_subscription',
+        plan: SELLER_PACK,
+      });
+    }
+
     if (!listingId) {
       return next(errorHandler(400, "Listing ID is required!"));
     }
@@ -31,7 +58,7 @@ export const createOrder = async (req, res, next) => {
     const listing = await Listing.findById(listingId);
     if (!listing) return next(errorHandler(404, 'Listing not found!'));
 
-    // --- A. BUYER BOOKING ORDER ---
+    // --- B. BUYER BOOKING ORDER ---
     if (orderType === 'booking') {
       // Owner cannot book their own property
       if (listing.userRef === req.user.id) {
@@ -155,12 +182,21 @@ export const verifyPayment = async (req, res, next) => {
     const rzpOrder = await razorpay.orders.fetch(razorpay_order_id);
     const notes = rzpOrder.notes || {};
     const listingId = notes.listingId;
-    const paymentType = notes.type === 'listing_fee' ? 'listing_fee' : 'booking';
+    const paymentType = notes.type === 'seller_subscription'
+      ? 'seller_subscription'
+      : (notes.type === 'listing_fee' ? 'listing_fee' : 'booking');
 
-    const listing = await Listing.findById(listingId);
-    if (!listing) return next(errorHandler(404, 'Listing not found'));
+    let listing = null;
+    if (paymentType !== 'seller_subscription') {
+      listing = await Listing.findById(listingId);
+      if (!listing) return next(errorHandler(404, 'Listing not found'));
+    }
 
-    if (paymentType === 'listing_fee') {
+    if (paymentType === 'seller_subscription') {
+      if (rzpOrder.amount / 100 !== SELLER_PACK.price) {
+        return next(errorHandler(400, 'Payment amount does not match Seller Pack price.'));
+      }
+    } else if (paymentType === 'listing_fee') {
       // Validate this is still an unpublished draft owned by the payer
       if (listing.userRef !== req.user.id) {
         return next(errorHandler(403, 'You can only verify a fee payment for your own listing.'));
@@ -179,7 +215,7 @@ export const verifyPayment = async (req, res, next) => {
     // C. Save to Database
     const newOrder = new Order({
       userRef: req.user.id,
-      listingRef: listingId,
+      listingRef: listing ? listingId : null,
       amount: rzpOrder.amount / 100,
       paymentId: razorpay_payment_id,
       orderId: razorpay_order_id,
@@ -189,6 +225,70 @@ export const verifyPayment = async (req, res, next) => {
     });
 
     const order = await newOrder.save();
+
+    // D. Fulfill Seller Subscription
+    if (paymentType === 'seller_subscription') {
+      const now = new Date();
+      const endDate = new Date(now.getTime() + SELLER_PACK.validityDays * 24 * 60 * 60 * 1000);
+
+      const currentTotal = (buyer.sellerSubscription && buyer.sellerSubscription.totalQuota) || 0;
+      const currentUsed = (buyer.sellerSubscription && buyer.sellerSubscription.usedQuota) || 0;
+
+      buyer.sellerSubscription = {
+        status: 'active',
+        totalQuota: currentTotal + SELLER_PACK.listingQuota,
+        usedQuota: currentUsed,
+        startDate: now,
+        endDate: endDate,
+        paymentId: razorpay_payment_id,
+        orderId: razorpay_order_id,
+      };
+
+      if (buyer.sellerStatus !== 'approved') {
+        buyer.sellerStatus = 'approved';
+      }
+
+      await buyer.save();
+
+      // Email receipt to seller
+      if (buyer.email) {
+        const emailSubject = `🎉 Seller Pro Pack Activated: 10 Sale Listings Added!`;
+        const emailBody = `
+          <div style="font-family: Arial, sans-serif; color: #333;">
+            <h2 style="color: #2563eb;">Congratulations, ${escapeHtml(buyer.username)}!</h2>
+            <p>Your <strong>${escapeHtml(SELLER_PACK.name)}</strong> is now ACTIVE.</p>
+            <div style="background: #f3f4f6; padding: 15px; border-radius: 10px; margin: 20px 0;">
+              <p><strong>📦 Package:</strong> ${escapeHtml(SELLER_PACK.name)}</p>
+              <p><strong>🏷️ Sale Listings Quota:</strong> 10 Properties</p>
+              <p><strong>💰 Amount Paid:</strong> ₹${SELLER_PACK.price}</p>
+              <p><strong>📅 Valid Till:</strong> ${endDate.toDateString()}</p>
+              <p><strong>🧾 Payment ID:</strong> ${escapeHtml(razorpay_payment_id)}</p>
+            </div>
+            <p>You can now list up to 10 Sale properties and they will publish immediately!</p>
+            <br/>
+            <p style="font-size: 12px; color: #888;">Team OasisSpace</p>
+          </div>
+        `;
+        await sendEmail(buyer.email, emailSubject, emailBody);
+        await sendEmail(process.env.SENDER_EMAIL, emailSubject, emailBody);
+      }
+
+      // In-app notification
+      const remaining = buyer.sellerSubscription.totalQuota - buyer.sellerSubscription.usedQuota;
+      await Notification.create({
+        recipient: buyer._id,
+        sender: buyer._id,
+        message: `🚀 Seller Pack activated! You have ${remaining} Sale listing credits valid for 1 year.`,
+        relatedId: null
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Seller Pro Pack activated! 10 Sale listings added to your account.",
+        type: 'seller_subscription',
+        sellerSubscription: buyer.sellerSubscription,
+      });
+    }
 
     if (paymentType === 'listing_fee') {
       // Publish the listing — draft becomes publicly visible

@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import PaymentLoading from './PaymentLoading';
 import { FaCreditCard } from 'react-icons/fa';
+import { updateUserSuccess } from '../redux/user/userSlice';
 
 export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle = "", onSuccess, orderType = "listing_fee" }) {
   const { currentUser } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
   const [paymentStatus, setPaymentStatus] = useState(null); // null | 'processing' | 'success' | 'failed'
   const navigate = useNavigate();
 
+  const isSubscription = orderType === 'seller_subscription';
   const isBooking = orderType === 'booking' || btnText.toLowerCase().includes('book');
 
   // 1. Script Load Function
@@ -39,13 +42,17 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
 
     try {
       // B. Create Order (Backend Call) — amount is computed server-side
+      const orderPayload = {
+        orderType: isSubscription ? 'seller_subscription' : (isBooking ? 'booking' : 'listing_fee'),
+      };
+      if (listing && listing._id) {
+        orderPayload.listingId = listing._id;
+      }
+
       const orderRes = await fetch('/api/order/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          listingId: listing._id,
-          orderType: isBooking ? 'booking' : 'listing_fee',
-        })
+        body: JSON.stringify(orderPayload)
       });
 
       const orderData = await orderRes.json();
@@ -76,7 +83,9 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
         amount: orderData.order.amount,
         currency: orderData.order.currency,
         name: "OasisSpace",
-        description: isBooking ? `Booking for ${listing.name}` : `Publishing fee for ${listing.name}`,
+        description: isSubscription
+          ? "Seller Pro Pack — 10 Sale Listings (₹5,100)"
+          : (isBooking ? `Booking for ${listing?.name || 'Property'}` : `Publishing fee for ${listing?.name || 'Property'}`),
         image: "https://cdn-icons-png.flaticon.com/512/1040/1040993.png",
         order_id: orderData.order.id, // Backend Order ID
         
@@ -99,12 +108,21 @@ export default function RazorpayBtn({ listing, btnText = "Pay Now", customStyle 
              const verifyData = await verifyRes.json();
 
              if (verifyData.success) {
+                // If seller subscription was updated, reflect immediately in Redux user state
+                if (verifyData.sellerSubscription) {
+                  dispatch(updateUserSuccess({
+                    ...currentUser,
+                    sellerStatus: 'approved',
+                    sellerSubscription: verifyData.sellerSubscription
+                  }));
+                }
+
                 if (onSuccess) {
                    onSuccess(verifyData);
                 } else {
                    setTimeout(() => {
                        setPaymentStatus(null);
-                       navigate('/order-history');
+                       navigate(isSubscription ? '/seller-dashboard' : '/order-history');
                    }, 1200);
                 }
              } else {

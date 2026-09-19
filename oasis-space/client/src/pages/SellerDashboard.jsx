@@ -124,6 +124,61 @@ export default function SellerDashboard() {
         </Link>
       </div>
 
+      {/* --- SELLER SUBSCRIPTION PACK STATUS & TOP-UP CARD --- */}
+      {(() => {
+        const sub = currentUser?.sellerSubscription;
+        const isActive = sub && sub.status === 'active' && sub.endDate && new Date(sub.endDate) > new Date();
+        const remaining = isActive ? Math.max(0, (sub.totalQuota || 0) - (sub.usedQuota || 0)) : 0;
+        const total = sub?.totalQuota || 0;
+        const percent = total > 0 ? Math.min(100, Math.round(((sub?.usedQuota || 0) / total) * 100)) : 0;
+
+        return (
+          <div className='p-6 rounded-2xl border shadow-xl mb-8 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950/40 border-indigo-500/30'>
+            <div className='flex flex-col md:flex-row justify-between items-start md:items-center gap-6'>
+              <div className='space-y-2 flex-1'>
+                <div className='flex items-center gap-3'>
+                  <span className='p-2 bg-indigo-500/20 text-indigo-400 rounded-lg text-lg'>
+                    <FaCreditCard />
+                  </span>
+                  <h2 className='text-xl font-bold text-white'>
+                    Seller Pro Pack <span className='text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wider ml-2 bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'>
+                      {isActive ? (remaining > 0 ? 'Active' : 'Quota Exhausted') : 'Get Pack'}
+                    </span>
+                  </h2>
+                </div>
+
+                {isActive ? (
+                  <div>
+                    <p className='text-slate-300 text-sm'>
+                      You have <span className='font-bold text-emerald-400'>{remaining} of {total}</span> Sale listing credits available. Sale listings publish instantly for FREE!
+                    </p>
+                    <div className='w-full max-w-md bg-slate-700/50 rounded-full h-2.5 mt-2.5 overflow-hidden'>
+                      <div className='bg-gradient-to-r from-blue-500 to-emerald-400 h-2.5 rounded-full transition-all duration-500' style={{ width: `${percent}%` }}></div>
+                    </div>
+                    <p className='text-xs text-slate-400 mt-1.5'>
+                      Valid till: <span className='text-slate-200 font-medium'>{new Date(sub.endDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'short', day: 'numeric' })}</span> ({total - remaining} of {total} used)
+                    </p>
+                  </div>
+                ) : (
+                  <p className='text-slate-300 text-sm max-w-2xl'>
+                    Get the <span className='font-bold text-white'>Seller Pro Pack for ₹5,100</span> to list up to <span className='font-bold text-emerald-400'>10 Sale properties</span> (effective cost ₹510/listing vs ₹5,100 each). 1-year validity with instant live publishing!
+                  </p>
+                )}
+              </div>
+
+              <div className='w-full md:w-auto flex flex-col sm:flex-row gap-3'>
+                <RazorpayBtn
+                  orderType="seller_subscription"
+                  btnText={isActive ? (remaining > 0 ? "Top-up 10 Credits (₹5,100)" : "Renew Pack (₹5,100)") : "Buy Seller Pack (₹5,100 for 10)"}
+                  onSuccess={() => fetchDashboardData()}
+                  customStyle="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold transition shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 text-sm cursor-pointer whitespace-nowrap"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10'>
         <div className='p-6 rounded-2xl border shadow-lg' style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}>
           <div className='flex justify-between items-start'>
